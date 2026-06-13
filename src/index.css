@@ -1,0 +1,63 @@
+:root {
+  /* Palette — dark, GPU/terminal inspired */
+  --bg: #0b0f0a;
+  --bg-elevated: #121712;
+  --bg-card: #161d15;
+  --bg-card-hover: #1b241a;
+  --border: #25301f;
+  --border-strong: #33421f;
+  --text: #e7f0e0;
+  --text-dim: #9fb295;
+  --text-faint: #6d7d63;
+  --nv-green: #76b900;
+  --nv-green-dim: #5c8f00;
+  --accent: #76b900;
+  --correct: #4ade80;
+  --correct-bg: rgba(74, 222, 128, 0.12);
+  --wrong: #f87171;
+  --wrong-bg: rgba(248, 113, 113, 0.12);
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+
+  color-scheme: dark;
+  font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100vh;
+}
+
+body {
+  background:
+    radial-gradient(1200px 600px at 80% -10%, rgba(118, 185, 0, 0.08), transparent 60%),
+    radial-gradient(900px 500px at -10% 110%, rgba(118, 185, 0, 0.05), transparent 55%),
+    var(--bg);
+  color: var(--text);
+}
+
+code,
+.mono {
+  font-family: ui-monospace, 'SF Mono', 'JetBrains Mono', 'Fira Code', Menlo, Consolas, monospace;
+}
+
+a {
+  color: var(--nv-green);
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+::selection {
+  background: rgba(118, 185, 0, 0.3);
+}

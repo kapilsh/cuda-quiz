@@ -15,6 +15,10 @@
 # production
 /build
 
+# vite build output (rebuilt in CI for GitHub Pages)
+/docs
+/dist
+
 # misc
 .DS_Store
 *.pem
