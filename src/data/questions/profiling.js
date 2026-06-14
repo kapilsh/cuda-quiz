@@ -8,7 +8,7 @@ export default defineQuestions('profiling', [
     q: 'What is the primary use of Nsight Systems (nsys)?',
     o: [
       'Per-kernel instruction-level analysis',
-      'System-wide timeline profiling: CPU/GPU activity, kernel/memcpy timing, streams, and gaps/overlap',
+      'System-wide timeline of CPU/GPU activity',
       'Editing CUDA source code',
       'Counting bank conflicts',
     ],
@@ -22,7 +22,7 @@ export default defineQuestions('profiling', [
     q: 'What is the primary use of Nsight Compute (ncu)?',
     o: [
       'Timeline of the whole application',
-      'Detailed single-kernel analysis: occupancy, memory throughput, instruction mix, roofline, stall reasons',
+      'Detailed single-kernel analysis',
       'Multi-node cluster profiling',
       'Compiling kernels',
     ],
@@ -36,7 +36,7 @@ export default defineQuestions('profiling', [
     q: 'When timing a kernel with CUDA events, why must you record a stop event and call cudaEventSynchronize before reading the elapsed time?',
     o: [
       'Events are stored on the host',
-      'Kernel launches are asynchronous, so you must wait for the GPU to actually reach the stop event before the timestamp is valid',
+      'Launches are async; wait for the GPU to reach stop',
       'cudaEventElapsedTime resets the clock',
       'Otherwise the time is in nanoseconds',
     ],
@@ -50,7 +50,7 @@ export default defineQuestions('profiling', [
     q: 'In Nsight Compute, "achieved occupancy" differs from "theoretical occupancy" because…',
     o: [
       'They always match',
-      'Achieved reflects the actual average active warps during execution, affected by load imbalance, tail effects, and divergence',
+      'Achieved is the runtime average active warps',
       'Theoretical is measured after the run',
       'Achieved ignores register usage',
     ],
@@ -64,7 +64,7 @@ export default defineQuestions('profiling', [
     q: 'A kernel shows high "Long Scoreboard" stalls in Nsight Compute. This typically indicates…',
     o: [
       'Too many atomic operations',
-      'Warps waiting on global/local memory loads (data dependency on a pending long-latency memory access)',
+      'Warps waiting on global/local memory loads',
       'Register bank conflicts',
       'Excessive __syncthreads',
     ],
@@ -78,7 +78,7 @@ export default defineQuestions('profiling', [
     q: 'To find whether a kernel is compute-bound or memory-bound in Nsight Compute, you would look at…',
     o: [
       'The kernel name only',
-      'The SM (compute) throughput vs. memory throughput utilization (and the roofline chart)',
+      'SM throughput vs memory throughput',
       'The number of registers',
       'The grid dimensions',
     ],
@@ -92,7 +92,7 @@ export default defineQuestions('profiling', [
     q: 'Why is it important to "warm up" the GPU (run the kernel once untimed) before benchmarking?',
     o: [
       'To clear global memory',
-      'To absorb one-time costs: context/JIT initialization, autotuning, and clock ramp-up, so timed runs reflect steady state',
+      'Absorb one-time init and clock ramp-up costs',
       'To increase occupancy',
       'It is never necessary',
     ],
@@ -106,7 +106,7 @@ export default defineQuestions('profiling', [
     q: 'In Nsight Systems, you see kernels and H2D copies running strictly back-to-back on the default stream. The fix to overlap them is to…',
     o: [
       'Increase the block size',
-      'Use multiple non-default streams with pinned memory and cudaMemcpyAsync so copies overlap with compute',
+      'Multiple streams, pinned memory, async copies',
       'Add more __syncthreads',
       'Reduce register usage',
     ],
@@ -120,7 +120,7 @@ export default defineQuestions('profiling', [
     q: 'The metric "DRAM throughput" reported as a % of peak tells you…',
     o: [
       'How full the L1 cache is',
-      'How close the kernel’s device-memory bandwidth usage is to the GPU’s peak HBM bandwidth',
+      'How close HBM bandwidth is to peak',
       'The PCIe transfer rate',
       'The occupancy',
     ],
@@ -134,7 +134,7 @@ export default defineQuestions('profiling', [
     q: 'compute-sanitizer with --tool memcheck is used to detect…',
     o: [
       'Slow kernels',
-      'Out-of-bounds and misaligned global/shared memory accesses and leaks',
+      'Out-of-bounds, misaligned, and leaks',
       'Low occupancy',
       'Bank conflicts',
     ],
@@ -148,7 +148,7 @@ export default defineQuestions('profiling', [
     q: 'You profile a GEMM and tensor-core (Tensor) pipe utilization is 30% while memory is 95%. The kernel is…',
     o: [
       'Compute-bound on tensor cores',
-      'Memory-bound — tensor cores are starved waiting for operands; improve data movement (larger tiles, TMA, better reuse/precision)',
+      'Memory-bound; tensor cores are starved',
       'Perfectly balanced',
       'Limited by registers',
     ],
@@ -162,7 +162,7 @@ export default defineQuestions('profiling', [
     q: 'What does the NVTX library let you do in profiles?',
     o: [
       'Automatically optimize kernels',
-      'Annotate code with named ranges/markers that appear on the Nsight Systems timeline for easier correlation',
+      'Add named ranges/markers to the timeline',
       'Count FLOPs',
       'Detect races',
     ],
@@ -176,7 +176,7 @@ export default defineQuestions('profiling', [
     q: 'When a kernel’s runtime barely changes as you increase occupancy, it most likely means…',
     o: [
       'The profiler is broken',
-      'The kernel already has enough parallelism to hide latency (it is bandwidth- or compute-bound), so more occupancy does not help',
+      'Latency is already hidden; the limiter is elsewhere',
       'Occupancy never affects runtime',
       'You must increase the block size further',
     ],
@@ -190,7 +190,7 @@ export default defineQuestions('profiling', [
     q: 'Why can profiling a kernel under Nsight Compute be much slower than a normal run?',
     o: [
       'It recompiles the kernel each time',
-      'ncu may replay the kernel multiple times (kernel replay) to gather all hardware counters that cannot be collected in a single pass',
+      'It replays the kernel to gather all counters',
       'It runs on the CPU',
       'It disables the cache',
     ],

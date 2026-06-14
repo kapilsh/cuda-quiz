@@ -10,7 +10,7 @@ export default defineQuestions(
       q: '__ballot_sync(mask, predicate) returns what?',
       o: [
         'The number of threads with predicate true',
-        'A 32-bit value whose bit i is set if lane i (in the mask) had predicate true',
+        '32-bit mask: bit i set if lane i had pred true',
         'The first lane with predicate true',
         'A boolean: true if all lanes agree',
       ],
@@ -48,7 +48,7 @@ export default defineQuestions(
       q: 'How do you compute a thread’s lane index within its warp?',
       o: [
         'threadIdx.x / 32',
-        'threadIdx.x % warpSize (or read the %laneid special register)',
+        'threadIdx.x % warpSize (or %laneid)',
         'blockIdx.x % 32',
         'threadIdx.x * warpSize',
       ],
@@ -67,7 +67,7 @@ export default defineQuestions(
       q: '__activemask() is useful when…',
       o: [
         'You always want the full 0xFFFFFFFF mask',
-        'You need the set of currently-converged/active lanes to pass to a _sync primitive in code that may be partially diverged',
+        'You need the active lanes to feed a _sync primitive',
         'You want to deactivate lanes',
         'You need the block’s thread count',
       ],
@@ -86,7 +86,7 @@ export default defineQuestions(
       q: 'Zero-overhead warp scheduling means…',
       o: [
         'Warps never stall',
-        'Switching which resident warp the scheduler issues from costs no extra cycles, because each warp’s state stays live in the register file',
+        'Switching resident warps costs zero cycles',
         'There is no scheduler',
         'Warps run on the host',
       ],
@@ -105,7 +105,7 @@ export default defineQuestions(
       q: 'In Nsight terms, what is an "eligible" warp?',
       o: [
         'A warp that has finished',
-        'A resident (active) warp whose next instruction’s dependencies are satisfied, so it is ready to be issued this cycle',
+        'A resident warp ready to issue this cycle',
         'A warp that diverged',
         'A warp waiting on __syncthreads',
       ],
@@ -124,7 +124,7 @@ export default defineQuestions(
       q: 'A typical FMA instruction on an SM has a latency of a few cycles but a throughput of one per cycle (per pipe). To keep the pipe full you must…',
       o: [
         'Reduce the block size',
-        'Have enough independent instructions in flight (from ILP and/or multiple warps) to cover the latency',
+        'Keep independent instructions in flight',
         'Use double precision',
         'Avoid shared memory',
       ],
@@ -158,7 +158,7 @@ export default defineQuestions(
       q: 'cudaOccupancyMaxActiveBlocksPerMultiprocessor(&n, kernel, blockSize, dynamicSMem) returns…',
       o: [
         'The total number of blocks to launch',
-        'How many blocks of the given size can be co-resident per SM, given the kernel’s register/shared-memory use',
+        'Resident blocks per SM for that kernel and block size',
         'The achieved occupancy after a run',
         'The number of SMs',
       ],
@@ -187,7 +187,7 @@ export default defineQuestions(
       q: 'Dynamic parallelism allows…',
       o: [
         'The host to launch kernels faster',
-        'A running kernel to launch child kernels directly from the device',
+        'A kernel to launch child kernels on-device',
         'Kernels to resize blocks at runtime',
         'Warps to change size',
       ],
@@ -206,7 +206,7 @@ export default defineQuestions(
       q: 'The compiler often converts a short if-body into predicated instructions. The benefit is…',
       o: [
         'It uses more registers',
-        'It avoids a branch (and its divergence/reconvergence overhead) by executing both sides with per-lane predicates for very short bodies',
+        'Avoids a branch via per-lane predicates',
         'It guarantees coalescing',
         'It increases occupancy',
       ],
@@ -225,7 +225,7 @@ export default defineQuestions(
       q: 'cooperative_groups::tiled_partition<32>(block) gives you…',
       o: [
         'A new block',
-        'A statically-sized sub-group (e.g. a warp-sized tile) supporting collective ops like .shfl(), .sync(), .reduce() within the tile',
+        'A fixed-size tile with collective ops',
         'A grid-wide group',
         'A device handle',
       ],
@@ -244,7 +244,7 @@ export default defineQuestions(
       q: 'coalesced_group (from cooperative groups) represents…',
       o: [
         'All threads in the grid',
-        'The set of threads that are currently converged/active together, letting you do collectives over exactly those lanes',
+        'The currently-converged active lanes',
         'Threads accessing coalesced memory',
         'A block of 32 threads always',
       ],
@@ -263,7 +263,7 @@ export default defineQuestions(
       q: 'clock64() inside a kernel returns…',
       o: [
         'Wall-clock time in nanoseconds',
-        'A per-SM cycle counter, useful for measuring relative timing of code regions on the device',
+        'A per-SM cycle counter for relative timing',
         'The host CPU time',
         'The kernel launch timestamp',
       ],
@@ -282,7 +282,7 @@ export default defineQuestions(
       q: '__nanosleep(ns) is used to…',
       o: [
         'Halt the whole GPU',
-        'Back off a thread for approximately the given nanoseconds, useful in spin-wait/back-off loops to reduce contention',
+        'Back off a thread ~ns in spin-wait loops',
         'Synchronize a block',
         'Sleep the host',
       ],
@@ -301,7 +301,7 @@ export default defineQuestions(
       q: 'A loop whose trip count depends on per-thread data (e.g. while (x[i] > tol)) can hurt performance because…',
       o: [
         'It uses too much shared memory',
-        'Threads in a warp finish at different iterations, so the warp runs until its slowest lane (divergence/imbalance)',
+        'The warp runs until its slowest lane finishes',
         'It cannot be compiled',
         'It disables coalescing entirely',
       ],
@@ -320,7 +320,7 @@ export default defineQuestions(
       q: 'Warp specialization in advanced kernels (e.g. Hopper GEMM) refers to…',
       o: [
         'Making all warps identical',
-        'Assigning different roles to different warps/warpgroups — e.g. producer warps issue TMA loads while consumer warps run wgmma — coordinated via barriers',
+        'Different roles per warp: producers vs consumers',
         'Running warps on different GPUs',
         'Disabling some warps',
       ],
@@ -348,7 +348,7 @@ export default defineQuestions(
       d: 4,
       q: 'Separate INT32 and FP32 pipelines (Volta+) allow…',
       o: [
-        'Integer and float instructions to be issued concurrently, so address/index math overlaps with floating-point compute',
+        'INT and FP instructions to issue concurrently',
         'Faster double precision only',
         'More shared memory',
         'Larger warps',
@@ -368,7 +368,7 @@ export default defineQuestions(
       q: 'After a divergent if/else within a warp, where do the lanes "reconverge" (pre-Volta model)?',
       o: [
         'They never reconverge',
-        'At the immediate post-dominator of the branch (the reconvergence point), after both paths have executed',
+        'At the post-dominator of the branch',
         'At the next kernel launch',
         'At a __syncthreads only',
       ],
@@ -397,7 +397,7 @@ export default defineQuestions(
       q: 'A warp scheduler can issue back-to-back instructions from the SAME warp in consecutive cycles only if…',
       o: [
         'The warp has the lowest id',
-        'Those instructions are independent (no data hazard) so the second need not wait on the first’s result',
+        'They are independent (no data hazard)',
         'The block is small',
         'Shared memory is unused',
       ],
@@ -416,7 +416,7 @@ export default defineQuestions(
       q: 'A thread block cluster’s cluster.sync() barrier synchronizes…',
       o: [
         'All threads in the grid',
-        'All threads across all blocks of the cluster (which are co-scheduled on one GPC)',
+        'All threads in all blocks of the cluster',
         'Only threads in one block',
         'Only one warp per block',
       ],
@@ -435,7 +435,7 @@ export default defineQuestions(
       q: '__syncwarp(mask) differs from __syncthreads() in that it…',
       o: [
         'Synchronizes the whole device',
-        'Synchronizes (and reconverges) only the specified lanes of a single warp, not the whole block',
+        'Syncs only the named lanes of one warp',
         'Is slower',
         'Also flushes the L2 cache',
       ],
@@ -454,7 +454,7 @@ export default defineQuestions(
       q: 'Why does the GPU keep a warp resident (occupying register/shared resources) even while it is stalled on memory?',
       o: [
         'To save power',
-        'So it can resume instantly when its data arrives — resident state is what enables zero-overhead switching and latency hiding',
+        'So it can resume instantly when data arrives',
         'Because it cannot be evicted',
         'To prevent divergence',
       ],
@@ -473,7 +473,7 @@ export default defineQuestions(
       q: 'Two blocks of the same kernel cannot reliably communicate through global memory mid-kernel mainly because…',
       o: [
         'Global memory is read-only',
-        'There is no guarantee both blocks are resident at the same time; the scheduler may run them sequentially',
+        'Both blocks may not be resident at once',
         'Blocks have separate global memories',
         'It is too slow',
       ],
@@ -492,7 +492,7 @@ export default defineQuestions(
       q: 'In a "ping-pong" (cooperative) Hopper GEMM, what overlaps to hide latency across warpgroups?',
       o: [
         'Two GPUs',
-        'One warpgroup’s wgmma math runs while another stage’s TMA loads fill the next shared-memory buffer, alternating through mbarrier phases',
+        'wgmma math overlaps the next TMA loads',
         'Host and device',
         'FP32 and FP64',
       ],
@@ -511,7 +511,7 @@ export default defineQuestions(
       q: '"Wave quantization" hurts performance when…',
       o: [
         'The grid size is a multiple of the SM resident-block capacity',
-        'The grid size is just over a whole number of waves, so a nearly-empty final wave runs while most SMs idle',
+        'A nearly-empty final wave runs while SMs idle',
         'There are too few registers',
         'Shared memory is unused',
       ],
@@ -530,7 +530,7 @@ export default defineQuestions(
       q: 'Within Cooperative Groups, calling .reduce(val, op) on a 32-thread tile (CC 8.0+) may use…',
       o: [
         'Global atomics',
-        'Hardware-accelerated warp reduction instructions (redux.sync) where available, otherwise a shuffle-based reduction',
+        'Hardware redux.sync or a shuffle reduction',
         'Shared memory only',
         'The host',
       ],

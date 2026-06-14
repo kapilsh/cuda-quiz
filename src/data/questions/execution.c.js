@@ -10,7 +10,7 @@ export default defineQuestions(
       q: '__match_any_sync(mask, value) returns…',
       o: [
         'The sum of values in the warp',
-        'A bitmask of the lanes (within mask) that have the SAME value as the caller — useful for grouping/aggregation',
+        'Mask of lanes with the same value',
         'The maximum value',
         'A single boolean',
       ],
@@ -29,7 +29,7 @@ export default defineQuestions(
       q: 'A butterfly reduction within a warp uses which shuffle variant?',
       o: [
         '__shfl_up_sync',
-        '__shfl_xor_sync (each step XORs the lane index by a decreasing power of two)',
+        '__shfl_xor_sync',
         '__shfl_idx_sync',
         '__ballot_sync',
       ],
@@ -48,7 +48,7 @@ export default defineQuestions(
       q: '__shfl_up_sync is the natural primitive for implementing…',
       o: [
         'A reduction to lane 0',
-        'An inclusive warp scan (prefix sum), since each lane adds the value from a lower lane',
+        'An inclusive warp scan (prefix sum)',
         'A broadcast from lane 31',
         'Atomic increments',
       ],
@@ -67,7 +67,7 @@ export default defineQuestions(
       q: 'The intrinsics __isGlobal(ptr) / __isShared(ptr) let device code…',
       o: [
         'Allocate memory',
-        'Query which memory space (state space) a generic pointer refers to, e.g. to specialize handling of shared vs. global pointers',
+        'Query which memory space a pointer is in',
         'Convert pointers',
         'Free memory',
       ],
@@ -86,7 +86,7 @@ export default defineQuestions(
       q: 'Registers are allocated to warps in fixed-size chunks (allocation granularity). A consequence is that…',
       o: [
         'Register count never affects occupancy',
-        'A small increase in registers/thread can drop occupancy in steps, because allocation rounds up to the granularity per warp',
+        'A few extra registers can drop occupancy in steps',
         'Registers are unlimited',
         'Occupancy is continuous',
       ],
@@ -105,7 +105,7 @@ export default defineQuestions(
       q: 'Control divergence vs. memory divergence: "memory divergence" within a warp refers to…',
       o: [
         'Threads taking different branches',
-        'Threads accessing scattered addresses, so the single memory instruction is serviced by multiple transactions (replays)',
+        'Scattered addresses force multiple transactions',
         'Threads using different registers',
         'Warps on different SMs',
       ],
@@ -124,7 +124,7 @@ export default defineQuestions(
       q: 'cooperative_groups::this_grid() returns a grid_group whose .sync() requires…',
       o: [
         'Nothing special',
-        'A cooperative launch (cudaLaunchCooperativeKernel) with a grid sized so all blocks are co-resident',
+        'Cooperative launch, all blocks co-resident',
         'Dynamic parallelism',
         'Two GPUs',
       ],
@@ -143,7 +143,7 @@ export default defineQuestions(
       q: 'Within a tiled_partition tile, thread_rank() gives…',
       o: [
         'The global thread index',
-        'The thread’s index within the tile (0..tile_size-1)',
+        'Its index within the tile (0..size-1)',
         'The block index',
         'The warp id',
       ],
@@ -162,7 +162,7 @@ export default defineQuestions(
       q: 'A block of 64 threads on an SM that allows up to 32 resident blocks and 2048 resident threads is limited by…',
       o: [
         'Threads (2048 / 64 = 32 blocks, exactly the block cap)',
-        'Both hit 32 simultaneously: 32 blocks × 64 = 2048 threads, so it reaches full thread occupancy at the block-count limit',
+        '32 blocks × 64 = 2048: full thread occupancy',
         'Shared memory always',
         'Registers always',
       ],
@@ -181,7 +181,7 @@ export default defineQuestions(
       q: 'Divergence is a performance concern only WITHIN a warp, not across warps, because…',
       o: [
         'Warps share a program counter',
-        'Different warps are scheduled independently — each can be on a different instruction without penalty; only intra-warp path splits serialize',
+        'Warps are scheduled independently',
         'Warps always run in lockstep with each other',
         'Across-warp divergence is illegal',
       ],
@@ -200,7 +200,7 @@ export default defineQuestions(
       q: 'cooperative_groups::reduce(tile, val, cg::plus<T>()) on a 32-thread tile is convenient because it…',
       o: [
         'Uses global atomics',
-        'Encapsulates the optimal warp reduction (shuffle/redux) so you don’t hand-write the shfl tree',
+        'Wraps the optimal warp reduction',
         'Runs on the host',
         'Requires shared memory',
       ],
@@ -238,7 +238,7 @@ export default defineQuestions(
       q: 'The warp scheduler’s "greedy-then-oldest" (GTO) policy tends to…',
       o: [
         'Round-robin every warp equally',
-        'Keep issuing from one warp until it stalls, then pick the oldest ready warp — which can improve cache locality and latency for that warp',
+        'Issue one warp until it stalls, then the oldest',
         'Pick the newest warp',
         'Issue randomly',
       ],
@@ -257,7 +257,7 @@ export default defineQuestions(
       q: 'cooperative_groups::binary_partition(tile, predicate) splits a group into…',
       o: [
         'Two halves by lane index',
-        'Two subgroups: lanes whose predicate is true and those where it is false, each usable for independent collective ops',
+        'Two subgroups by predicate true/false',
         'Even and odd lanes',
         'Two blocks',
       ],
@@ -276,7 +276,7 @@ export default defineQuestions(
       q: 'Shared memory is also allocated to blocks at a granularity, so requesting slightly more shared memory can…',
       o: [
         'Have no effect',
-        'Drop the number of resident blocks per SM in a step (occupancy decreases discretely as usage crosses a granularity/limit)',
+        'Drop resident blocks per SM in a step',
         'Increase registers',
         'Improve coalescing',
       ],
@@ -295,7 +295,7 @@ export default defineQuestions(
       q: 'An uncoalesced load shows up in Nsight as instruction "replays." A replay means…',
       o: [
         'The kernel restarts',
-        'A single memory instruction is issued multiple times to cover all the cache-line sectors the warp’s scattered addresses require',
+        'One instruction reissued per transaction',
         'A warp diverged',
         'The scheduler stalled',
       ],
@@ -314,7 +314,7 @@ export default defineQuestions(
       q: 'In a 32-thread tile, tile.shfl(value, srcLane) is equivalent to…',
       o: [
         'A global memory read',
-        '__shfl_sync over the tile’s lanes — reading value from srcLane within the tile',
+        '__shfl_sync over the tile lanes',
         'An atomic operation',
         'A block barrier',
       ],
@@ -333,7 +333,7 @@ export default defineQuestions(
       q: 'Why can two kernels that each report 50% occupancy still differ greatly in performance?',
       o: [
         'Occupancy fully determines speed',
-        'Occupancy only bounds latency-hiding potential; actual speed depends on memory access patterns, ILP, divergence, and instruction mix — which occupancy does not capture',
+        'Occupancy only bounds latency hiding, not speed',
         'One uses more blocks',
         'They run on different SMs',
       ],
@@ -352,7 +352,7 @@ export default defineQuestions(
       q: 'meta_group_rank() on a tiled_partition<8>(block) of a 256-thread block returns…',
       o: [
         'The lane within the tile',
-        'Which 8-thread tile this is among the 32 tiles of the block (0..31)',
+        'Which tile this is (0..31 of 32)',
         'The block index',
         'The number of tiles',
       ],
@@ -371,7 +371,7 @@ export default defineQuestions(
       q: 'Warps from one block are distributed across the SM’s sub-partitions so that…',
       o: [
         'All warps go to one scheduler',
-        'Warps are spread across the 4 schedulers/sub-partitions, letting multiple warps issue per cycle and balancing the execution resources',
+        'Warps spread across the 4 sub-partitions',
         'Each warp gets its own SM',
         'Warps share a single register',
       ],
@@ -390,7 +390,7 @@ export default defineQuestions(
       q: 'CUB BlockScan / BlockReduce operate at block scope by…',
       o: [
         'Using global atomics',
-        'Cooperatively combining per-thread values across the whole block (via shared memory + shuffles) into a scan/reduction, with the threads as participants',
+        'Combining per-thread values block-wide',
         'Running one thread',
         'Calling the host',
       ],
@@ -409,7 +409,7 @@ export default defineQuestions(
       q: 'A kernel with a two-way branch where exactly half of each warp takes each side runs the divergent region at roughly…',
       o: [
         'Full speed',
-        'Half efficiency for that region — both paths execute serially with half the lanes masked off each time',
+        'Half efficiency: paths run serially',
         'Double speed',
         'Quarter speed',
       ],
@@ -428,7 +428,7 @@ export default defineQuestions(
       q: 'Persistent-kernel grid sizing typically launches exactly cooperativeMaxActiveBlocks × SM_count blocks because…',
       o: [
         'More blocks are faster',
-        'You want every block co-resident (for grid sync or a stable work-stealing pool) without oversubscribing the SMs',
+        'Every block co-resident, no oversubscription',
         'It minimizes registers',
         'It is required by the compiler',
       ],
@@ -447,7 +447,7 @@ export default defineQuestions(
       q: 'Two independent global loads issued before either result is used (manual prefetch / batched loads) help because…',
       o: [
         'They reduce memory traffic',
-        'Their latencies overlap (memory-level parallelism), so the warp waits roughly once instead of twice',
+        'Their latencies overlap (memory-level parallelism)',
         'They coalesce automatically',
         'They use tensor cores',
       ],
@@ -466,7 +466,7 @@ export default defineQuestions(
       q: '__shfl_sync requires a mask argument that must…',
       o: [
         'Always be 0',
-        'Name the lanes participating in the exchange (commonly 0xFFFFFFFF for a full warp), and all named lanes must execute the shuffle',
+        'Name participating lanes; all must execute',
         'Be the lane id',
         'Be the block size',
       ],
@@ -485,7 +485,7 @@ export default defineQuestions(
       q: 'cooperative_groups::multi_grid_group (this_multi_grid) was designed to synchronize…',
       o: [
         'Threads in one block',
-        'Cooperative kernels launched across MULTIPLE GPUs (multi-device cooperative launch)',
+        'Cooperative kernels across multiple GPUs',
         'Two warps',
         'Host and device',
       ],
@@ -504,7 +504,7 @@ export default defineQuestions(
       q: 'Why might a kernel limited to 25% occupancy still be optimal?',
       o: [
         'It never is',
-        'If each thread uses many registers for ILP/data reuse (e.g. a register-blocked GEMM), the low occupancy still hides latency and maximizes per-thread throughput',
+        'Register-heavy ILP hides latency at low occupancy',
         'Because the grid is small',
         'Because it uses constant memory',
       ],
@@ -523,7 +523,7 @@ export default defineQuestions(
       q: 'The number of warps in a block is computed as…',
       o: [
         'blockDim.x only',
-        'ceil(threads_per_block / 32) — the total threads rounded up to whole warps',
+        'ceil(threads_per_block / 32)',
         'gridDim.x / 32',
         'always 32',
       ],
@@ -542,7 +542,7 @@ export default defineQuestions(
       q: 'In a warp-specialized producer/consumer kernel, named barriers (rather than __syncthreads) are needed because…',
       o: [
         '__syncthreads is deprecated',
-        'Producer and consumer warps must synchronize as SEPARATE groups, not as the whole block, which named barriers (with their own participant counts) allow',
+        'Producers and consumers sync as separate groups',
         'Named barriers are faster',
         'It reduces registers',
       ],

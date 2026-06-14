@@ -10,7 +10,7 @@ export default defineQuestions(
       q: 'Autotuning a kernel (e.g. sweeping tile sizes / block sizes) is valuable because…',
       o: [
         'There is one optimal config',
-        'The best configuration depends on problem shape, data types, and the specific GPU; searching the space finds the winner that static heuristics miss',
+        'Best config depends on shape, types, and GPU',
         'It reduces precision',
         'It avoids profiling',
       ],
@@ -29,7 +29,7 @@ export default defineQuestions(
       q: 'An "occupancy cliff" is when…',
       o: [
         'Occupancy increases smoothly',
-        'A tiny change in register/shared-memory use crosses a granularity threshold, dropping resident blocks (and occupancy) in a sudden step',
+        'A tiny resource change drops occupancy in a step',
         'Occupancy is always 100%',
         'The grid is too small',
       ],
@@ -48,7 +48,7 @@ export default defineQuestions(
       q: 'Fusing the GEMM epilogue (bias + activation) into the matmul kernel rather than a separate elementwise kernel saves…',
       o: [
         'Compute',
-        'A full read+write of the output matrix to/from HBM (the separate kernel would reload and rewrite it) — a big memory-traffic saving',
+        'A reread+rewrite of the output',
         'Registers',
         'Occupancy',
       ],
@@ -67,7 +67,7 @@ export default defineQuestions(
       q: 'A small-matrix (e.g. 16×16) batched GEMM is better done with one batched kernel than a loop of cublasSgemm because…',
       o: [
         'Batched is less accurate',
-        'Per-call launch overhead and underutilization dominate for tiny matrices; a batched kernel processes all matrices in one launch, amortizing overhead and filling the GPU',
+        'One launch amortizes overhead and fills the GPU',
         'Loops use tensor cores',
         'Batched needs more memory',
       ],
@@ -86,7 +86,7 @@ export default defineQuestions(
       q: 'Using __shfl to broadcast a value computed by one lane to the rest of the warp avoids…',
       o: [
         'Tensor cores',
-        'A shared-memory round-trip (write+__syncthreads+read) — the shuffle exchanges the value directly via registers, faster for warp-scope broadcast',
+        'A shared-memory round-trip',
         'Global memory',
         'Divergence',
       ],
@@ -105,7 +105,7 @@ export default defineQuestions(
       q: 'Choosing the loop nest so the innermost (unit-stride) dimension matches the warp’s thread index ensures…',
       o: [
         'More registers',
-        'Coalesced global accesses — consecutive threads touch consecutive addresses in the hot inner loop',
+        'Coalesced accesses in the inner loop',
         'Tensor-core usage',
         'Lower precision',
       ],
@@ -124,7 +124,7 @@ export default defineQuestions(
       q: 'In a Hopper GEMM, replacing cp.async (Ampere-style) loads with TMA improves performance because TMA…',
       o: [
         'Computes faster',
-        'Offloads multidimensional address generation and bulk-copies tiles asynchronously, freeing registers and threads from indexing and enabling deeper overlap',
+        'Offloads address gen; bulk async tile copies',
         'Uses less precision',
         'Avoids shared memory',
       ],
@@ -143,7 +143,7 @@ export default defineQuestions(
       q: 'For a bandwidth-bound kernel already at ~85% of peak, the realistic next step is…',
       o: [
         'Increase occupancy',
-        'Reduce the bytes moved (fuse with neighbors, reuse via tiling, or use a smaller data type) — you can’t exceed the bandwidth roof, so move less data',
+        'Reduce the bytes moved',
         'Add more atomics',
         'Use FP64',
       ],
@@ -162,7 +162,7 @@ export default defineQuestions(
       q: 'A reduction that loads multiple elements per thread AND uses warp shuffles for the final stages is fast because it combines…',
       o: [
         'Two slow techniques',
-        'High memory throughput (each thread streams several coalesced elements) with low-overhead final combination (shuffles, no shared memory/barriers for the last warp)',
+        'High read bandwidth plus low-overhead shuffle finish',
         'Atomics and locks',
         'Constant and texture memory',
       ],
@@ -181,7 +181,7 @@ export default defineQuestions(
       q: 'When a kernel spills registers to local memory, a first remedy that often helps is…',
       o: [
         'Increase the block size',
-        'Reduce live state (smaller tiles, recompute instead of hold, restructure) or cap registers — though capping can trade spills for lower occupancy, so measure',
+        'Reduce live state (smaller tiles, recompute)',
         'Add atomics',
         'Use constant memory for outputs',
       ],
@@ -200,7 +200,7 @@ export default defineQuestions(
       q: 'In FlashAttention-2, a key improvement over FlashAttention-1 is…',
       o: [
         'Using FP64',
-        'Reducing non-matmul work and improving parallelism/work partitioning (e.g. parallelizing over sequence length, fewer rescaling ops) to raise GPU utilization',
+        'Less non-matmul work and better parallelism',
         'Materializing the score matrix',
         'Removing tiling',
       ],
@@ -219,7 +219,7 @@ export default defineQuestions(
       q: 'Precomputing and reusing an index/address that several statements share (common subexpression elimination) in a kernel…',
       o: [
         'Always hurts',
-        'Avoids recomputing the same address arithmetic repeatedly, reducing instruction count in the hot path (the compiler often does this, but manual CSE helps complex cases)',
+        'Avoids recomputing the same address math',
         'Increases divergence',
         'Reduces precision',
       ],
@@ -238,7 +238,7 @@ export default defineQuestions(
       q: 'A fused "softmax" kernel (max, exp-sum, normalize in one launch) outperforms three separate kernels mainly because…',
       o: [
         'It is more accurate',
-        'It keeps the row in on-chip memory across the three passes instead of re-reading/writing it from HBM each time, cutting memory traffic',
+        'Keeps the row on-chip across the passes',
         'It uses tensor cores',
         'It avoids the max',
       ],
@@ -257,7 +257,7 @@ export default defineQuestions(
       q: 'Why does padding a [N][N] shared tile to [N][N+1] sometimes cost negligible performance despite using more shared memory?',
       o: [
         'Padding is free',
-        'The extra column eliminates 32-way bank conflicts on column access; the small shared-memory increase rarely changes occupancy, so the conflict-free access dominates',
+        'Extra column removes bank conflicts, tiny cost',
         'It reduces registers',
         'It enables tensor cores',
       ],
@@ -276,7 +276,7 @@ export default defineQuestions(
       q: 'Mixed-precision elementwise kernels often store in FP16/BF16 but compute in FP32 by…',
       o: [
         'Never converting',
-        'Loading 16-bit, converting to FP32 for the math (accuracy), then converting back to 16-bit for storage — keeping memory traffic low while preserving compute accuracy',
+        'Load 16-bit, compute FP32, store 16-bit',
         'Computing in INT8',
         'Using FP64',
       ],
@@ -295,7 +295,7 @@ export default defineQuestions(
       q: 'Increasing the work per thread (coarsening) helps a LATENCY-bound kernel because it…',
       o: [
         'Reduces memory traffic',
-        'Gives each thread more independent instructions/loads (ILP/MLP) to overlap latencies, even without more warps',
+        'More independent per-thread work (ILP/MLP)',
         'Increases occupancy',
         'Uses tensor cores',
       ],
@@ -314,7 +314,7 @@ export default defineQuestions(
       q: 'A GEMM kernel tuned for square matrices underperforms on tall-skinny (large K, small M,N) shapes. The fix is…',
       o: [
         'Use FP64',
-        'Split-K / Stream-K to parallelize the contraction dimension so enough blocks fill the GPU, then reduce partials',
+        'Split-K/Stream-K to parallelize over K',
         'Larger tiles',
         'Disable tensor cores',
       ],
@@ -333,7 +333,7 @@ export default defineQuestions(
       q: 'Replacing a data-dependent branch inside a warp with arithmetic (e.g. multiply by a 0/1 mask) is worthwhile when…',
       o: [
         'The branch bodies are large',
-        'The bodies are short and the branch would diverge — computing both and masking is cheaper than serializing two paths',
+        'Short bodies that would diverge',
         'The branch never diverges',
         'It uses tensor cores',
       ],
@@ -352,7 +352,7 @@ export default defineQuestions(
       q: 'cudaFuncAttributeMaxDynamicSharedMemorySize must be set (opt-in) to use large dynamic shared memory because…',
       o: [
         'Shared memory is unlimited',
-        'The default static cap is 48 KB; using the architecture’s larger dynamic shared memory (e.g. up to ~228 KB on Hopper) requires explicitly opting in per kernel',
+        'The 48 KB default cap needs opt-in to exceed',
         'It disables L1',
         'It increases registers',
       ],
@@ -371,7 +371,7 @@ export default defineQuestions(
       q: 'Using a grid-stride loop instead of launching exactly N threads helps reuse and tuning because…',
       o: [
         'It avoids indexing',
-        'You launch an occupancy-sized grid (independent of N) and each thread handles multiple elements — decoupling grid size from problem size for easy tuning and good reuse',
+        'An occupancy-sized grid, each thread does many',
         'It removes bounds checks',
         'It uses tensor cores',
       ],
@@ -390,7 +390,7 @@ export default defineQuestions(
       q: 'The biggest single reason a custom Triton/CUTLASS kernel beats a generic library call is usually…',
       o: [
         'Faster math units',
-        'Fusion — combining adjacent ops (e.g. matmul + bias + activation + dropout) so intermediates stay on-chip, eliminating HBM round-trips the separate library calls would incur',
+        'Fusion keeps intermediates on-chip',
         'Lower precision',
         'More occupancy',
       ],
@@ -409,7 +409,7 @@ export default defineQuestions(
       q: 'A kernel becomes SFU-bound after switching exp() to the fast __expf(). The correct interpretation is…',
       o: [
         'Something is broken',
-        'You sped up each exp (now SFU throughput, not accuracy, is the limit); further gains need fewer transcendentals or overlapping them with other pipes — accept the accuracy trade-off was applied',
+        'Faster exp; now SFU throughput is the limit',
         'It is memory-bound',
         'Occupancy is too low',
       ],
@@ -428,7 +428,7 @@ export default defineQuestions(
       q: 'For an elementwise kernel on a large tensor, vectorizing to float4 typically improves throughput by…',
       o: [
         'Increasing precision',
-        'Cutting the instruction count ~4× and issuing wider, fully-coalesced 16-byte accesses — raising effective bandwidth for the memory-bound op',
+        'Fewer instructions and wider 16-byte accesses',
         'Using tensor cores',
         'Reducing occupancy',
       ],
@@ -447,7 +447,7 @@ export default defineQuestions(
       q: 'When two consecutive kernels share data, keeping it in GLOBAL memory between them (vs recomputing or copying to host) is correct because…',
       o: [
         'Global memory is cleared between kernels',
-        'Device memory persists across kernel launches, and the launch boundary guarantees the first kernel’s writes are visible to the second — no copy needed',
+        'Device memory persists and launches are ordered',
         'It must go to the host',
         'Shared memory persists',
       ],
@@ -466,7 +466,7 @@ export default defineQuestions(
       q: 'In a deeply-pipelined GEMM, the number of pipeline stages is chosen to…',
       o: [
         'Maximize shared memory use',
-        'Be just enough to fully hide the global-load latency behind compute; more stages waste shared memory/occupancy, fewer leave the tensor cores stalling on loads',
+        'Just enough to hide the load latency',
         'Always be 2',
         'Match the warp size',
       ],
@@ -485,7 +485,7 @@ export default defineQuestions(
       q: 'A profiler shows a kernel is "L2-bound" (high L2 throughput, DRAM not saturated). A useful optimization is…',
       o: [
         'Add more atomics',
-        'Increase L1/register reuse (tile so more accesses hit L1 or stay in registers) so fewer requests reach L2 — or improve locality to raise L1 hit rate',
+        'More L1/register reuse to cut L2 traffic',
         'Use FP64',
         'Lower occupancy',
       ],
@@ -504,7 +504,7 @@ export default defineQuestions(
       q: 'Choosing block dimensions of (32, 8) instead of (8, 32) for a 2D kernel often matters because…',
       o: [
         'Total threads differ',
-        'threadIdx.x should map to the unit-stride (coalesced) dimension; making the x-extent 32 aligns a warp with contiguous memory, while (8,32) may scatter the warp',
+        'x=32 maps a warp to contiguous memory',
         'It changes occupancy',
         'It uses tensor cores',
       ],
@@ -523,7 +523,7 @@ export default defineQuestions(
       q: 'cuBLASLt heuristics (cublasLtMatmulAlgoGetHeuristic) help by…',
       o: [
         'Running on the CPU',
-        'Returning a ranked list of candidate algorithms/tile configs for the specific matmul, which you can benchmark to pick the fastest — autotuning the GEMM per problem',
+        'A ranked list of candidate algos to benchmark',
         'Disabling tensor cores',
         'Reducing precision',
       ],
@@ -542,7 +542,7 @@ export default defineQuestions(
       q: 'Reducing the number of __syncthreads in a tiled kernel (e.g. by double-buffering) helps because each barrier…',
       o: [
         'Corrupts shared memory',
-        'Forces all warps to wait for the slowest, so removing avoidable barriers (overlapping load of the next tile with compute on the current) reduces stalling',
+        'Makes all warps wait for the slowest',
         'Spills registers',
         'Disables coalescing',
       ],

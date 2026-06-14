@@ -10,7 +10,7 @@ export default defineQuestions(
       q: 'Replacing an if/else that selects one of two values with a branchless expression (e.g. fminf/fmaxf or a select) helps because…',
       o: [
         'It uses less memory',
-        'It avoids warp divergence — both candidates are computed and one is selected with a predicate, keeping the warp converged',
+        'Avoids divergence; both computed, one selected',
         'It increases occupancy',
         'It enables tensor cores',
       ],
@@ -29,7 +29,7 @@ export default defineQuestions(
       q: 'For tensor-core GEMM, padding M, N, K to multiples of the MMA tile (e.g. 8 or 16) matters because…',
       o: [
         'It reduces memory',
-        'Non-multiple dimensions waste tensor-core throughput on masked/partial tiles or fall back to slower paths; aligned dimensions map cleanly to MMA instructions',
+        'Non-multiples waste tensor cores on partial tiles',
         'It improves coalescing only',
         'It is required to compile',
       ],
@@ -48,7 +48,7 @@ export default defineQuestions(
       q: 'The reduction optimization "first add during load" (each thread loads two elements and adds them before the tree) improves performance by…',
       o: [
         'Reducing precision',
-        'Halving the number of blocks/threads needed and doing useful work during the otherwise idle load phase, improving bandwidth utilization',
+        'Halves threads and works during the load phase',
         'Avoiding __syncthreads',
         'Using atomics',
       ],
@@ -67,7 +67,7 @@ export default defineQuestions(
       q: 'Completely unrolling the last 6 steps of a block reduction (the final warp) lets you…',
       o: [
         'Use more shared memory',
-        'Drop __syncthreads for the within-warp steps (warp-synchronous, with __syncwarp on Volta+) and unroll, removing barrier and loop overhead',
+        'Drop block barriers for the final warp steps',
         'Avoid loading data',
         'Use tensor cores',
       ],
@@ -86,7 +86,7 @@ export default defineQuestions(
       q: 'Hoisting a loop-invariant computation (e.g. a reciprocal used every iteration) out of the loop is beneficial because…',
       o: [
         'It uses more registers always',
-        'It computes the value once instead of every iteration, removing redundant work from the hot path',
+        'Computes the value once, not every iteration',
         'It improves coalescing',
         'It enables tensor cores',
       ],
@@ -105,7 +105,7 @@ export default defineQuestions(
       q: 'When dividing by the same value many times in a loop, a strength-reduction trick is to…',
       o: [
         'Use double precision',
-        'Compute the reciprocal once and multiply by it (mul is much cheaper than div on GPUs)',
+        'Precompute the reciprocal, then multiply',
         'Use atomics',
         'Move the divisor to constant memory',
       ],
@@ -124,7 +124,7 @@ export default defineQuestions(
       q: 'cudaFuncSetAttribute(kernel, cudaFuncAttributePreferredSharedMemoryCarveout, percent) is used to…',
       o: [
         'Set the grid size',
-        'Bias the unified L1/shared split toward more shared memory (or L1) for a kernel on architectures with a configurable carveout',
+        'Bias the L1/shared split per kernel',
         'Pin the kernel to an SM',
         'Increase registers',
       ],
@@ -143,7 +143,7 @@ export default defineQuestions(
       q: 'For tensor-core GEMM, aligning the matrices’ leading dimension (row/column stride) to a multiple of, e.g., 16 elements matters because…',
       o: [
         'It reduces memory',
-        'Misaligned leading dimensions break the wide, aligned vector loads (ldmatrix/cp.async) that feed tensor cores, hurting memory throughput or forcing slower paths',
+        'Misalignment breaks the wide aligned loads',
         'It changes the result',
         'It increases occupancy',
       ],
@@ -162,7 +162,7 @@ export default defineQuestions(
       q: 'Processing multiple elements per thread in a reduction (grid-stride accumulate into a register, then reduce) helps because…',
       o: [
         'It avoids shared memory',
-        'It amortizes the reduction overhead over more data and improves memory throughput by keeping threads busy with sequential coalesced loads',
+        'Amortizes overhead with coalesced loads',
         'It increases divergence',
         'It uses tensor cores',
       ],
@@ -181,7 +181,7 @@ export default defineQuestions(
       q: 'Computing x*x instead of powf(x, 2.0f) is a micro-optimization because…',
       o: [
         'powf is more accurate',
-        'powf is a general (expensive, transcendental) routine; a direct multiply is far cheaper for small integer exponents',
+        'powf is costly; a multiply is far cheaper',
         'They compile identically always',
         'powf uses tensor cores',
       ],
@@ -200,7 +200,7 @@ export default defineQuestions(
       q: 'In a warp-level GEMM (each warp computes a tile using mma.sync), operands are typically staged from shared memory into registers via…',
       o: [
         'Global loads',
-        'ldmatrix, which loads the per-lane fragment layout the MMA expects directly from shared memory',
+        'ldmatrix from shared memory',
         'Constant memory',
         'Texture fetches',
       ],
@@ -219,7 +219,7 @@ export default defineQuestions(
       q: 'Prefetching the next loop iteration’s global data into registers before computing on the current data…',
       o: [
         'Reduces memory traffic',
-        'Overlaps the next load’s latency with the current computation (a register-level software pipeline), hiding global-memory latency',
+        'Overlaps the next load with current compute',
         'Avoids coalescing',
         'Uses tensor cores',
       ],
@@ -238,7 +238,7 @@ export default defineQuestions(
       q: 'Minimizing host↔device synchronization points (e.g. avoiding cudaDeviceSynchronize in a loop) helps because…',
       o: [
         'Sync is free',
-        'Each sync stalls the CPU and drains the GPU pipeline, serializing what could otherwise overlap; fewer syncs keep both busy',
+        'Each sync stalls the CPU and drains the GPU',
         'It reduces registers',
         'It improves coalescing',
       ],
@@ -257,7 +257,7 @@ export default defineQuestions(
       q: 'A kernel does 10 FLOPs and moves 40 bytes per element (intensity 0.25 FLOP/byte). On a GPU with 3 TB/s and 60 TFLOP/s, it is…',
       o: [
         'Compute-bound',
-        'Memory-bound — the ridge point is 60e12/3e12 = 20 FLOP/byte, far above 0.25, so bandwidth limits it',
+        'Memory-bound: below the 20 ridge',
         'Perfectly balanced',
         'Latency-bound',
       ],
@@ -276,7 +276,7 @@ export default defineQuestions(
       q: 'Choosing INT32 index arithmetic over INT64 where the range allows can help a hot loop because…',
       o: [
         'INT64 is unsupported',
-        '64-bit integer ops use more instructions/registers than 32-bit; staying in 32-bit (when indices fit) reduces address-calculation overhead',
+        '64-bit ops cost more than 32-bit',
         'INT32 is more accurate',
         'It enables tensor cores',
       ],
@@ -295,7 +295,7 @@ export default defineQuestions(
       q: 'In CUTLASS, increasing the threadblock tile (e.g. 128×128 vs 64×64) generally raises GEMM efficiency until…',
       o: [
         'It never helps',
-        'Shared memory / register pressure caps occupancy too low or the tile no longer fits, and problem sizes can’t fill enough tiles (small-problem/wave-quantization effects)',
+        'Pressure caps occupancy or tiles stay unfilled',
         'The grid is too large',
         'Tensor cores turn off',
       ],
@@ -314,7 +314,7 @@ export default defineQuestions(
       q: 'For an elementwise kernel, using a grid-stride loop with a grid sized to the GPU (rather than one thread per element) helps because…',
       o: [
         'It avoids bounds checks',
-        'It launches a bounded, occupancy-tuned grid that fully utilizes the GPU, each thread doing several coalesced elements — good reuse of launched threads and easy tuning',
+        'A bounded, occupancy-tuned grid fills the GPU',
         'It increases divergence',
         'It needs no indexing',
       ],
@@ -333,7 +333,7 @@ export default defineQuestions(
       q: 'A memory-bound elementwise kernel achieves 60% of peak bandwidth. Before chasing occupancy, the FIRST thing to check is…',
       o: [
         'Register count',
-        'Whether accesses are fully coalesced and vectorized (alignment, stride-1, float4) — uncoalesced access is the usual cause of sub-peak bandwidth',
+        'Whether accesses are coalesced and vectorized',
         'Tensor-core usage',
         'The block-per-SM limit',
       ],
@@ -352,7 +352,7 @@ export default defineQuestions(
       q: 'In FlashAttention, keeping Q tile in registers and streaming K,V tiles works well because…',
       o: [
         'Q is larger than K and V',
-        'Each Q tile is reused against every K/V tile, so caching it in fast registers and streaming K/V (loaded once) maximizes reuse and minimizes HBM traffic',
+        'Q is reused against every K/V tile (high reuse)',
         'K and V are constants',
         'It avoids softmax',
       ],
@@ -371,7 +371,7 @@ export default defineQuestions(
       q: 'Why might converting an array-of-structs hot path to struct-of-arrays be one of the highest-impact changes?',
       o: [
         'It reduces total memory',
-        'It turns strided, partially-used cache-line accesses into coalesced stride-1 accesses, often multiplying achieved bandwidth',
+        'Turns strided accesses into coalesced stride-1',
         'It enables tensor cores',
         'It reduces register usage',
       ],
@@ -390,7 +390,7 @@ export default defineQuestions(
       q: 'Selecting a block size that maximizes occupancy via cudaOccupancyMaxPotentialBlockSize is a good default, but you might override it when…',
       o: [
         'Never; it is always optimal',
-        'A specific algorithm needs a particular tile/block shape (e.g. 16×16 for a tiled GEMM) or benefits from lower occupancy with more registers (ILP)',
+        'The algorithm needs a specific tile/block shape',
         'The grid is small',
         'You use streams',
       ],
@@ -409,7 +409,7 @@ export default defineQuestions(
       q: 'A common reason a fused kernel UNDERperforms two separate kernels is…',
       o: [
         'Fusion never helps',
-        'The fused kernel’s combined register/shared-memory needs exceed resources, dropping occupancy or spilling — outweighing the saved memory traffic',
+        'Combined resource needs drop occupancy/spill',
         'It uses more global memory',
         'It cannot use tensor cores',
       ],
@@ -428,7 +428,7 @@ export default defineQuestions(
       q: 'Using fminf/fmaxf for a clamp (fmaxf(lo, fminf(x, hi))) instead of two ifs is preferred because…',
       o: [
         'It is more accurate',
-        'It is branchless (maps to min/max instructions), avoiding divergence and often fewer instructions',
+        'Branchless min/max; no divergence',
         'It uses tensor cores',
         'It reduces memory',
       ],
@@ -447,7 +447,7 @@ export default defineQuestions(
       q: 'Why do high-performance GEMM kernels often run at relatively LOW occupancy (e.g. 25–50%)?',
       o: [
         'They are poorly written',
-        'Large register-blocked micro-tiles consume many registers per thread (for reuse and ILP), and that per-thread work hides latency more effectively than extra warps would',
+        'Register-blocked tiles trade occupancy for ILP',
         'They are memory-bound',
         'They avoid tensor cores',
       ],
@@ -466,7 +466,7 @@ export default defineQuestions(
       q: 'For a transpose kernel, the optimization that most improves global write coalescing is…',
       o: [
         'Using atomics',
-        'Staging the tile in (padded) shared memory and writing it out so that consecutive threads write consecutive global addresses',
+        'Stage in padded shared memory; write coalesced',
         'Increasing the block size to 1024',
         'Using constant memory',
       ],
@@ -485,7 +485,7 @@ export default defineQuestions(
       q: 'Issuing several independent global loads before using any of them (load batching) primarily improves…',
       o: [
         'Coalescing',
-        'Memory-level parallelism — multiple loads in flight overlap their latencies, hiding more latency than serial dependent loads',
+        'Memory-level parallelism',
         'Occupancy',
         'Precision',
       ],
@@ -504,7 +504,7 @@ export default defineQuestions(
       q: 'Marking inputs const __restrict__ in a memory-bound kernel can speed it up because the compiler may…',
       o: [
         'Move them to the host',
-        'Assume no aliasing and route reads through the read-only data cache, and reuse loaded values without reloading',
+        'Assume no aliasing; use the read-only cache',
         'Increase occupancy',
         'Use tensor cores',
       ],
@@ -523,7 +523,7 @@ export default defineQuestions(
       q: 'Persistent-kernel GEMM (Stream-K style) reduces the "tail" inefficiency of tile-per-block GEMM by…',
       o: [
         'Using larger tiles',
-        'Launching a fixed wave of blocks that loop over a balanced share of the total MAC work, so all SMs stay busy until the end regardless of problem shape',
+        'A fixed wave loops over a balanced MAC share',
         'Disabling tensor cores',
         'Lowering precision',
       ],
@@ -542,7 +542,7 @@ export default defineQuestions(
       q: 'When a kernel is bound by special-function (SFU) throughput (heavy expf/sinf), a useful optimization is to…',
       o: [
         'Add more global loads',
-        'Reduce transcendental count (algebraic simplification, reuse results) or use faster intrinsics (__expf) where accuracy allows',
+        'Cut transcendental count or use __expf',
         'Increase the block size',
         'Use atomics',
       ],

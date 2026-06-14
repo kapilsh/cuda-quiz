@@ -10,7 +10,7 @@ export default defineQuestions(
       q: 'Separate compilation with relocatable device code requires which nvcc flag, and why?',
       o: [
         '-O3, for optimization',
-        '-rdc=true (relocatable device code), so __device__/__global__ symbols can be linked across translation units via a device link step',
+        '-rdc=true, to link device symbols across files',
         '--use_fast_math',
         '-arch=native',
       ],
@@ -29,7 +29,7 @@ export default defineQuestions(
       q: 'A __device__ global variable (file-scope, e.g. __device__ int counter;) is…',
       o: [
         'Per-thread storage',
-        'A single instance in global memory shared by all threads of all kernels, accessed by name (cudaMemcpyToSymbol from host)',
+        'One shared global-memory instance',
         'Stored in shared memory',
         'Only visible to one block',
       ],
@@ -48,7 +48,7 @@ export default defineQuestions(
       q: 'Calling malloc()/free() (or new/delete) INSIDE a kernel allocates from…',
       o: [
         'Shared memory',
-        'A device heap in global memory whose size is set by cudaDeviceSetLimit(cudaLimitMallocHeapSize, ...)',
+        'A device heap in global memory',
         'Host memory',
         'Registers',
       ],
@@ -77,7 +77,7 @@ export default defineQuestions(
       q: 'A launch fails with "too many resources requested for launch." The most likely cause is…',
       o: [
         'The grid is too small',
-        'The block’s register or shared-memory demand exceeds what an SM can provide for that block size',
+        'Block needs too many registers/shared mem',
         'The kernel name is wrong',
         'The stream is invalid',
       ],
@@ -96,7 +96,7 @@ export default defineQuestions(
       q: 'cudaFuncSetCacheConfig(kernel, cudaFuncCachePreferShared) requests that the SM…',
       o: [
         'Disable caching',
-        'Favor a larger shared-memory partition over L1 for that kernel (on architectures with a configurable split)',
+        'Favor shared memory over L1 for that kernel',
         'Use constant memory',
         'Increase registers',
       ],
@@ -115,7 +115,7 @@ export default defineQuestions(
       q: 'cudaMemGetInfo(&free, &total) reports…',
       o: [
         'Host RAM usage',
-        'Free and total device global memory for the current GPU',
+        'Free and total device memory',
         'The L2 cache size',
         'Shared memory per block',
       ],
@@ -134,7 +134,7 @@ export default defineQuestions(
       q: 'Why are CUDA kernels typically written as C++ templates in high-performance libraries?',
       o: [
         'Templates run faster at runtime by themselves',
-        'Compile-time parameters (tile sizes, types, unroll factors) let the compiler specialize and fully optimize each instantiation (e.g. unroll loops, size shared memory)',
+        'Compile-time params let the compiler specialize',
         'Templates reduce binary size',
         'They are required for __global__',
       ],
@@ -153,7 +153,7 @@ export default defineQuestions(
       q: 'assert() inside device code, when it fails, will…',
       o: [
         'Be silently ignored',
-        'Stop the kernel and report the assertion (in debug builds), surfacing as an error on the next synchronization',
+        'Halt the kernel and report it on next sync',
         'Crash the host immediately with no message',
         'Retry the kernel',
       ],
@@ -172,7 +172,7 @@ export default defineQuestions(
       q: 'cudaDeviceGetAttribute lets you query a single capability (e.g. cudaDevAttrMaxSharedMemoryPerBlockOptin). Why prefer it over reading cudaDeviceProp?',
       o: [
         'It is the only way to get attributes',
-        'It is lighter (one value) and exposes some attributes not in the struct, useful for portable feature checks at runtime',
+        'Lighter, and exposes attributes not in the struct',
         'cudaDeviceProp is deprecated',
         'It runs on the device',
       ],
@@ -191,7 +191,7 @@ export default defineQuestions(
       q: 'A reasonable default block size for a simple elementwise kernel is often…',
       o: [
         '1 thread',
-        '128 or 256 threads (a multiple of the warp size, balancing occupancy and flexibility)',
+        '128 or 256 threads',
         '1024 always',
         '32 only',
       ],
@@ -210,7 +210,7 @@ export default defineQuestions(
       q: 'Marking a __device__ helper __forceinline__ in a hot kernel can help because…',
       o: [
         'It moves it to the host',
-        'It avoids call overhead and lets the compiler optimize across the call boundary (e.g. keep operands in registers), at the cost of code size',
+        'Avoids call overhead, optimizes across the boundary',
         'It reduces register usage always',
         'It enables tensor cores',
       ],
@@ -229,7 +229,7 @@ export default defineQuestions(
       q: 'Why might extern "C" be used on a __global__ kernel?',
       o: [
         'To run it on the CPU',
-        'To prevent C++ name mangling so the kernel can be looked up by a stable symbol name (e.g. from the driver API or another language)',
+        'To prevent name mangling for a stable symbol',
         'To make it faster',
         'To enable templates',
       ],
@@ -248,7 +248,7 @@ export default defineQuestions(
       q: 'The difference between the CUDA Runtime API (cudart) and the Driver API (cuda) is that the Driver API…',
       o: [
         'Runs on the device',
-        'Is lower-level: explicit context/module management, loading PTX/cubin by name (cuModuleLoad/cuLaunchKernel), used by language bindings and JIT systems',
+        'Lower-level: explicit contexts and modules',
         'Is faster for all kernels',
         'Cannot launch kernels',
       ],
@@ -267,7 +267,7 @@ export default defineQuestions(
       q: 'NVRTC is used to…',
       o: [
         'Profile kernels',
-        'Compile CUDA C++ source to PTX at runtime (just-in-time), enabling code specialization based on values known only at runtime',
+        'Compile CUDA C++ to PTX at runtime (JIT)',
         'Link static libraries',
         'Manage streams',
       ],
@@ -286,7 +286,7 @@ export default defineQuestions(
       q: 'PTX is best described as…',
       o: [
         'Final machine code for a specific GPU',
-        'A virtual ISA / intermediate assembly that is JIT-compiled by the driver to architecture-specific SASS',
+        'A virtual ISA JIT-compiled by the driver to SASS',
         'A profiling format',
         'A host object file',
       ],
@@ -305,7 +305,7 @@ export default defineQuestions(
       q: 'cudaMemcpyAsync(dst, src, n, kind, stream) issued on a non-default stream returns to the host…',
       o: [
         'After the copy completes',
-        'Immediately (asynchronously), with the copy ordered within that stream',
+        'Immediately; the copy is ordered in the stream',
         'Only after a kernel finishes',
         'After cudaDeviceReset',
       ],
@@ -324,7 +324,7 @@ export default defineQuestions(
       q: 'cuobjdump / nvdisasm are used to…',
       o: [
         'Allocate device memory',
-        'Inspect compiled CUDA binaries — extract/disassemble PTX and SASS to see exactly what the GPU will run',
+        'Disassemble PTX/SASS from compiled binaries',
         'Profile memory bandwidth',
         'Launch kernels',
       ],
@@ -343,7 +343,7 @@ export default defineQuestions(
       q: 'A "fatbin" (fat binary) embedded by nvcc contains…',
       o: [
         'Only host code',
-        'Device code for multiple architectures (and/or PTX), so one executable runs on several GPU generations',
+        'Device code for multiple architectures',
         'Profiling data',
         'The source code',
       ],
@@ -362,7 +362,7 @@ export default defineQuestions(
       q: 'A kernel compiled only with PTX (no SASS) for an older arch will, on a newer GPU…',
       o: [
         'Fail to run',
-        'Be JIT-compiled from PTX to the new GPU’s SASS by the driver at load time (forward compatibility), with a one-time JIT cost',
+        'Be JIT-compiled from PTX to the new GPU’s SASS',
         'Run on the CPU',
         'Require recompilation of the host code',
       ],
@@ -381,7 +381,7 @@ export default defineQuestions(
       q: 'Which is true about launching a kernel with a block size of 0 threads?',
       o: [
         'It runs an empty kernel efficiently',
-        'It is an invalid configuration and the launch fails',
+        'Invalid configuration; the launch fails',
         'It defaults to 32 threads',
         'It runs one thread',
       ],
@@ -400,7 +400,7 @@ export default defineQuestions(
       q: 'CUDA_LAUNCH_BLOCKING=1 in the environment makes kernel launches…',
       o: [
         'Faster',
-        'Synchronous (the host blocks until each kernel finishes), useful for debugging to pinpoint which launch caused an error',
+        'Synchronous; pinpoints a failing launch',
         'Run on the CPU',
         'Use more streams',
       ],
@@ -419,7 +419,7 @@ export default defineQuestions(
       q: 'Recursion in a __device__ function is…',
       o: [
         'Never allowed',
-        'Allowed (CC 2.0+), but uses the per-thread stack and can be costly/limited — deep recursion risks stack overflow (cudaLimitStackSize)',
+        'Allowed (CC 2.0+), but uses the per-thread stack',
         'Always free',
         'Only allowed in __global__ functions',
       ],
@@ -438,7 +438,7 @@ export default defineQuestions(
       q: 'cudaDeviceSetLimit(cudaLimitStackSize, bytes) is sometimes needed when a kernel…',
       o: [
         'Uses too much shared memory',
-        'Has deep call chains / recursion or large local arrays, requiring a bigger per-thread stack than the default',
+        'Has deep recursion or large local arrays',
         'Launches too many blocks',
         'Uses atomics',
       ],
@@ -457,7 +457,7 @@ export default defineQuestions(
       q: 'Passing a kernel argument by value that is a large array (e.g. float[1000]) is…',
       o: [
         'Efficient and recommended',
-        'Not how you pass big data — it would exceed the parameter limit; pass a device pointer instead',
+        'Wrong — it exceeds the param limit',
         'Automatically converted to a pointer',
         'Stored in shared memory',
       ],
@@ -476,7 +476,7 @@ export default defineQuestions(
       q: 'Why does cudaMalloc return memory aligned to at least 256 bytes?',
       o: [
         'To waste space',
-        'So allocations meet alignment requirements for coalesced/vectorized accesses (e.g. float4) and texture binding without manual padding',
+        'For aligned vectorized/texture access',
         'For host compatibility',
         'To enable atomics',
       ],
@@ -495,7 +495,7 @@ export default defineQuestions(
       q: 'The compute capability you compile for (e.g. sm_80) primarily must be…',
       o: [
         'Higher than the GPU’s',
-        '≤ the target GPU’s compute capability (SASS is forward-compatible within a major arch line via PTX JIT, but SASS built for a newer arch won’t run on older GPUs)',
+        '≤ the target GPU’s compute capability',
         'Exactly 7.5 always',
         'Irrelevant',
       ],
@@ -514,7 +514,7 @@ export default defineQuestions(
       q: 'The error "no kernel image is available for execution on the device" usually means…',
       o: [
         'Out of memory',
-        'The binary lacks SASS or compatible PTX for the GPU you are running on (wrong -gencode targets)',
+        'No SASS or compatible PTX for this GPU',
         'The kernel has a bug',
         'The driver is missing',
       ],
@@ -533,7 +533,7 @@ export default defineQuestions(
       q: 'cudaStreamCreate followed by passing that stream as the 4th launch parameter causes the kernel to…',
       o: [
         'Run on the host',
-        'Execute in that stream, enabling concurrency with work in other streams',
+        'Run in that stream, concurrent with others',
         'Run synchronously',
         'Use more registers',
       ],

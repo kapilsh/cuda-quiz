@@ -10,7 +10,7 @@ export default defineQuestions(
       q: 'A pipe has 4-cycle latency and accepts 1 op/cycle. To keep it full with a single dependency chain, you need about…',
       o: [
         '1 independent op',
-        '4 independent ops in flight (latency × throughput) — e.g. 4 accumulators — so each op’s result is ready by the time it’s reused',
+        '4 ops in flight (latency × throughput)',
         '32 ops',
         '0 ops',
       ],
@@ -25,7 +25,7 @@ export default defineQuestions(
       q: 'To hide ~600-cycle memory latency at 1 memory op issued per cycle per scheduler, you need on the order of…',
       o: [
         '4 warps',
-        'Hundreds of cycles of independent memory work in flight — i.e. enough warps/ILP to issue ~600 outstanding requests (achieved via occupancy and/or per-thread MLP)',
+        '~600 outstanding requests in flight',
         '1 warp',
         '32 warps exactly',
       ],
@@ -44,7 +44,7 @@ export default defineQuestions(
       q: 'A warp where 8 of 32 lanes take a branch and the other 24 take the else runs the divergent region at about…',
       o: [
         'Full efficiency',
-        'Reduced efficiency — both paths execute serially (8 active then 24 active), so the region runs at ~(8+24)/(32+32) ... effectively splitting one warp’s slot across two passes',
+        'Reduced: both paths run serially',
         'Double speed',
         'Zero speed',
       ],
@@ -73,7 +73,7 @@ export default defineQuestions(
       q: 'A grid of 300 blocks runs on a GPU with capacity for 264 resident blocks (132 SMs × 2). The execution takes…',
       o: [
         '1 wave',
-        '2 waves: 264 blocks in wave 1, then only 36 in wave 2 (a small "tail" wave underfilling the SMs) — sizing the grid to a multiple of 264 avoids the wasteful tail',
+        '2 waves: 264 then a 36-block tail',
         '300 waves',
         '0.5 waves',
       ],
@@ -98,7 +98,7 @@ export default defineQuestions(
       q: 'For a cooperative (grid.sync) kernel on a 132-SM GPU where the kernel’s occupancy allows 3 resident blocks/SM, the cooperative grid should have at most…',
       o: [
         'Any number',
-        '396 blocks (132 × 3) — all blocks must be co-resident, so the grid is capped at SMs × resident-blocks-per-SM',
+        '396 blocks (132 × 3 co-resident)',
         '132 blocks',
         '2048 blocks',
       ],
@@ -113,7 +113,7 @@ export default defineQuestions(
       q: 'Nsight shows a kernel dominated by "Math Pipe Throttle" with heavy __expf usage. The fix is…',
       o: [
         'More memory accesses',
-        'Reduce transcendental (SFU) pressure: fewer exp/log/sin (algebraic simplification, reuse), or accept the fast-intrinsic accuracy and overlap with other pipes — the SFU is the bottleneck',
+        'Reduce transcendental (SFU) pressure',
         'More occupancy',
         'Larger grid',
       ],
@@ -132,7 +132,7 @@ export default defineQuestions(
       q: 'A block of 48 threads forms how many warps, and how many lanes are idle?',
       o: [
         '1 warp, 0 idle',
-        '2 warps, 16 idle (48 → 2 warps of 32; the second warp has 16 inactive lanes)',
+        '2 warps, 16 idle',
         '2 warps, 0 idle',
         '3 warps, 48 idle',
       ],
@@ -147,7 +147,7 @@ export default defineQuestions(
       q: 'Why might a kernel at 25% occupancy with 4 independent accumulators per thread match a 75%-occupancy version with 1 accumulator?',
       o: [
         'Occupancy is everything',
-        'The 4 accumulators provide ILP that hides FMA latency WITHOUT extra warps; the low-occupancy/high-ILP version can keep the pipes as full as the high-occupancy/low-ILP one',
+        'ILP from 4 accumulators hides FMA latency',
         'They differ by 3×',
         'Accumulators reduce memory',
       ],
@@ -166,7 +166,7 @@ export default defineQuestions(
       q: 'A 64-thread block on an SM capped at 32 resident blocks and 2048 threads is limited by…',
       o: [
         'Threads (it reaches 2048)',
-        'The block-count cap: 32 blocks × 64 = 2048 threads exactly, so it just fills threads at the block limit — but a 32-thread block would hit 32 blocks at only 1024 threads (block-cap-limited, wasting half)',
+        'Block-count cap: 32 × 64 = 2048, exactly full',
         'Registers',
         'Shared memory',
       ],
@@ -185,7 +185,7 @@ export default defineQuestions(
       q: 'An uncoalesced load where a warp touches 32 different cache lines generates roughly how many memory transactions vs the coalesced ideal?',
       o: [
         'The same',
-        '~32 transactions (one per line) vs ~1–4 for the coalesced case — a large over-fetch and instruction-replay penalty',
+        '~32 transactions vs ~1–4',
         '2',
         '0',
       ],
@@ -200,7 +200,7 @@ export default defineQuestions(
       q: 'A Hopper cluster of 4 blocks needs all 4 co-resident. If the kernel’s occupancy allows only 2 blocks/SM and a GPC has 4 SMs, the cluster…',
       o: [
         'Cannot fit',
-        'Fits — 4 SMs × 2 blocks = 8 block slots in the GPC, more than the 4 cluster blocks; co-residency within the GPC is satisfiable',
+        'Fits: 4 SMs × 2 = 8 slots > 4 blocks',
         'Needs 8 SMs',
         'Runs on the host',
       ],
@@ -219,7 +219,7 @@ export default defineQuestions(
       q: 'A kernel shows ~0.5 eligible warps per scheduler per cycle with high long-scoreboard stalls. This indicates…',
       o: [
         'Plenty of parallelism',
-        'The scheduler is starved — most warps are stalled on global loads (memory-latency/bandwidth bound), so few are ready to issue; increase MLP/occupancy or improve locality',
+        'Scheduler starved; warps stalled on memory',
         'Compute-bound',
         'A barrier issue',
       ],
@@ -248,7 +248,7 @@ export default defineQuestions(
       q: 'In a warp-specialized GEMM with 1 producer warpgroup (TMA) and 2 consumer warpgroups (wgmma), the producer feeds both consumers because…',
       o: [
         'Producers do math',
-        'A TMA copy is issued by one thread and runs in hardware, so a single producer warpgroup can supply enough tiles to keep two consumer warpgroups’ tensor cores busy — balancing the pipeline',
+        'One TMA producer feeds two consumer groups',
         'Consumers copy data',
         'It uses the CPU',
       ],
@@ -267,7 +267,7 @@ export default defineQuestions(
       q: 'Increasing a kernel from 32 to 40 registers/thread drops resident blocks from 8 to 6 (an occupancy cliff). This happens because…',
       o: [
         'Registers are unlimited',
-        'Per-warp register allocation rounds up to a granularity; crossing a threshold reduces how many warps/blocks fit, so a small register increase causes a discrete occupancy drop',
+        'Register allocation rounds up to a granularity',
         'Shared memory changed',
         'The grid shrank',
       ],
@@ -296,7 +296,7 @@ export default defineQuestions(
       q: 'Nsight shows high "Barrier" stalls in a tiled kernel. The most direct remedy is…',
       o: [
         'More memory accesses',
-        'Reduce/balance the work so threads reach __syncthreads more uniformly, and cut unnecessary barriers (e.g. double-buffer to overlap the next load with compute) — barriers wait for the slowest warp',
+        'Balance work and cut unnecessary barriers',
         'More registers',
         'A larger grid',
       ],
@@ -315,7 +315,7 @@ export default defineQuestions(
       q: 'redux.sync gives a warp-wide INTEGER reduction in 1 instruction; a float warp reduction instead needs…',
       o: [
         '1 instruction too',
-        '~5 shuffle (shfl_xor) steps, because there is no hardware float warp-reduction — floats use the log2(32) shuffle tree',
+        '~5 shfl_xor steps (no HW float reduce)',
         '32 instructions',
         'A barrier',
       ],
@@ -330,7 +330,7 @@ export default defineQuestions(
       q: 'Why can a kernel be simultaneously "not memory-bound" (DRAM 30%) and "not compute-bound" (SM 30%) yet slow?',
       o: [
         'It is optimal',
-        'It is latency-bound: too little work in flight (low occupancy/ILP), so neither resource is saturated while warps stall — increase parallelism (warps and/or ILP) to fill the pipelines',
+        'Latency-bound: too few in flight',
         'It is a bug',
         'It needs FP64',
       ],
@@ -349,7 +349,7 @@ export default defineQuestions(
       q: 'A block reduction does 8 shared-memory tree steps for 256 threads then 5 shuffle steps for the last warp. The shuffle steps replace…',
       o: [
         'Global atomics',
-        'The shared-memory + __syncthreads steps for the final 32 elements — once down to one warp, shuffles (no shared memory/barriers) finish the reduction faster',
+        'Shared-mem steps for the last 32 elements',
         'The whole reduction',
         'The load phase',
       ],
@@ -368,7 +368,7 @@ export default defineQuestions(
       q: 'A 2D block of (16, 16) forms warps by linearizing as x + y*16. Warp 0 therefore contains threads with…',
       o: [
         'x in [0,31], y=0',
-        'y in {0,1}, x in [0,15] — the first 32 linear indices span 2 full rows (16 wide), so a warp covers 2 rows',
+        'y in {0,1}, x in [0,15] (2 rows)',
         'x=0, y in [0,31]',
         'Random threads',
       ],
@@ -387,7 +387,7 @@ export default defineQuestions(
       q: 'A kernel’s achieved occupancy is 30% while theoretical is 75%. With many blocks and a long runtime, the gap most likely comes from…',
       o: [
         'Register spilling',
-        'Load imbalance / divergence causing uneven warp completion (so average active warps is well below the resource ceiling), rather than the tail effect (which a long, many-block kernel minimizes)',
+        'Load imbalance / divergence, not the tail',
         'Too few blocks',
         'Bank conflicts only',
       ],
@@ -406,7 +406,7 @@ export default defineQuestions(
       q: 'Dynamic parallelism launches a child grid per parent thread for an irregular workload. The overhead concern is…',
       o: [
         'None',
-        'Per-launch overhead × (potentially many) child launches can dominate; coarsening (one child per block/warp, batched work) or flattening the algorithm reduces the number of device launches',
+        'Many child launches dominate overhead',
         'It uses FP64',
         'It needs the host',
       ],
@@ -425,7 +425,7 @@ export default defineQuestions(
       q: 'For a memory-bound copy at 50% of peak bandwidth with 100% occupancy, the FIRST thing to check is…',
       o: [
         'Register count',
-        'Coalescing/vectorization: at full occupancy the limiter isn’t latency hiding; sub-peak bandwidth usually means uncoalesced/misaligned/non-vectorized accesses (over-fetch)',
+        'Coalescing/vectorization of the accesses',
         'Tensor-core usage',
         'The block-per-SM limit',
       ],
@@ -444,7 +444,7 @@ export default defineQuestions(
       q: 'cooperative_groups::reduce on a 32-thread tile on an Ampere GPU for an int sum will likely…',
       o: [
         'Use global atomics',
-        'Lower to a single redux.sync hardware instruction (integer reduction), faster than the 5-step shuffle tree',
+        'Lower to one redux.sync instruction',
         'Use shared memory',
         'Run on the host',
       ],
@@ -463,7 +463,7 @@ export default defineQuestions(
       q: 'A GEMM at 80% tensor-pipe utilization but 55% of peak FLOP/s most likely suffers from…',
       o: [
         'DRAM saturation',
-        'Bubbles between MMAs — operand-feeding stalls (shared-memory loads/ldmatrix, barriers); deeper pipelining/better SMEM feeding (conflict-free ldmatrix) closes the gap',
+        'Operand-feed bubbles between MMAs',
         'Low occupancy',
         'Branch divergence',
       ],
@@ -482,7 +482,7 @@ export default defineQuestions(
       q: 'Why does choosing block dimensions (32, 4) often beat (4, 32) for a 2D kernel reading row-major data?',
       o: [
         'Total threads differ',
-        'Warps form along x; with x=32 a warp spans 32 contiguous columns (coalesced reads of a row), whereas x=4 scatters a warp across 8 rows (strided, uncoalesced)',
+        'x=32 makes a warp span 32 contiguous columns',
         'It uses more registers',
         'It avoids divergence',
       ],

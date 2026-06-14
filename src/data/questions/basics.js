@@ -12,7 +12,7 @@ export default defineQuestions('basics', [
     q: 'In CUDA terminology, what is a "kernel"?',
     o: [
       'The part of the operating system that schedules GPU work',
-      'A function that runs on the GPU and is executed by many threads in parallel',
+      'A GPU function run by many threads in parallel',
       'The on-chip cache shared by all streaming multiprocessors',
       'A compiled binary blob containing host-side driver code',
     ],
@@ -80,7 +80,7 @@ export default defineQuestions('basics', [
     q: 'Why do most kernels include a guard like `if (i < n) { ... }` after computing the global index `i`?',
     o: [
       'To skip threads in diverged warps for performance',
-      'Because grids are usually launched with more threads than data elements (rounded up to whole blocks)',
+      'Grids usually launch more threads than data elements',
       'To prevent threads from writing to shared memory',
       'Because threadIdx can legally exceed blockDim',
     ],
@@ -204,7 +204,7 @@ export default defineQuestions('basics', [
     q: 'A __device__ function and a __host__ function can be the same function if it is marked how, and what does that imply?',
     o: [
       '__global__ — it is compiled once for both targets',
-      '__host__ __device__ — the compiler generates both a host and a device version',
+      '__host__ __device__ — compiles a version for each side',
       '__inline__ — it is inlined on whichever side calls it',
       'You cannot share a function between host and device',
     ],
@@ -233,7 +233,7 @@ export default defineQuestions('basics', [
     q: 'What is the third launch parameter in <<<grid, block, shmem, stream>>>?',
     o: [
       'The number of registers per thread',
-      'The amount of dynamic shared memory in bytes per block',
+      'Dynamic shared memory per block (bytes)',
       'The L2 cache reservation',
       'A priority hint',
     ],
@@ -251,7 +251,7 @@ export default defineQuestions('basics', [
     d: 2,
     q: 'On a GPU, what does SIMT stand for and what is the key idea?',
     o: [
-      'Single Instruction Multiple Threads — groups of threads execute the same instruction in lockstep',
+      'Single Instruction Multiple Threads — a warp runs in lockstep',
       'Serial Instruction Multi-Tasking — threads time-slice on one core',
       'Streaming Inter-Module Transfer — the on-chip data path',
       'Single Instruction Multiple Tasks — one thread runs many tasks',
@@ -271,7 +271,7 @@ export default defineQuestions('basics', [
     q: 'Why can’t you simply dereference a device pointer (returned by cudaMalloc) on the host?',
     o: [
       'Device pointers are encrypted',
-      'It points into the GPU’s address space, which is not directly accessible from host code in general',
+      'It points into GPU memory, not host-accessible',
       'Host code runs in kernel mode and lacks permission',
       'You actually can; it is always safe',
     ],
@@ -290,7 +290,7 @@ export default defineQuestions('basics', [
     q: 'What does cudaDeviceSynchronize() do?',
     o: [
       'Resets the GPU to a clean state',
-      'Blocks the host until all previously issued device work has completed',
+      'Blocks the host until all device work completes',
       'Synchronizes threads within a block',
       'Copies all device memory back to the host',
     ],
@@ -319,7 +319,7 @@ export default defineQuestions('basics', [
     q: 'In a 2D block, how are threads grouped into warps?',
     o: [
       'By columns of threadIdx.y',
-      'By the linearized index threadIdx.x + threadIdx.y*blockDim.x, in groups of 32',
+      'Linearized as x + y*blockDim.x, in groups of 32',
       'Randomly each launch',
       'Each row is exactly one warp regardless of width',
     ],
@@ -338,7 +338,7 @@ export default defineQuestions('basics', [
     q: 'Which statement about blocks in a grid is TRUE?',
     o: [
       'Blocks always execute in increasing blockIdx order',
-      'Blocks may execute in any order, concurrently or sequentially, and must not assume a global ordering',
+      'Blocks may execute in any order, with no guarantees',
       'Blocks can synchronize with each other using __syncthreads()',
       'All blocks share the same shared memory contents',
     ],
@@ -357,7 +357,7 @@ export default defineQuestions('basics', [
     q: 'What does the nvcc flag -arch=sm_90 (or --gpu-architecture) control?',
     o: [
       'The number of SMs to use',
-      'The target compute capability / SASS architecture the code is compiled for',
+      'The target compute capability (SASS)',
       'The CUDA runtime version',
       'The maximum threads per block',
     ],
@@ -376,7 +376,7 @@ export default defineQuestions('basics', [
     q: 'What is the difference between cudaMalloc and cudaMallocManaged?',
     o: [
       'No difference; they are aliases',
-      'cudaMallocManaged returns Unified Memory accessible from both host and device, migrated on demand',
+      'Managed memory is accessible on host and device',
       'cudaMallocManaged is faster but device-only',
       'cudaMalloc is for pinned host memory',
     ],
@@ -395,7 +395,7 @@ export default defineQuestions('basics', [
     q: 'A kernel computes correctly for n = 1000 with <<< (n+255)/256, 256 >>> but a colleague rewrites the launch as <<< n/256, 256 >>>. What is the bug?',
     o: [
       'It launches too many blocks and reads out of bounds',
-      'n/256 = 3 blocks cover only 768 elements; elements 768..999 are never processed',
+      'n/256 = 3 blocks; elements 768–999 are skipped',
       'Nothing — integer division rounds up',
       'It causes a shared-memory overflow',
     ],

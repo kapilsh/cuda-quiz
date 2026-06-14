@@ -10,7 +10,7 @@ export default defineQuestions(
       q: 'In GEMM/conv accelerator dataflow terms, "output stationary" means…',
       o: [
         'Inputs stay in registers',
-        'Each output (accumulator) tile stays resident (in registers/accumulator) while inputs stream through it — maximizing accumulator reuse and minimizing output writes',
+        'The output tile stays resident as inputs stream',
         'Weights stay fixed',
         'Nothing moves',
       ],
@@ -29,7 +29,7 @@ export default defineQuestions(
       q: 'Implicit GEMM for convolution avoids the memory blow-up of im2col by…',
       o: [
         'Skipping the convolution',
-        'Computing the convolution AS a GEMM without materializing the lowered (im2col) matrix — generating the needed input patches on the fly from indices',
+        'A GEMM without materializing the im2col matrix',
         'Using FP64',
         'Using the CPU',
       ],
@@ -48,7 +48,7 @@ export default defineQuestions(
       q: 'Winograd convolution speeds up small-filter convs by…',
       o: [
         'Using FFT',
-        'Transforming inputs/filters so the convolution needs FEWER multiplications (trading multiplies for cheaper adds/transforms) — beneficial for 3×3 filters',
+        'Transforms cut the multiplication count',
         'Skipping channels',
         'Using FP64',
       ],
@@ -67,7 +67,7 @@ export default defineQuestions(
       q: 'For convolutions on tensor cores, the NHWC ("channels-last") layout is preferred over NCHW because…',
       o: [
         'It uses less memory',
-        'NHWC makes the channel dimension contiguous (innermost), matching tensor-core/implicit-GEMM access patterns for coalesced, aligned loads of channel vectors',
+        'Channels contiguous for coalesced loads',
         'NCHW is faster',
         'It avoids accumulation',
       ],
@@ -86,7 +86,7 @@ export default defineQuestions(
       q: 'Padding the channel count to a multiple of 8 (FP16) for tensor-core convolution helps because…',
       o: [
         'It reduces memory',
-        'Tensor-core MMAs operate on fixed tile widths; non-multiple channel counts cause partial/predicated tiles or slower fallbacks, so padding aligns to the MMA shape',
+        'Aligns channels to the fixed MMA tile width',
         'It increases precision',
         'It avoids the K loop',
       ],
@@ -105,7 +105,7 @@ export default defineQuestions(
       q: 'A work-EFFICIENT parallel scan (Blelloch) does O(n) work in two sweeps, vs Hillis-Steele’s O(n log n). The trade-off is…',
       o: [
         'Blelloch is always best',
-        'Blelloch does less total work (better for large n / bandwidth) but has two phases and more complex indexing; Hillis-Steele is simpler and lower-latency for small n despite more work',
+        'Blelloch does less work but is more complex',
         'They are identical',
         'Hillis-Steele is work-efficient',
       ],
@@ -124,7 +124,7 @@ export default defineQuestions(
       q: 'CUB’s single-pass "decoupled look-back" scan achieves near-bandwidth-optimal device scan by…',
       o: [
         'Two full passes',
-        'Each block computing its local aggregate, publishing it, then "looking back" at predecessors’ published partials to derive its prefix — avoiding a separate global pass over the data',
+        'Blocks publish and look back for prefixes',
         'Sorting first',
         'Using atomics per element',
       ],
@@ -143,7 +143,7 @@ export default defineQuestions(
       q: 'For SpMV in CSR, the "vector" kernel (a warp per row) beats the "scalar" kernel (a thread per row) when…',
       o: [
         'Rows are very short',
-        'Rows have many nonzeros — a warp cooperatively processing a row coalesces the column/value reads, whereas one thread per row causes uncoalesced, imbalanced access',
+        'Rows have many nonzeros',
         'The matrix is dense',
         'Always',
       ],
@@ -162,7 +162,7 @@ export default defineQuestions(
       q: 'Fusing LayerNorm (compute mean/var, normalize, scale/shift) into one kernel rather than several passes mainly saves…',
       o: [
         'Compute',
-        'Repeated reads/writes of the activation row to/from HBM — the fused kernel computes statistics and normalizes with the row kept on-chip (often via Welford), cutting memory traffic',
+        'Repeated HBM passes over the row',
         'Registers',
         'Occupancy',
       ],
@@ -181,7 +181,7 @@ export default defineQuestions(
       q: 'Top-k selection on the GPU for small k is often done with…',
       o: [
         'A full sort always',
-        'A bitonic/sorting network or a per-thread/warp heap that tracks the k largest, avoiding a full O(n log n) sort of the whole array',
+        'A sorting network or heap of the k largest',
         'atomicMax only',
         'The CPU',
       ],
@@ -200,7 +200,7 @@ export default defineQuestions(
       q: 'Triple buffering (vs double) in a software pipeline is warranted when…',
       o: [
         'Always',
-        'The producer latency (e.g. HBM load) exceeds what two buffers can hide given the per-stage compute — a third buffer adds more in-flight slack, at extra shared-memory cost',
+        'Two buffers cannot hide the load latency',
         'Shared memory is scarce',
         'The kernel is compute-bound',
       ],
@@ -219,7 +219,7 @@ export default defineQuestions(
       q: 'A vectorized epilogue in a GEMM (writing the output tile with float4 and a fused activation) helps because it…',
       o: [
         'Increases precision',
-        'Reduces the number/width of store instructions and applies bias/activation while results are in registers — improving the epilogue’s store throughput and avoiding a separate kernel',
+        'Wider stores; bias/activation in registers',
         'Avoids tensor cores',
         'Uses the CPU',
       ],
@@ -238,7 +238,7 @@ export default defineQuestions(
       q: 'Balancing loop unrolling against register pressure means…',
       o: [
         'Always unroll fully',
-        'Unrolling exposes ILP but increases live registers; past a point it spills (or cuts occupancy), so you pick an unroll factor that maximizes ILP without triggering spills/occupancy cliffs',
+        'Pick an unroll factor with ILP but no spills',
         'Never unroll',
         'Unrolling reduces registers',
       ],
@@ -257,7 +257,7 @@ export default defineQuestions(
       q: 'In FlashAttention, storing the running statistics (max m and sum l) per query row rather than the full scores enables…',
       o: [
         'Higher precision',
-        'O(1) extra state per query instead of O(N) scores — combined with rescaling, this lets the kernel process K/V tiles incrementally without ever materializing the N×N matrix',
+        'O(1) state per query, not O(N) scores',
         'Avoiding softmax',
         'Using FP64',
       ],
@@ -276,7 +276,7 @@ export default defineQuestions(
       q: 'A "weight stationary" dataflow is attractive when…',
       o: [
         'Weights change often',
-        'The same weights are reused across many inputs (e.g. a conv filter over a feature map / batched inference), so keeping weights resident amortizes their load over many MACs',
+        'Weights are reused across many inputs',
         'There are no weights',
         'Inputs are reused more',
       ],
@@ -295,7 +295,7 @@ export default defineQuestions(
       q: 'Blocking a matmul for the L2 cache (a coarse tile larger than the threadblock tile) helps because…',
       o: [
         'It reduces registers',
-        'It groups the work of multiple threadblocks so their shared operands stay resident in L2 across them, cutting HBM re-reads of the same data (complementing shared-memory tiling)',
+        'Neighboring blocks reuse operands from L2',
         'It avoids tensor cores',
         'It lowers precision',
       ],
@@ -314,7 +314,7 @@ export default defineQuestions(
       q: 'For a memory-bound reduction, the most impactful optimization is usually…',
       o: [
         'More atomics',
-        'Maximizing read bandwidth: each thread streams many coalesced (vectorized) elements (grid-stride), so the kernel saturates DRAM — the reduction tree itself is cheap',
+        'Maximize coalesced read bandwidth',
         'Using tensor cores',
         'Lowering occupancy',
       ],
@@ -333,7 +333,7 @@ export default defineQuestions(
       q: 'A blocked-ELL or hybrid sparse format can outperform CSR for SpMV when…',
       o: [
         'Rows vary wildly',
-        'The matrix has fairly uniform row lengths (or dense sub-blocks), so a regular format gives coalesced, balanced access and can use vector/tensor units — CSR’s irregularity hurts there',
+        'Row lengths are fairly uniform',
         'The matrix is dense',
         'Always',
       ],
@@ -352,7 +352,7 @@ export default defineQuestions(
       q: 'Fusing a residual add and dropout into the preceding kernel’s epilogue is beneficial because…',
       o: [
         'It improves accuracy',
-        'It avoids extra HBM round-trips for the intermediate tensor — applying residual/dropout while the data is on-chip instead of launching separate elementwise kernels',
+        'Applies them on-chip, no extra HBM trips',
         'It uses tensor cores',
         'It reduces registers',
       ],
@@ -371,7 +371,7 @@ export default defineQuestions(
       q: 'Radix sort’s efficiency on GPUs comes largely from…',
       o: [
         'Comparisons',
-        'Processing keys digit-by-digit with high-throughput, coalesced passes and cooperative scans/histograms to scatter keys — avoiding comparison-based branchy work',
+        'Digit-by-digit coalesced passes with scans',
         'Recursion',
         'Atomics per element',
       ],
@@ -390,7 +390,7 @@ export default defineQuestions(
       q: 'Why is the attention KV-cache often stored with a layout that places the head dimension contiguous?',
       o: [
         'It saves memory',
-        'Attention reads each token’s K/V vectors per head; a head-contiguous layout makes those reads coalesced/vectorizable and matches the kernel’s access pattern, improving decode bandwidth',
+        'Head-contiguous reads coalesce in decode',
         'It increases precision',
         'It avoids tensor cores',
       ],
@@ -409,7 +409,7 @@ export default defineQuestions(
       q: 'A practical reason channels-last (NHWC) memory format matters in PyTorch for conv nets on tensor cores is…',
       o: [
         'It changes the math',
-        'cuDNN’s fastest tensor-core conv kernels expect NHWC; using NCHW forces layout transposes or slower kernels, so setting channels-last lets the model hit the fast path',
+        'cuDNN fast conv kernels expect NHWC',
         'It reduces parameters',
         'It increases precision',
       ],
@@ -428,7 +428,7 @@ export default defineQuestions(
       q: 'A warp-level reduction in a GEMM epilogue (e.g. for a fused row-sum) is preferred over shared memory because…',
       o: [
         'It is less accurate',
-        'The values are already distributed across a warp’s registers; shuffles combine them without shared-memory traffic or a block barrier, fitting the epilogue’s warp-tile structure',
+        'Values in registers; shuffles combine them',
         'It uses global memory',
         'It needs the host',
       ],
@@ -447,7 +447,7 @@ export default defineQuestions(
       q: 'Stream-K differs from split-K in HOW it parallelizes the K dimension by…',
       o: [
         'Not using K',
-        'Distributing the FLATTENED MAC iteration space evenly across a fixed set of blocks (so all SMs stay busy regardless of shape) rather than statically splitting K into a fixed number of partitions',
+        'Spreads MAC work evenly across blocks',
         'Using larger tiles',
         'Avoiding reduction',
       ],
@@ -466,7 +466,7 @@ export default defineQuestions(
       q: 'A reason to choose a work-INEFFICIENT (Hillis-Steele) scan for a small per-warp prefix sum is…',
       o: [
         'It does less work',
-        'For 32 elements its simplicity and use of shuffles make it fast and branch-light; the asymptotic extra work is negligible at warp size, and it avoids Blelloch’s two-phase complexity',
+        'Simple shuffle scan, fine at warp size',
         'It is always best',
         'It uses atomics',
       ],
@@ -485,7 +485,7 @@ export default defineQuestions(
       q: 'Choosing the GEMM threadblock tile (e.g. 128×256 vs 128×128) trades…',
       o: [
         'Precision for speed',
-        'Data reuse / arithmetic intensity (bigger tile = more reuse) against shared-memory & register usage (which lower occupancy and need enough work to fill the tiles)',
+        'Reuse/intensity against SMEM/register usage',
         'Memory for compute',
         'Nothing',
       ],
@@ -504,7 +504,7 @@ export default defineQuestions(
       q: 'Why does FlashAttention parallelize over the QUERY blocks (and heads/batch) rather than the key dimension in its primary loop?',
       o: [
         'Keys are smaller',
-        'Each query block can be processed independently (its own running softmax state), giving abundant parallelism; the inner loop streams K/V tiles sequentially to update that query block’s output',
+        'Query blocks are independent and parallel',
         'It avoids softmax',
         'Keys are reused once',
       ],
@@ -523,7 +523,7 @@ export default defineQuestions(
       q: 'A fused "bias + GELU" epilogue computes GELU in FP32 (even for FP16 outputs) because…',
       o: [
         'FP16 GELU is faster',
-        'GELU involves transcendentals/erf where FP16 precision would degrade accuracy; computing it in FP32 on the in-register accumulator preserves quality before casting to FP16 for storage',
+        'GELU transcendentals need FP32 accuracy',
         'It avoids tensor cores',
         'For memory',
       ],
@@ -542,7 +542,7 @@ export default defineQuestions(
       q: 'The biggest reason torch.compile/Triton fusion helps transformer training throughput is…',
       o: [
         'Faster matmul',
-        'Fusing the many small memory-bound ops around the matmuls (norms, activations, residuals, dropout, bias) into few kernels — eliminating intermediate HBM round-trips that dominate those ops',
+        'Fuses surrounding memory-bound ops',
         'Lower precision',
         'More occupancy',
       ],

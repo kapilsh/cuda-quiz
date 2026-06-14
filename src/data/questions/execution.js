@@ -8,7 +8,7 @@ export default defineQuestions('execution', [
     q: 'What is a warp?',
     o: [
       'A block of 1024 threads',
-      'A group of 32 threads that execute instructions together in lockstep',
+      '32 threads executed together in lockstep',
       'The unit of work assigned to one SM',
       'A synchronization primitive',
     ],
@@ -22,7 +22,7 @@ export default defineQuestions('execution', [
     q: 'What is "warp divergence"?',
     o: [
       'When warps from different blocks run on the same SM',
-      'When threads in a warp take different branches, forcing the paths to be executed serially',
+      'Threads in a warp take different branches, serialized',
       'When a warp accesses memory out of bounds',
       'When the warp scheduler stalls on a memory load',
     ],
@@ -64,7 +64,7 @@ export default defineQuestions('execution', [
     q: 'How does a GPU primarily hide global-memory latency?',
     o: [
       'By prefetching all data into registers',
-      'By switching among many resident warps so that when one stalls, another executes',
+      'Switching among resident warps when one stalls',
       'By running each warp on a dedicated core',
       'By compressing memory traffic',
     ],
@@ -78,7 +78,7 @@ export default defineQuestions('execution', [
     q: 'What is "occupancy"?',
     o: [
       'The fraction of SMs that are active',
-      'The ratio of active warps per SM to the maximum possible warps per SM',
+      'Active warps per SM ÷ max warps per SM',
       'The percentage of memory bandwidth used',
       'The number of blocks in the grid',
     ],
@@ -92,7 +92,7 @@ export default defineQuestions('execution', [
     q: 'Which is a correct statement about occupancy and performance?',
     o: [
       'Maximizing occupancy always maximizes performance',
-      'Higher occupancy helps hide latency, but a kernel can be fast at moderate occupancy if it has enough instruction-level parallelism and memory parallelism',
+      'Helps hide latency, but ILP can give speed at modest occupancy',
       'Occupancy is irrelevant to performance',
       'Occupancy only matters for compute-bound kernels',
     ],
@@ -106,7 +106,7 @@ export default defineQuestions('execution', [
     q: 'What limits the number of resident blocks on an SM? (choose the most complete answer)',
     o: [
       'Only the number of CUDA cores',
-      'The minimum across: registers, shared memory, threads/warps per SM, and the hardware block-per-SM limit',
+      'Min of registers, shared mem, warps, block limits',
       'Only shared memory',
       'The grid size',
     ],
@@ -120,7 +120,7 @@ export default defineQuestions('execution', [
     q: 'Since the Volta architecture, "Independent Thread Scheduling" means…',
     o: [
       'Each thread runs on its own physical core',
-      'Threads in a warp have individual program counters and can interleave/reconverge, so you can no longer assume implicit warp-synchronous behavior',
+      'Per-thread PCs; no implicit warp-synchronous behavior',
       'Warps are no longer 32 threads',
       'Divergence has zero cost',
     ],
@@ -134,7 +134,7 @@ export default defineQuestions('execution', [
     q: 'Why should warp-level primitives use the explicit-mask "_sync" variants (e.g. __shfl_down_sync) on Volta+?',
     o: [
       'They are faster',
-      'They specify exactly which lanes participate and enforce reconvergence/synchronization, which is required for correctness under independent thread scheduling',
+      'They name participating lanes and force sync',
       'The non-sync versions use more registers',
       'They enable tensor cores',
     ],
@@ -148,7 +148,7 @@ export default defineQuestions('execution', [
     q: 'What does __shfl_down_sync allow threads in a warp to do?',
     o: [
       'Write to global memory atomically',
-      'Read a register value directly from another lane in the same warp without using shared memory',
+      'Read a register from another lane, no shared memory',
       'Synchronize across blocks',
       'Down-convert FP32 to FP16',
     ],
@@ -174,7 +174,7 @@ export default defineQuestions('execution', [
   {
     d: 3,
     q: 'On a modern SM with 4 warp schedulers, how many warps can issue instructions in a single cycle (best case)?',
-    o: ['1', '4 (one per scheduler, possibly dual-issue for more)', '32', '128'],
+    o: ['1', '4 (one per scheduler)', '32', '128'],
     a: 1,
     e: 'Each warp scheduler can issue from one (sometimes two, via dual-issue) ready warp per cycle. With 4 schedulers, up to ~4–8 instructions across warps can be issued per cycle on the SM, sustaining high throughput across many resident warps.',
     ref: 'NVIDIA architecture whitepapers (Volta/Ampere/Hopper)',
@@ -185,7 +185,7 @@ export default defineQuestions('execution', [
     q: 'What is a "tail effect" in GPU execution?',
     o: [
       'The latency of the last memory transaction',
-      'Underutilization when the final wave of blocks does not fill all SMs, so the kernel runtime is dominated by a partial wave',
+      'The final partial wave of blocks underfills the SMs',
       'Divergence at the end of a loop',
       'Cache eviction at kernel exit',
     ],
@@ -198,7 +198,7 @@ export default defineQuestions('execution', [
     d: 2,
     q: 'Threads within a single block are guaranteed to…',
     o: [
-      'Run on the same SM and be able to share shared memory and synchronize',
+      'Run on one SM; share memory and synchronize',
       'Run on different SMs for load balancing',
       'Execute strictly in threadIdx order',
       'Each get a private copy of shared memory',
@@ -213,7 +213,7 @@ export default defineQuestions('execution', [
     q: 'What is the practical effect of choosing a block size that is not a multiple of 32?',
     o: [
       'The launch fails',
-      'The last warp is partially filled, wasting execution slots for the inactive lanes',
+      'The last warp is partially filled, wasting lanes',
       'Shared memory is disabled',
       'Occupancy automatically rounds up',
     ],
@@ -227,7 +227,7 @@ export default defineQuestions('execution', [
     q: 'Cooperative Groups’ grid-wide synchronization (grid.sync()) requires which launch mechanism and constraint?',
     o: [
       'A normal <<<>>> launch with any grid size',
-      'cudaLaunchCooperativeKernel, with a grid sized so all blocks are simultaneously resident (co-scheduled)',
+      'cudaLaunchCooperativeKernel with all blocks resident',
       'Dynamic parallelism',
       'A separate kernel per block',
     ],
@@ -241,7 +241,7 @@ export default defineQuestions('execution', [
     q: 'A reduction that maps active threads to contiguous lanes each step (instead of strided with modulo) is preferred because…',
     o: [
       'It uses less shared memory',
-      'It keeps active threads packed into full warps, reducing divergence and idle warps as the reduction shrinks',
+      'Keeps active threads in full warps, less divergence',
       'It avoids atomics',
       'It is required by __syncthreads',
     ],
@@ -255,7 +255,7 @@ export default defineQuestions('execution', [
     q: 'What is "register pressure" and a common symptom in Nsight Compute?',
     o: [
       'Too few registers, shown as high occupancy',
-      'High per-thread register demand that lowers occupancy and may cause local-memory spills (visible as local load/store traffic)',
+      'High register demand; lowers occupancy, spills to local',
       'Bank conflicts in the register file',
       'Excessive atomic contention',
     ],
@@ -268,7 +268,7 @@ export default defineQuestions('execution', [
     d: 5,
     q: 'Hopper introduced thread block clusters. What scheduling guarantee do they add beyond ordinary blocks?',
     o: [
-      'Blocks in a cluster are co-scheduled on SMs within the same GPC and can synchronize and share memory',
+      'Co-scheduled on one GPC; can sync and share memory',
       'Blocks in a cluster run on different GPUs',
       'Clusters remove the concept of warps',
       'Clusters guarantee global ordering of all blocks',

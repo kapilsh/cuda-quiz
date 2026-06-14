@@ -11,7 +11,7 @@ export default defineQuestions(
       q: 'Thread coarsening (having each thread compute several output elements) helps mainly by…',
       o: [
         'Increasing the number of threads',
-        'Amortizing redundant work (index math, shared-memory loads, sync) and exposing ILP across the elements one thread handles',
+        'Amortizes redundant work and exposes ILP',
         'Reducing register usage',
         'Eliminating global memory',
       ],
@@ -30,7 +30,7 @@ export default defineQuestions(
       q: 'In GEMM, "split-K" parallelizes over the K (contraction) dimension. The catch is that…',
       o: [
         'It needs no extra work',
-        'Partial products from each K-split must be summed — via atomics or a separate reduction kernel — adding a combine step',
+        'Partial products must be summed (combine step)',
         'It only works for square matrices',
         'It disables tensor cores',
       ],
@@ -49,7 +49,7 @@ export default defineQuestions(
       q: 'For a stencil (e.g. 5-point) kernel, loading a tile plus its halo into shared memory…',
       o: [
         'Wastes memory with no benefit',
-        'Lets each interior point read its neighbors from fast shared memory instead of re-reading global memory many times',
+        'Neighbors come from fast shared memory',
         'Avoids the need for boundary handling',
         'Removes all divergence',
       ],
@@ -68,7 +68,7 @@ export default defineQuestions(
       q: 'A "persistent kernel" keeps a fixed set of blocks resident and feeds them work from a queue. It is used to…',
       o: [
         'Increase occupancy',
-        'Avoid repeated launch overhead and enable cross-wave coordination / load balancing within one launch',
+        'Avoid launch overhead and balance load',
         'Reduce register usage',
         'Disable the scheduler',
       ],
@@ -87,7 +87,7 @@ export default defineQuestions(
       q: 'A warp-level reduction using __shfl_down_sync is preferred over a shared-memory reduction within a warp because it…',
       o: [
         'Is more accurate',
-        'Exchanges values directly between registers, avoiding shared-memory traffic and the associated __syncthreads',
+        'Swaps registers directly, no shared memory',
         'Uses less power only',
         'Works across blocks',
       ],
@@ -106,7 +106,7 @@ export default defineQuestions(
       q: 'Vectorized stores (e.g. writing float4) help write-heavy kernels by…',
       o: [
         'Reducing arithmetic',
-        'Issuing fewer, wider store instructions that move 16 bytes per thread, improving store throughput and instruction efficiency',
+        'Fewer, wider stores (16 bytes/thread)',
         'Avoiding alignment requirements',
         'Eliminating the L2 cache',
       ],
@@ -125,7 +125,7 @@ export default defineQuestions(
       q: 'Compiling with --use_fast_math does what, and what is the trade-off?',
       o: [
         'Enables double precision; slower but exact',
-        'Replaces standard math with faster, lower-accuracy intrinsics (e.g. approximate div, sqrt, transcendentals) and flushes denormals — faster but less precise',
+        'Faster low-accuracy intrinsics; flushes denormals',
         'Disables all math',
         'Only affects integer ops',
       ],
@@ -144,7 +144,7 @@ export default defineQuestions(
       q: 'For an iterative algorithm, keeping data resident on the GPU across iterations (instead of copying to/from host each step) matters because…',
       o: [
         'Host memory is larger',
-        'Host-device transfers over PCIe are slow relative to on-device bandwidth, so repeated copies dominate runtime',
+        'PCIe transfers are slow vs on-device bandwidth',
         'The GPU cannot store data between kernels',
         'It improves occupancy',
       ],
@@ -163,7 +163,7 @@ export default defineQuestions(
       q: 'Choosing a lookup table (in shared/constant memory) over recomputation is beneficial when…',
       o: [
         'The function is a single multiply',
-        'The recomputation is expensive (transcendentals) and the table is small enough to be cached/broadcast without bank conflicts',
+        'Recompute is costly and the table is small/cached',
         'Always — tables are free',
         'The table is larger than global memory',
       ],
@@ -182,7 +182,7 @@ export default defineQuestions(
       q: 'Caching a value reused several times by a thread in a register (instead of re-reading global memory) is effective because…',
       o: [
         'Registers are slower but larger',
-        'Registers are the fastest storage; eliminating repeated global loads raises arithmetic intensity and cuts memory traffic',
+        'Registers are fastest; cuts repeated global loads',
         'It increases occupancy',
         'Global memory cannot be read twice',
       ],
@@ -201,7 +201,7 @@ export default defineQuestions(
       q: 'A common Tensor Core MMA tile shape on Ampere for FP16 is m16n8k16. This means one mma.sync computes…',
       o: [
         'A 16-element vector',
-        'A 16×8 output tile accumulating over a K-dimension of 16, cooperatively across the warp',
+        'A 16×8 tile accumulating over K=16',
         'A 16×16×16 cube per thread',
         'One scalar FMA',
       ],
@@ -220,7 +220,7 @@ export default defineQuestions(
       q: 'Binning/sorting irregular work so that threads in a warp do similar work reduces…',
       o: [
         'Memory capacity',
-        'Warp divergence and load imbalance, since same-category items follow the same control path',
+        'Divergence and load imbalance',
         'Register usage',
         'The number of kernels',
       ],
@@ -239,7 +239,7 @@ export default defineQuestions(
       q: 'The nvcc flag -maxrregcount=N (or __launch_bounds__) lets you…',
       o: [
         'Increase registers without limit',
-        'Cap the registers per thread to raise occupancy, accepting possible spills to local memory',
+        'Cap registers/thread to raise occupancy',
         'Set the number of blocks',
         'Choose the GPU architecture',
       ],
@@ -258,7 +258,7 @@ export default defineQuestions(
       q: 'Increasing the number of pipeline stages (e.g. 3–4 buffers) in a cp.async-based GEMM helps until…',
       o: [
         'It never stops helping',
-        'Shared memory or registers run out, or the loads already fully hide compute latency — extra stages then just consume resources',
+        'SMEM/registers run out or latency is hidden',
         'The grid is too small',
         'Tensor cores are disabled',
       ],
@@ -277,7 +277,7 @@ export default defineQuestions(
       q: 'Replacing many tiny kernel launches with one batched/fused launch primarily reduces…',
       o: [
         'Numerical error',
-        'Cumulative launch overhead and global-memory round-trips for intermediates',
+        'Launch overhead and global round-trips',
         'Register usage',
         'Shared memory bank conflicts',
       ],
@@ -296,7 +296,7 @@ export default defineQuestions(
       q: 'A reduction kernel uses sequential addressing (`for (s=blockDim/2; s>0; s>>=1)`) instead of interleaved addressing with `%`. The main win is…',
       o: [
         'Fewer iterations',
-        'No warp divergence and no shared-memory bank conflicts, because active threads stay contiguous',
+        'No divergence and no bank conflicts',
         'Lower precision',
         'It removes __syncthreads',
       ],
@@ -315,7 +315,7 @@ export default defineQuestions(
       q: 'In FlashAttention, tiling the K/V over blocks while keeping the running softmax statistics avoids…',
       o: [
         'Using tensor cores',
-        'Materializing and reading/writing the full S = QKᵀ (N×N) matrix to HBM, which would be memory-bound and memory-heavy',
+        'Writing the full N×N score matrix to HBM',
         'Computing the softmax',
         'Any synchronization',
       ],
@@ -334,7 +334,7 @@ export default defineQuestions(
       q: 'When a kernel is compute-bound on the FP32 pipe, a useful optimization is to…',
       o: [
         'Add more global memory accesses',
-        'Reduce instruction count / use cheaper instructions (FMA contraction, fast intrinsics, fewer redundant ops) or move eligible math to tensor cores',
+        'Cut instruction count or use tensor cores',
         'Increase the block size only',
         'Add atomics',
       ],
@@ -353,7 +353,7 @@ export default defineQuestions(
       q: 'A prefetch distance that is too LARGE in a software-pipelined loop can hurt because…',
       o: [
         'It always helps',
-        'It increases shared-memory/register footprint (more in-flight buffers), lowering occupancy and possibly spilling',
+        'More in-flight buffers lower occupancy/spill',
         'It causes incorrect results',
         'It disables coalescing',
       ],
@@ -372,7 +372,7 @@ export default defineQuestions(
       q: 'Loop interchange (swapping nested loop order) in a kernel can improve performance by…',
       o: [
         'Reducing the number of iterations',
-        'Changing the memory access pattern so the innermost accesses become unit-stride/coalesced',
+        'Makes innermost accesses unit-stride/coalesced',
         'Removing the loop entirely',
         'Increasing divergence',
       ],
@@ -391,7 +391,7 @@ export default defineQuestions(
       q: 'Why is recomputing a cheap value often better than storing and reloading it from global memory on a GPU?',
       o: [
         'Recomputation is always exact',
-        'GPUs have abundant compute but limited memory bandwidth, so trading a few extra FLOPs to avoid a memory access is usually a win',
+        'Compute is abundant; bandwidth is scarce',
         'Global memory cannot be reread',
         'It reduces register usage',
       ],
@@ -410,7 +410,7 @@ export default defineQuestions(
       q: 'Stream-K (a GEMM scheduling strategy) improves on split-K by…',
       o: [
         'Removing the K dimension',
-        'Distributing work evenly across all SMs regardless of problem shape (each block does a slice of the total MAC work), reducing the wave-quantization/tail inefficiency',
+        'Even work across SMs, cutting the tail',
         'Using only one block',
         'Disabling tensor cores',
       ],
@@ -429,7 +429,7 @@ export default defineQuestions(
       q: 'A rule-of-thumb starting point: aim for at least enough occupancy that there are several resident warps per scheduler, because…',
       o: [
         'More warps always means more speed',
-        'A few warps per scheduler are usually enough to hide arithmetic/memory latency; beyond that, returns diminish',
+        'A few warps per scheduler hide latency',
         'The hardware requires 64 warps',
         'Occupancy below 100% fails to launch',
       ],
@@ -448,7 +448,7 @@ export default defineQuestions(
       q: 'Reducing precision of an intermediate buffer from FP32 to FP16/BF16 can speed a memory-bound kernel even without tensor cores because…',
       o: [
         'It changes the algorithm',
-        'It halves the bytes moved, directly cutting the runtime of a bandwidth-bound stage',
+        'Halves bytes moved on a bandwidth-bound stage',
         'It increases occupancy',
         'It avoids divergence',
       ],
@@ -467,7 +467,7 @@ export default defineQuestions(
       q: 'Minimizing __syncthreads() calls in a kernel can help because each barrier…',
       o: [
         'Corrupts shared memory',
-        'Forces all warps to wait for the slowest, creating a synchronization point that can stall otherwise-independent work',
+        'Makes all warps wait for the slowest',
         'Uses a register',
         'Disables coalescing',
       ],
@@ -486,7 +486,7 @@ export default defineQuestions(
       q: 'Output (C-tile) "register blocking" in GEMM where each thread holds an 8×8 accumulator in registers improves throughput because…',
       o: [
         'It reduces the matrix size',
-        'Operands fetched once from shared memory feed 64 FMAs, maximizing reuse and the compute-to-load ratio, with all accumulation in fast registers',
+        'One operand fetch feeds 64 register FMAs',
         'It avoids tensor cores',
         'It lowers precision',
       ],
@@ -505,7 +505,7 @@ export default defineQuestions(
       q: 'Overlapping host-to-device copies with kernel execution requires splitting work into chunks and using…',
       o: [
         'A single default-stream pipeline',
-        'Multiple streams with pinned memory and cudaMemcpyAsync so copy engines and SMs run concurrently',
+        'Multiple streams, pinned memory, async copies',
         'More registers',
         'Constant memory',
       ],
@@ -524,7 +524,7 @@ export default defineQuestions(
       q: 'Why can a hand-written GEMM that hits 90% of cuBLAS still be a poor choice in practice?',
       o: [
         'It is always faster',
-        'cuBLAS auto-selects among many tuned kernels per shape/arch and is maintained for new hardware; matching it across all shapes/architectures is a large ongoing effort',
+        'cuBLAS covers all shapes/archs and is maintained',
         'Hand-written kernels cannot use tensor cores',
         '90% is unacceptable',
       ],
@@ -543,7 +543,7 @@ export default defineQuestions(
       q: 'Avoiding atomics by using a segmented/hierarchical reduction is beneficial when…',
       o: [
         'There is no contention',
-        'Many threads would otherwise hammer few output locations; reducing locally first (warp/block) cuts global atomic traffic dramatically',
+        'Local reduction cuts contended global atomics',
         'The output is unique per thread',
         'Atomics are unsupported',
       ],
@@ -562,7 +562,7 @@ export default defineQuestions(
       q: 'Unrolling the inner accumulation loop of a dot product AND using multiple accumulators together address which two issues?',
       o: [
         'Memory capacity and divergence',
-        'Loop overhead (unrolling) and the serial FMA dependency chain / latency (multiple accumulators → ILP)',
+        'Loop overhead and the FMA dependency chain',
         'Coalescing and bank conflicts',
         'Occupancy and registers',
       ],

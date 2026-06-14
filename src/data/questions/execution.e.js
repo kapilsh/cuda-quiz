@@ -10,7 +10,7 @@ export default defineQuestions(
       q: 'A thread-block cluster of size 2 means two blocks are co-scheduled. The cluster size is limited by…',
       o: [
         'The grid size',
-        'How many blocks can fit on SMs of one GPC simultaneously (portable max is 8; the hardware/occupancy may allow fewer) — they must be co-resident',
+        'Blocks that fit co-resident on one GPC (max 8)',
         'The warp size',
         'The register count only',
       ],
@@ -29,7 +29,7 @@ export default defineQuestions(
       q: 'A kernel uses 96 registers/thread and 32 KB shared memory/block with 256-thread blocks on an SM with 65536 registers, 100 KB shared memory, 2048 max threads. The likely occupancy limiter is…',
       o: [
         'Threads',
-        'Registers: 65536/(96×256) ≈ 2.67 ⇒ 2 blocks; shared memory allows 3 and threads allow 8, so registers (2 blocks) bind',
+        'Registers: 65536/(96×256) ≈ 2 blocks',
         'Shared memory',
         'Max blocks per SM',
       ],
@@ -48,7 +48,7 @@ export default defineQuestions(
       q: 'High "Stall Wait" (fixed-latency dependency) in Nsight Compute is typically addressed by…',
       o: [
         'Reducing memory traffic',
-        'Increasing ILP — independent instructions to fill the fixed instruction latencies (e.g. multiple accumulators, unrolling) — since the warp is waiting on short, fixed-latency results',
+        'Increasing ILP to fill fixed latencies',
         'Adding atomics',
         'Lowering occupancy',
       ],
@@ -66,7 +66,7 @@ export default defineQuestions(
       d: 5,
       q: 'In a producer/consumer warp-specialized kernel, if the producer warpgroup is too SLOW relative to consumers, the symptom is…',
       o: [
-        'Consumers idle waiting on the mbarrier for data — the pipeline is producer-bound (memory feeding limits throughput)',
+        'Consumers idle waiting on the producer',
         'Producers idle',
         'A deadlock always',
         'Register spilling',
@@ -86,7 +86,7 @@ export default defineQuestions(
       q: 'Under Independent Thread Scheduling, code like `if (laneid<16) { ... } x = __shfl_sync(0xffffffff, x, src);` is buggy because…',
       o: [
         'shfl is slow',
-        'The full-warp mask 0xffffffff claims all 32 lanes participate, but only lanes <16 reach the shuffle (the rest are in the else/after) — diverged lanes don’t participate, giving undefined results',
+        'Only lanes <16 reach it, but the mask names all 32',
         'laneid is wrong',
         'It uses too many registers',
       ],
@@ -105,7 +105,7 @@ export default defineQuestions(
       q: 'A kernel achieves 100% occupancy but Nsight shows low eligible-warps-per-scheduler and high long-scoreboard stalls. This means…',
       o: [
         'It is compute-bound',
-        'Despite full occupancy, nearly all warps are simultaneously stalled on global loads (memory-latency/bandwidth bound) — so occupancy isn’t the fix; reduce/streamline memory traffic',
+        'Nearly all warps stalled on global loads',
         'Too few warps',
         'Register spilling',
       ],
@@ -124,7 +124,7 @@ export default defineQuestions(
       q: 'Cooperative groups’ grid.sync() inside a cooperative-launched kernel lets you…',
       o: [
         'Synchronize a block',
-        'Synchronize ALL blocks at a barrier within one kernel launch — enabling multi-phase algorithms (e.g. iterative solvers) without splitting into multiple launches',
+        'Sync all blocks within one kernel launch',
         'Synchronize the host',
         'Synchronize a warp',
       ],
@@ -143,7 +143,7 @@ export default defineQuestions(
       q: 'Why might a cooperative (grid.sync) kernel be SLOWER than two separate kernels for the same two-phase computation?',
       o: [
         'grid.sync is free',
-        'Cooperative launch caps the grid to what fits co-resident (limiting parallelism/occupancy), and the grid barrier itself has cost; two launches can use a larger grid and the kernel-boundary barrier may be cheaper',
+        'Co-resident cap limits parallelism; the barrier costs',
         'Two launches are always slower',
         'It uses FP64',
       ],
@@ -162,7 +162,7 @@ export default defineQuestions(
       q: 'The warp-stall reason "No Instructions" indicates…',
       o: [
         'Memory latency',
-        'The warp is waiting on instruction fetch (e.g. instruction-cache miss or branch target not yet fetched) — high values suggest instruction-footprint/I-cache pressure',
+        'The warp is waiting on instruction fetch',
         'A barrier',
         'A register conflict',
       ],
@@ -181,7 +181,7 @@ export default defineQuestions(
       q: 'A grid with 132 blocks on a 132-SM GPU where each SM holds 2 resident blocks runs in roughly…',
       o: [
         '1 wave',
-        'About half a wave (132 blocks but capacity is 264), so SMs are underfilled — increasing blocks toward 264 (or more, in whole waves) improves utilization',
+        'Half a wave (capacity 264)',
         '2 waves',
         '132 waves',
       ],
@@ -200,7 +200,7 @@ export default defineQuestions(
       q: 'cluster.map_shared_rank(ptr, rank) in a Hopper kernel returns…',
       o: [
         'A global pointer',
-        'A pointer to the shared memory of the block with the given rank in the cluster, so the calling block can access that peer block’s DSMEM',
+        'A pointer to a peer block DSMEM',
         'The SM id',
         'A register value',
       ],
@@ -219,7 +219,7 @@ export default defineQuestions(
       q: 'When a kernel is "tail-effect" limited, increasing the number of blocks (e.g. via thread coarsening reduction or splitting work) helps because…',
       o: [
         'It reduces registers',
-        'More, smaller blocks fill the SMs more evenly and shrink the relative cost of the final partial wave — improving achieved occupancy/utilization for short kernels',
+        'More blocks fill SMs, shrinking the tail',
         'It uses tensor cores',
         'It lowers precision',
       ],
@@ -238,7 +238,7 @@ export default defineQuestions(
       q: 'Independent Thread Scheduling guarantees forward progress, which fixed a class of bugs where…',
       o: [
         'Kernels never finish',
-        'Pre-Volta, a spinning lane waiting on another lane in the SAME warp could livelock (the winner couldn’t proceed past reconvergence); ITS lets diverged lanes make independent progress',
+        'Intra-warp spin-waits livelocked pre-Volta',
         'Memory was incoherent',
         'Atomics failed',
       ],
@@ -257,7 +257,7 @@ export default defineQuestions(
       q: 'A warp executing __syncwarp(0x0000FFFF) synchronizes…',
       o: [
         'All 32 lanes',
-        'Only the lower 16 lanes (those set in the mask) — useful when only a subset is cooperating and the others have diverged away',
+        'Only the lower 16 lanes (the mask bits)',
         'The whole block',
         'No lanes',
       ],
@@ -276,7 +276,7 @@ export default defineQuestions(
       q: 'Why does a deeply warp-specialized GEMM often dedicate FEWER warps to producers (TMA) than consumers (wgmma)?',
       o: [
         'Producers need more registers',
-        'TMA bulk copies are issued by a single thread and are hardware-driven, so one (or few) producer warp(s) can feed many consumer warps doing the math — balancing the pipeline',
+        'One TMA producer can feed many consumers',
         'Consumers are slower to launch',
         'Producers use tensor cores',
       ],
@@ -295,7 +295,7 @@ export default defineQuestions(
       q: 'A kernel’s achieved occupancy oscillates run-to-run for a SHORT kernel because…',
       o: [
         'Registers change',
-        'With few blocks and brief runtime, scheduling/tail variability dominates the average active-warps measurement — short kernels have noisy achieved occupancy',
+        'Few blocks, short runtime: noisy average',
         'The grid changes',
         'ECC toggles',
       ],
@@ -314,7 +314,7 @@ export default defineQuestions(
       q: 'Why is it generally fine for DIFFERENT warps in a block to be on different instructions, but NOT different lanes of one warp (pre-Volta)?',
       o: [
         'Warps share a PC',
-        'Warps are independent scheduling units (no shared PC), so they naturally diverge for free; lanes of one warp shared a PC under classic SIMT, so intra-warp divergence serialized paths',
+        'Warps have independent PCs; lanes shared one',
         'Lanes are independent',
         'Blocks share a PC',
       ],
@@ -333,7 +333,7 @@ export default defineQuestions(
       q: 'Cooperative groups cg::this_grid().sync() in an iterative stencil kernel replaces…',
       o: [
         '__syncthreads',
-        'The need to launch a separate kernel per iteration — keeping all iterations in one launch with a grid barrier between them (if all blocks fit co-resident)',
+        'A kernel relaunch per iteration',
         'Atomics',
         'cudaMemcpy',
       ],
@@ -352,7 +352,7 @@ export default defineQuestions(
       q: 'A "persistent" reduction kernel (one wave of blocks looping over the input via atomics/work queue) can beat a multi-launch tree reduction when…',
       o: [
         'Never',
-        'The input is moderate and launch overhead / multiple passes dominate — keeping blocks resident and combining via shared/global avoids relaunch overhead and extra memory passes',
+        'Launch overhead dominates, input moderate',
         'The input is huge',
         'It uses FP64',
       ],
@@ -371,7 +371,7 @@ export default defineQuestions(
       q: 'On Nsight Compute, "Issued Warp Per Scheduler" near the theoretical max with low achieved throughput suggests…',
       o: [
         'Memory-bound',
-        'The SM is issuing well but the work itself is low-value (e.g. overhead instructions, poor vectorization) — reduce instruction count / increase useful work per instruction',
+        'Issuing well but little useful work',
         'Latency-bound',
         'Too few warps',
       ],
@@ -390,7 +390,7 @@ export default defineQuestions(
       q: 'cudaFuncSetAttribute(kernel, cudaFuncAttributeNonPortableClusterSizeAllowed, 1) is needed when…',
       o: [
         'Using any cluster',
-        'You request a cluster size larger than the portable maximum (8); you opt in to a hardware-specific larger cluster, accepting reduced portability',
+        'You want a cluster bigger than 8',
         'Using shared memory',
         'Using tensor cores',
       ],
@@ -409,7 +409,7 @@ export default defineQuestions(
       q: 'A kernel with a data-dependent `while` loop per thread shows high warp-execution-efficiency early but low efficiency later because…',
       o: [
         'It speeds up',
-        'As threads finish their loops at different times, fewer lanes remain active in each warp, so the warp runs with idle lanes until its slowest thread completes (intra-warp imbalance)',
+        'Idle lanes grow as threads finish early',
         'It uses atomics',
         'Registers spill',
       ],
@@ -428,7 +428,7 @@ export default defineQuestions(
       q: 'In a multi-stage GEMM with a producer warpgroup and TWO consumer warpgroups alternating (ping-pong), the goal is to…',
       o: [
         'Use one warp',
-        'Keep the tensor cores continuously busy: while one consumer runs wgmma on stage k, the other prepares/consumes stage k+1, with the producer (TMA) staying ahead — hiding all latencies',
+        'Keep tensor cores continuously busy',
         'Lower precision',
         'Avoid shared memory',
       ],
@@ -447,7 +447,7 @@ export default defineQuestions(
       q: 'Why does the occupancy calculator account for register ALLOCATION GRANULARITY rather than just dividing register file by usage?',
       o: [
         'For simplicity',
-        'Registers are allocated to warps in fixed-size chunks, so usage rounds UP to the granularity — meaning a few extra registers can reduce resident warps more than a naive division suggests',
+        'Register use rounds up to a granularity',
         'Registers are unlimited',
         'It ignores registers',
       ],
@@ -466,7 +466,7 @@ export default defineQuestions(
       q: 'A kernel that is purely INSTRUCTION-bound (compute pipe saturated, memory idle) is best sped up by…',
       o: [
         'More memory accesses',
-        'Reducing the number/cost of instructions: vectorize/pack (half2/dp4a), use FMA/tensor cores, eliminate redundant work, or use cheaper math',
+        'Reduce the number/cost of instructions',
         'More occupancy',
         'Larger grids',
       ],
@@ -485,7 +485,7 @@ export default defineQuestions(
       q: 'The reason elect.sync (or invoke_one) is preferred over `if (threadIdx.x % 32 == 0)` for a warp leader under ITS is…',
       o: [
         'It is the same',
-        'It elects a leader among the ACTIVE lanes (handling divergence correctly) and returns a predicate, rather than assuming lane 0 is active — safer when the warp may be partially diverged',
+        'Elects a leader among active lanes safely',
         'It is faster only',
         'It uses shared memory',
       ],
@@ -504,7 +504,7 @@ export default defineQuestions(
       q: 'Why can adding a cluster (size 2) to a GEMM improve performance even though each block already uses shared-memory tiling?',
       o: [
         'It reduces registers',
-        'The cluster enables DSMEM + TMA multicast so the two blocks SHARE operand tiles (one HBM read serves both) and can synchronize, cutting redundant DRAM traffic and improving reuse',
+        'DSMEM + TMA multicast lets blocks share tiles',
         'It lowers precision',
         'It avoids tensor cores',
       ],
@@ -523,7 +523,7 @@ export default defineQuestions(
       q: 'For a kernel limited by __syncthreads frequency (high barrier stalls), a structural fix is…',
       o: [
         'Add more barriers',
-        'Reduce the number of barriers (e.g. double-buffer so the next tile loads without an extra sync, or do more work between barriers), and balance per-thread work before each barrier',
+        'Reduce barriers (e.g. double-buffer)',
         'Use FP64',
         'Lower occupancy',
       ],
@@ -542,7 +542,7 @@ export default defineQuestions(
       q: 'A warp reduction using cg::reduce on Ampere+ may be faster than a manual shuffle tree because it…',
       o: [
         'Uses global memory',
-        'Can lower to the redux.sync hardware reduction instruction for integer ops (one instruction) instead of log2(32) shuffle steps',
+        'Lowers to redux.sync hardware reduction',
         'Uses shared memory',
         'Runs on the host',
       ],

@@ -20,7 +20,7 @@ export default defineQuestions(
       q: 'Speed-of-Light shows Memory 95%, Compute 30%. The correct optimization direction is…',
       o: [
         'Add more compute',
-        'It is memory-bound: reduce bytes moved (fusion, reuse via tiling, smaller types) or improve coalescing — adding compute/occupancy won’t help',
+        'Memory-bound: reduce bytes moved',
         'Increase occupancy',
         'Use FP64',
       ],
@@ -39,7 +39,7 @@ export default defineQuestions(
       q: 'Speed-of-Light shows Memory 30%, Compute 30%, with high stall percentages. This is…',
       o: [
         'Compute-bound',
-        'Latency-bound — neither resource saturated; too little work in flight, so increase occupancy and/or per-thread ILP/MLP to keep the pipelines busy',
+        'Latency-bound; too little in flight',
         'Memory-bound',
         'Optimal',
       ],
@@ -58,7 +58,7 @@ export default defineQuestions(
       q: 'Global load efficiency = 25%. This directly means…',
       o: [
         'Low occupancy',
-        'Each memory request moves ~4× the bytes actually used (uncoalesced/strided access fetching mostly-unused cache-line sectors) — fix the access pattern',
+        '~4× bytes fetched (uncoalesced)',
         'Register spilling',
         'Tensor starvation',
       ],
@@ -77,7 +77,7 @@ export default defineQuestions(
       q: 'A kernel with no large local arrays shows significant local memory load/store traffic. This indicates…',
       o: [
         'Bank conflicts',
-        'Register spilling — the compiler spilled registers to local memory; reduce register pressure or adjust -maxrregcount',
+        'Register spilling to local memory',
         'Uncoalesced global access',
         'Atomic contention',
       ],
@@ -96,7 +96,7 @@ export default defineQuestions(
       q: 'For a transformer training step, MFU = 30%. To estimate it you computed…',
       o: [
         'GPU-Util average',
-        '(model FLOPs per step × steps/sec) ÷ peak FLOP/s — comparing useful model compute to the hardware peak; 30% means much of the time is non-matmul/comm/bubbles/memory-bound',
+        'Model FLOP/s ÷ peak FLOP/s',
         'DRAM bandwidth',
         'Occupancy',
       ],
@@ -115,7 +115,7 @@ export default defineQuestions(
       q: 'To confirm a GEMM is using tensor cores, the metric to check is…',
       o: [
         'dram__bytes',
-        'The tensor pipe activity (e.g. sm__pipe_tensor_op_hmma_cycles_active) — zero means it fell back to CUDA cores (wrong precision/path/alignment)',
+        'Tensor pipe activity (hmma cycles active)',
         'achieved_occupancy',
         'l2_hit_rate',
       ],
@@ -134,7 +134,7 @@ export default defineQuestions(
       q: 'Branch/divergence is quantified by comparing thread_inst_executed to inst_executed: a ratio of 24 (out of 32) means…',
       o: [
         'No divergence',
-        'On average 24 of 32 lanes were active per instruction (75% warp execution efficiency) — 25% of execution slots wasted to divergence/predication',
+        '24 of 32 lanes active (75% efficiency)',
         'Register spilling',
         'A barrier',
       ],
@@ -153,7 +153,7 @@ export default defineQuestions(
       q: 'The Occupancy section reports "limited by registers." This tells you…',
       o: [
         'Nothing useful',
-        'Register usage is the binding constraint on theoretical occupancy — if occupancy is the bottleneck, reduce registers (smaller working set, -maxrregcount) to raise it',
+        'Registers bind theoretical occupancy',
         'DRAM is the limit',
         'The clock is low',
       ],
@@ -172,7 +172,7 @@ export default defineQuestions(
       q: 'A GEMM’s roofline dot sits near the FP32 (CUDA-core) ceiling, well below the tensor ceiling. This means…',
       o: [
         'It is optimal',
-        'It isn’t using tensor cores effectively — bound by the much lower CUDA-core roof; route it through tensor cores (correct dtype/path/alignment) to access the higher ceiling',
+        'Not using tensor cores; at the FP32 roof',
         'It is memory-bound',
         'It is latency-bound',
       ],
@@ -191,7 +191,7 @@ export default defineQuestions(
       q: 'In Nsight Systems, the GPU is idle during gaps while CPU/data-loader threads are busy. The bottleneck is…',
       o: [
         'The GPU',
-        'The input pipeline / host: data loading or Python/launch overhead is starving the GPU; fix with prefetching, more loader workers, pinned async copies, or fewer/larger launches',
+        'The host/input pipeline starves the GPU',
         'Memory bandwidth',
         'Tensor cores',
       ],
@@ -210,7 +210,7 @@ export default defineQuestions(
       q: 'A 3 µs kernel launched millions of times dominates a profile’s host time. It is…',
       o: [
         'Compute-bound',
-        'Launch-bound: per-launch CPU overhead and inter-kernel gaps dominate — use CUDA Graphs (capture+replay) or fuse kernels, not kernel micro-optimization',
+        'Launch-bound; use graphs or fusion',
         'Memory-bound',
         'Tensor-bound',
       ],
@@ -229,7 +229,7 @@ export default defineQuestions(
       q: 'A kernel depends on state set by a prior launch. For faithful metrics you must use…',
       o: [
         'Kernel replay',
-        'Application replay — it re-runs the whole app per pass, preserving cross-launch state that kernel replay (which only restores the kernel’s captured memory) would not reproduce',
+        'Application replay (whole-app reruns)',
         'Range replay',
         'No replay',
       ],
@@ -248,7 +248,7 @@ export default defineQuestions(
       q: 'ncu --set full vs --set basic: full…',
       o: [
         'Runs the kernel once',
-        'Collects more sections/metrics (more kernel replays, longer profiling) for a complete picture; basic is faster for quick checks',
+        'Collects more sections/metrics (more replays)',
         'Is faster',
         'Disables replay',
       ],
@@ -267,7 +267,7 @@ export default defineQuestions(
       q: 'Comparing kernel A (2.0 ms, 8 GB DRAM) vs B (1.2 ms, 4 GB DRAM): the most informative conclusion is…',
       o: [
         'A is better',
-        'B is faster largely because it moves half the bytes — the speedup is explained by reduced memory traffic (better reuse/fusion/coalescing), not just a smaller time number',
+        'B moves half the bytes (less traffic)',
         'They are equal',
         'A uses tensor cores',
       ],
@@ -286,7 +286,7 @@ export default defineQuestions(
       q: 'Shared-memory bank conflicts appear in Nsight Compute as…',
       o: [
         'DRAM throughput',
-        'More shared (l1tex) wavefronts/transactions per request than the ideal one — extra transactions from serialized conflicting accesses',
+        'Extra shared wavefronts per request',
         'Low occupancy',
         'High register count',
       ],
@@ -305,7 +305,7 @@ export default defineQuestions(
       q: 'For repeatable benchmarking, locking clocks (nvidia-smi -lgc) matters because…',
       o: [
         'It speeds up the kernel',
-        'GPU boost clocks vary with power/thermal state, so unlocked timing is noisy; locking clocks makes runs comparable and attributes differences to the code',
+        'Boost clocks vary; locking stabilizes timing',
         'It increases occupancy',
         'It reduces memory',
       ],
@@ -324,7 +324,7 @@ export default defineQuestions(
       q: 'PC sampling in the profiler is used to…',
       o: [
         'Count exact instructions',
-        'Statistically attribute hotspots and stall reasons to source/SASS locations at low overhead — building a sampled profile of where time/stalls concentrate',
+        'Statistically attribute hotspots/stalls to code',
         'Lock clocks',
         'Allocate memory',
       ],
@@ -343,7 +343,7 @@ export default defineQuestions(
       q: 'A training run’s nsys timeline shows NCCL all-reduce kernels taking 40% of step time with little overlap. The fix targets…',
       o: [
         'Kernel micro-optimization',
-        'Communication/computation overlap (bucket gradients, separate comm stream so all-reduce hides behind backward) and/or faster interconnect/topology',
+        'Overlap comm with compute; faster interconnect',
         'Lower precision in the optimizer',
         'A bigger batch only',
       ],
@@ -362,7 +362,7 @@ export default defineQuestions(
       q: 'IPC near the issue max but achieved throughput well below peak indicates…',
       o: [
         'Memory-bound',
-        'Issue-bound: the SM issues many instructions but they accomplish little useful work (overhead, scalar where vector would do) — reduce instruction count / increase work per instruction',
+        'Issue-bound; low value per instruction',
         'Latency-bound',
         'Occupancy too low',
       ],
@@ -381,7 +381,7 @@ export default defineQuestions(
       q: 'compute-sanitizer --tool racecheck reports a hazard in a tiled kernel. The likely cause is…',
       o: [
         'Out-of-bounds access',
-        'A missing/incorrect __syncthreads between the shared-memory write and read phases (a shared-memory data race) — add the barrier so writes complete before reads',
+        'Missing __syncthreads between write and read',
         'Register spilling',
         'Low occupancy',
       ],
@@ -400,7 +400,7 @@ export default defineQuestions(
       q: 'After fixing coalescing, load efficiency hits ~100% but runtime is unchanged. The conclusion is…',
       o: [
         'The fix failed',
-        'The kernel wasn’t bandwidth-bound — coalescing improved a non-limiting metric; re-check Speed-of-Light to find the true limiter (compute, latency, or another pipe)',
+        'Not bandwidth-bound; limiter is elsewhere',
         'Occupancy dropped',
         'ECC turned on',
       ],
@@ -419,7 +419,7 @@ export default defineQuestions(
       q: 'A high L2 hit rate with low DRAM throughput on a slow kernel suggests the limiter is…',
       o: [
         'DRAM bandwidth',
-        'The L2/L1/LSU path or compute — reuse is captured on-chip (so DRAM isn’t the issue); check pipe utilization (LSU/MIO throttle) and memory-instruction pressure',
+        'The L1/LSU path or compute, not DRAM',
         'Register spilling',
         'A divergent branch',
       ],
@@ -438,7 +438,7 @@ export default defineQuestions(
       q: 'You want clock-independent FLOP/s for a kernel. Nsight Compute computes it from…',
       o: [
         'The kernel name',
-        'FLOP-weighted instruction counts (e.g. FFMA = 2 FLOPs) summed and divided by the kernel duration — giving achieved FLOP/s to place on the roofline',
+        'FLOP instruction counts ÷ duration',
         'The register count',
         'The grid size',
       ],
@@ -457,7 +457,7 @@ export default defineQuestions(
       q: 'Two attention kernels are both tensor-bound but one has 2× the FLOP/s. The most informative comparison is…',
       o: [
         'Lines of code',
-        'Tensor-pipe utilization plus the stall breakdown — the faster one keeps the tensor pipe fed (fewer operand/barrier stalls) via better tiling/pipelining/swizzle',
+        'Tensor-pipe utilization and stall breakdown',
         'Register count alone',
         'Grid size',
       ],
@@ -476,7 +476,7 @@ export default defineQuestions(
       q: 'Before deep-diving a kernel in ncu, running nsys first ensures you…',
       o: [
         'Compile faster',
-        'Optimize what actually dominates: nsys shows each kernel’s share of runtime (and if the GPU is even the bottleneck) — don’t tune a kernel that’s 2% of the time',
+        'Optimize what dominates runtime',
         'Lock clocks',
         'Count FLOPs',
       ],
@@ -495,7 +495,7 @@ export default defineQuestions(
       q: 'A kernel shows high "Math Pipe Throttle." This means the limiter is…',
       o: [
         'Memory',
-        'The arithmetic pipeline is saturated (FMA/SFU/tensor) — the kernel is compute-bound on that pipe; reduce/rebalance that math (cheaper ops, fewer transcendentals, tensor cores)',
+        'The math pipe is saturated',
         'A barrier',
         'The host',
       ],
@@ -514,7 +514,7 @@ export default defineQuestions(
       q: 'ncu profiling is much slower than a normal run because…',
       o: [
         'It recompiles the kernel',
-        'It replays each kernel multiple times (kernel replay) to collect all hardware counters that can’t be gathered in one pass, restoring state between passes',
+        'It replays each kernel to collect all counters',
         'It runs on the CPU',
         'It disables caching',
       ],
@@ -533,7 +533,7 @@ export default defineQuestions(
       q: 'A multi-GPU job has efficient per-GPU kernels but poor scaling. Profiling should focus on…',
       o: [
         'Per-kernel ncu',
-        'The Nsight Systems multi-rank timeline: exposed NCCL communication, straggler/imbalance, and overlap quality — scaling losses are in communication/synchronization, not the kernels',
+        'Multi-rank comm and imbalance',
         'Register usage',
         'Bank conflicts',
       ],

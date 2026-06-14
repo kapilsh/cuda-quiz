@@ -39,7 +39,7 @@ export default defineQuestions(
       q: 'What is the main advantage of texture memory / texture objects for read access?',
       o: [
         'It is writable by all threads',
-        'It is cached with 2D spatial locality and offers hardware interpolation/addressing modes',
+        'Cached with 2D locality, plus hardware filtering',
         'It is faster than registers',
         'It has no size limit',
       ],
@@ -107,7 +107,7 @@ export default defineQuestions(
       q: 'When all threads in a warp read the SAME shared-memory address, what happens?',
       o: [
         'A 32-way bank conflict',
-        'A broadcast — it is served as a single access with no conflict',
+        'A broadcast — one access, no conflict',
         'Undefined behavior',
         'The read is serialized across banks',
       ],
@@ -136,7 +136,7 @@ export default defineQuestions(
       q: 'Zero-copy (mapped pinned) memory lets a kernel…',
       o: [
         'Avoid all memory access',
-        'Directly access host memory over the interconnect without an explicit cudaMemcpy',
+        'Access host memory directly, no cudaMemcpy',
         'Double the size of device memory',
         'Cache host memory in registers',
       ],
@@ -155,7 +155,7 @@ export default defineQuestions(
       q: 'cudaMemPrefetchAsync(ptr, bytes, device) is used with Unified Memory to…',
       o: [
         'Free managed memory',
-        'Proactively migrate managed pages to a device (or host) before they are accessed, avoiding page-fault stalls',
+        'Migrate managed pages before access',
         'Pin the pages permanently',
         'Convert managed memory to device memory',
       ],
@@ -174,7 +174,7 @@ export default defineQuestions(
       q: 'cudaMemAdvise with cudaMemAdviseSetReadMostly on managed memory does what?',
       o: [
         'Makes the memory immutable',
-        'Hints that the data is mostly read, so the driver can create read-only copies on multiple processors to avoid migration',
+        'Lets the driver replicate read-only copies',
         'Moves the data to the host',
         'Disables caching',
       ],
@@ -193,7 +193,7 @@ export default defineQuestions(
       q: 'You compute effective bandwidth as (bytes_read + bytes_written) / time. Why compare it to the GPU’s peak bandwidth?',
       o: [
         'To estimate occupancy',
-        'To judge how well a memory-bound kernel uses the available DRAM bandwidth and how much headroom remains',
+        'To gauge bandwidth efficiency and headroom',
         'To count FLOPs',
         'To measure latency',
       ],
@@ -212,7 +212,7 @@ export default defineQuestions(
       q: 'cp.async supports cache hints. What does the .cg (cache-global) hint do versus .ca (cache-all)?',
       o: [
         'Nothing; they are aliases',
-        '.cg bypasses L1 and caches only in L2, useful for streaming data unlikely to be reused at L1',
+        '.cg skips L1, caches only in L2',
         '.cg caches in registers',
         '.cg disables the copy',
       ],
@@ -231,7 +231,7 @@ export default defineQuestions(
       q: 'To declare two differently-typed arrays in a single dynamic shared-memory allocation, you…',
       o: [
         'Cannot — only one extern __shared__ array is allowed',
-        'Declare one extern __shared__ byte/char array and carve sub-arrays from it with computed offsets',
+        'Carve sub-arrays from one extern __shared__ block',
         'Use two separate launch parameters',
         'Use constant memory for the second array',
       ],
@@ -250,7 +250,7 @@ export default defineQuestions(
       q: 'The __align__(16) attribute on a struct used in a kernel helps because…',
       o: [
         'It makes the struct smaller',
-        'It guarantees alignment so loads/stores can use wide, coalesced (e.g. 16-byte) transactions',
+        'Guarantees alignment for wide coalesced loads',
         'It moves the struct to constant memory',
         'It enables atomics',
       ],
@@ -269,7 +269,7 @@ export default defineQuestions(
       q: 'The volatile qualifier on a pointer in a kernel forces the compiler to…',
       o: [
         'Cache the value in a register',
-        'Re-read the value from memory on each access instead of reusing a cached/register copy',
+        'Re-read from memory on each access',
         'Make the access atomic',
         'Place the variable in shared memory',
       ],
@@ -288,7 +288,7 @@ export default defineQuestions(
       q: 'Enabling ECC (error-correcting code) on a data-center GPU generally…',
       o: [
         'Has no effect on memory',
-        'Slightly reduces usable memory capacity and bandwidth in exchange for single-bit error correction',
+        'Costs some capacity/bandwidth for ECC',
         'Doubles the bandwidth',
         'Disables the L2 cache',
       ],
@@ -307,7 +307,7 @@ export default defineQuestions(
       q: 'Given a float* p, the expression p[i] computes the address as…',
       o: [
         'p + i (byte offset i)',
-        'p + i*sizeof(float) — pointer arithmetic scales by the element size',
+        'p + i*sizeof(float) (scaled by element size)',
         'p (i is ignored)',
         'p * i',
       ],
@@ -336,7 +336,7 @@ export default defineQuestions(
       q: 'cuda::memcpy_async with a pipeline object (libcu++/cooperative groups) primarily enables…',
       o: [
         'Synchronous shared-memory copies',
-        'A portable, multi-stage producer/consumer pipeline that overlaps global→shared copies with computation',
+        'A pipeline overlapping copies with compute',
         'Host-to-host copies',
         'Atomic memory operations',
       ],
@@ -355,7 +355,7 @@ export default defineQuestions(
       q: 'A warp accesses global memory with a stride of 2 floats (thread i reads a[2*i]). Compared to stride-1, this…',
       o: [
         'Is equally efficient',
-        'Wastes ~half the bandwidth because each fetched cache line is only half used',
+        'Wastes ~half the bandwidth (lines half-used)',
         'Causes a compile error',
         'Improves coalescing',
       ],
@@ -374,7 +374,7 @@ export default defineQuestions(
       q: 'cudaHostAlloc with the cudaHostAllocPortable flag means the pinned memory…',
       o: [
         'Can be paged out',
-        'Is treated as pinned by all CUDA contexts/devices in the process, not just the one that allocated it',
+        'Pinned for all contexts in the process',
         'Is mapped into the device address space',
         'Is write-combined',
       ],
@@ -393,7 +393,7 @@ export default defineQuestions(
       q: 'Write-combined pinned host memory (cudaHostAllocWriteCombined) is a good choice for buffers that are…',
       o: [
         'Read frequently by the host',
-        'Written by the host and read by the device, since WC speeds host writes and PCIe transfers but makes host reads very slow',
+        'Host-written, device-read (WC: slow host reads)',
         'Used only on the device',
         'Shared between two GPUs',
       ],
@@ -412,7 +412,7 @@ export default defineQuestions(
       q: 'Which statement about the L2 cache is correct?',
       o: [
         'It is private to each SM',
-        'It is shared by all SMs and caches global memory accesses device-wide',
+        'Shared by all SMs, caches global device-wide',
         'It only caches shared memory',
         'It is part of host memory',
       ],
@@ -431,7 +431,7 @@ export default defineQuestions(
       q: 'In a tiled transpose kernel, writing the transposed tile to global memory can be uncoalesced unless you…',
       o: [
         'Use atomics',
-        'Stage the tile in shared memory and read it out transposed, so global writes stay coalesced',
+        'Stage in shared memory, write out transposed',
         'Use constant memory',
         'Increase the block size to 1024',
       ],
@@ -450,7 +450,7 @@ export default defineQuestions(
       q: 'On Hopper, TMA copies use a "tensor map" descriptor created on the host. What does it encode?',
       o: [
         'The kernel’s register count',
-        'The global tensor’s shape, strides, element type, and tile/box dimensions used to drive multidimensional async copies',
+        'The tensor’s shape, strides, type, and tile',
         'The grid dimensions',
         'The stream priority',
       ],
@@ -479,7 +479,7 @@ export default defineQuestions(
       q: 'Why can adding more registers per thread sometimes IMPROVE performance despite lowering occupancy?',
       o: [
         'Registers are slower than shared memory',
-        'More registers enable instruction-level parallelism and data reuse in registers, which can hide latency better than extra warps would',
+        'More ILP and register reuse hides latency',
         'It never improves performance',
         'It increases the clock speed',
       ],
@@ -498,7 +498,7 @@ export default defineQuestions(
       q: 'cudaMemcpy2D and the "pitch" parameter exist to handle…',
       o: [
         '3D textures only',
-        'Copying 2D regions where rows are padded (pitched) so each row is aligned, by specifying source/destination row strides',
+        'Copying pitched 2D regions with row strides',
         'Asynchronous copies',
         'Compressed data',
       ],
@@ -517,7 +517,7 @@ export default defineQuestions(
       q: 'Distributed Shared Memory (DSMEM) on Hopper is accessed using…',
       o: [
         'Ordinary global pointers',
-        'A mapped shared-memory address of another block in the same cluster (via cluster.map_shared_rank or mapped pointers)',
+        'A mapped pointer to a peer block’s shared memory',
         'cudaMemcpy',
         'Texture fetches',
       ],
@@ -536,7 +536,7 @@ export default defineQuestions(
       q: 'A kernel reads an input array once and writes an output once (pure streaming, no reuse). Its performance ceiling is set by…',
       o: [
         'The number of registers',
-        'DRAM bandwidth — it is memory-bound with arithmetic intensity near zero',
+        'DRAM bandwidth (memory-bound, low intensity)',
         'The instruction cache',
         'Warp divergence',
       ],

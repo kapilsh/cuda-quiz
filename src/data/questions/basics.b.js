@@ -30,7 +30,7 @@ export default defineQuestions(
       q: 'cudaGetErrorString(err) returns what?',
       o: [
         'The numeric error code',
-        'A human-readable description of the cudaError_t value',
+        'A readable description of the error',
         'The name of the kernel that failed',
         'The line number of the error',
       ],
@@ -49,7 +49,7 @@ export default defineQuestions(
       q: 'How are by-value kernel arguments (e.g. an int or a small struct) delivered to the device?',
       o: [
         'Through global memory the host must allocate',
-        'They are passed in a dedicated constant/parameter bank, with a limited total size',
+        'In a constant/parameter bank with a size limit',
         'Each argument becomes a separate cudaMemcpy',
         'They are pushed onto each thread’s local stack individually',
       ],
@@ -68,7 +68,7 @@ export default defineQuestions(
       q: 'You call printf() inside a __global__ kernel. What is true?',
       o: [
         'It is not allowed and fails to compile',
-        'It is supported; output is buffered on the device and flushed to the host on synchronization',
+        'Supported; output is flushed on synchronization',
         'It prints immediately, ahead of all host output',
         'It only works in the debugger',
       ],
@@ -87,7 +87,7 @@ export default defineQuestions(
       q: 'What does the __launch_bounds__(maxThreadsPerBlock, minBlocksPerSM) qualifier on a kernel tell the compiler?',
       o: [
         'To launch the kernel with exactly that configuration',
-        'Limits used to guide register allocation so the kernel can hit the desired occupancy',
+        'Register-allocation limits to hit a target occupancy',
         'The amount of shared memory to reserve',
         'The number of streams to use',
       ],
@@ -106,7 +106,7 @@ export default defineQuestions(
       q: 'Inside a kernel, what does gridDim.x give you?',
       o: [
         'The index of the current block',
-        'The number of blocks in the x-dimension of the grid',
+        'Number of blocks along x',
         'The number of threads in the block',
         'The total number of threads',
       ],
@@ -125,7 +125,7 @@ export default defineQuestions(
       q: 'What does blockDim.x give you inside a kernel?',
       o: [
         'The number of blocks in the grid',
-        'The number of threads per block along the x-dimension',
+        'Threads per block along x',
         'The current block index',
         'The number of warps in the grid',
       ],
@@ -144,7 +144,7 @@ export default defineQuestions(
       q: 'cudaMemset(ptr, 0, bytes) does what?',
       o: [
         'Allocates and zeroes device memory',
-        'Sets each byte of a device buffer to the given value (here 0)',
+        'Sets each byte to the given value',
         'Copies zeros from the host',
         'Frees the buffer',
       ],
@@ -173,7 +173,7 @@ export default defineQuestions(
       q: 'How does nvcc handle a .cu file that mixes host and device code?',
       o: [
         'It compiles everything for the GPU',
-        'It separates host and device code: device code → PTX/SASS, host code → handed to the host C++ compiler',
+        'Splits device code from host code for each compiler',
         'It requires you to split host and device into different files',
         'It runs host code on the GPU via emulation',
       ],
@@ -222,7 +222,7 @@ export default defineQuestions(
       q: 'cudaMemcpy(dst, src, n, cudaMemcpyDeviceToDevice) does what?',
       o: [
         'Copies from host to device',
-        'Copies between two device buffers (possibly on the same GPU)',
+        'Copies between two device buffers',
         'Copies device memory to a file',
         'Is not a valid copy kind',
       ],
@@ -241,7 +241,7 @@ export default defineQuestions(
       q: 'What is the practical difference between cudaPeekAtLastError() and cudaGetLastError()?',
       o: [
         'They are identical',
-        'Both return the last error, but cudaGetLastError also resets the error state to cudaSuccess; cudaPeekAtLastError leaves it',
+        'Get also clears the error state; Peek leaves it',
         'cudaPeekAtLastError blocks until the device is idle',
         'cudaGetLastError only works in debug builds',
       ],
@@ -270,7 +270,7 @@ export default defineQuestions(
       q: 'cudaMalloc’s signature is cudaMalloc(void** devPtr, size_t size). Why a void** (pointer-to-pointer)?',
       o: [
         'To support 2D allocations',
-        'So the function can write the allocated device address back into your pointer variable, while returning a cudaError_t status',
+        'It writes the pointer out; returns a status',
         'Because device pointers are 128 bits',
         'To allow allocating multiple buffers at once',
       ],
@@ -289,7 +289,7 @@ export default defineQuestions(
       q: 'cudaDeviceReset() does what?',
       o: [
         'Reboots the physical GPU',
-        'Destroys the current device’s context and frees all its resources for the calling process',
+        'Destroys the context, frees resources',
         'Clears all global memory to zero',
         'Resets only the default stream',
       ],
@@ -308,7 +308,7 @@ export default defineQuestions(
       q: 'cudaMallocPitch is preferred over cudaMalloc for 2D arrays because…',
       o: [
         'It is faster to allocate',
-        'It pads each row to a hardware-friendly alignment (the "pitch"), so row accesses stay coalesced',
+        'It pads rows to an aligned pitch',
         'It allocates in shared memory',
         'It allows arrays larger than global memory',
       ],
@@ -327,7 +327,7 @@ export default defineQuestions(
       q: 'Passing a host-allocated struct by value to a kernel works, but a pointer member inside that struct pointing to host memory will…',
       o: [
         'Be automatically copied to the device',
-        'Be invalid on the device — the pointer still refers to host memory',
+        'Invalid — it still points to host memory',
         'Cause a compile error',
         'Be converted to a device pointer',
       ],
@@ -376,7 +376,7 @@ export default defineQuestions(
       q: 'Why might cudaMemcpyAsync still behave synchronously (block the host) even though it is the "async" variant?',
       o: [
         'Async copies are never truly asynchronous',
-        'If the host memory is pageable (not pinned), the runtime must stage through a pinned buffer, which serializes the copy',
+        'Pageable memory is staged through a pinned buffer',
         'Because the default stream is always used',
         'Because the destination is on the device',
       ],
@@ -405,7 +405,7 @@ export default defineQuestions(
       q: 'You launch a kernel, then immediately call cudaMemcpy to copy its results to the host (default stream). Do you need an explicit cudaDeviceSynchronize between them?',
       o: [
         'Yes, otherwise the copy reads stale data',
-        'No — the blocking cudaMemcpy on the default stream waits for the kernel to finish first',
+        'No — the blocking copy waits for the kernel first',
         'Only on multi-GPU systems',
         'Only if the kernel uses shared memory',
       ],
@@ -439,7 +439,7 @@ export default defineQuestions(
       q: 'cudaGetDeviceCount(&n) reports what?',
       o: [
         'The number of SMs on the current GPU',
-        'The number of CUDA-capable GPUs visible to the process',
+        'Number of visible CUDA GPUs',
         'The number of streams created',
         'The number of running kernels',
       ],
@@ -454,7 +454,7 @@ export default defineQuestions(
       q: 'Setting the environment variable CUDA_VISIBLE_DEVICES=1 before running a program causes…',
       o: [
         'The program to use 1 GB of memory',
-        'Only physical GPU 1 to be visible, and it appears to the program as device 0',
+        'Only GPU 1 is visible, renumbered to device 0',
         'The program to run on the CPU',
         'Verbose CUDA logging',
       ],
@@ -511,7 +511,7 @@ export default defineQuestions(
       q: 'cudaGetErrorName vs cudaGetErrorString — the difference is…',
       o: [
         'They are the same',
-        'cudaGetErrorName returns the symbolic enum name (e.g. "cudaErrorMemoryAllocation"); cudaGetErrorString returns the prose description',
+        'Name → the enum identifier; String → the prose',
         'cudaGetErrorName works only on the device',
         'cudaGetErrorString returns a numeric code',
       ],
@@ -530,7 +530,7 @@ export default defineQuestions(
       q: 'A grid-stride loop uses the stride blockDim.x * gridDim.x because that equals…',
       o: [
         'The number of blocks',
-        'The total number of threads in the grid (so each pass advances by one full grid)',
+        'The total threads in the grid',
         'The warp size times the block count',
         'The number of SMs',
       ],

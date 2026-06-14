@@ -22,7 +22,7 @@ export default defineQuestions('synchronization', [
     q: 'Why is calling __syncthreads() inside a divergent branch (where only some threads reach it) dangerous?',
     o: [
       'It uses too many registers',
-      'It can deadlock or cause undefined behavior because the barrier requires all threads of the block to arrive',
+      'It can deadlock; the barrier needs all threads',
       'It always works fine',
       'It silently skips the barrier',
     ],
@@ -36,7 +36,7 @@ export default defineQuestions('synchronization', [
     q: 'What problem do atomic operations (e.g. atomicAdd) solve?',
     o: [
       'They speed up coalesced writes',
-      'They provide read-modify-write to a memory location without race conditions when many threads update it',
+      'Race-free read-modify-write on a location',
       'They synchronize the whole grid',
       'They reduce register usage',
     ],
@@ -50,7 +50,7 @@ export default defineQuestions('synchronization', [
     q: 'A histogram kernel with all threads doing atomicAdd to global bins is slow. A common optimization is to…',
     o: [
       'Remove the atomics and accept wrong results',
-      'Accumulate into a per-block histogram in shared memory, then atomically merge to global once per bin',
+      'Per-block shared-memory histogram, then merge',
       'Use a larger block size',
       'Switch to constant memory for the bins',
     ],
@@ -64,7 +64,7 @@ export default defineQuestions('synchronization', [
     q: 'Which return value does atomicAdd provide?',
     o: [
       'void',
-      'The old value stored at the address before the addition',
+      'The old value before the addition',
       'The new value after the addition',
       'A boolean success flag',
     ],
@@ -78,7 +78,7 @@ export default defineQuestions('synchronization', [
     q: 'What does atomicCAS(addr, compare, val) do, and why is it powerful?',
     o: [
       'Adds val if it is larger; used for max',
-      'Atomically: if *addr == compare, set *addr = val; returns old value — it can build arbitrary atomic operations via a retry loop',
+      'If *addr==compare, set val; returns old',
       'Copies addr to compare',
       'Clears the address',
     ],
@@ -92,7 +92,7 @@ export default defineQuestions('synchronization', [
     q: 'Why does __syncthreads() alone NOT guarantee correctness for inter-block communication through global memory?',
     o: [
       'It only orders register accesses',
-      'It synchronizes within a block; across blocks you need memory fences (__threadfence) and the blocks may not even be concurrently resident',
+      'It is block-scoped; cross-block needs fences',
       'It is too slow',
       'Global memory cannot be shared between blocks',
     ],
@@ -106,7 +106,7 @@ export default defineQuestions('synchronization', [
     q: 'What is the role of __threadfence()?',
     o: [
       'It blocks all threads until they reach it',
-      'It ensures the calling thread’s prior memory writes are visible to other threads (at device scope) before subsequent writes — an ordering fence, not a barrier',
+      'Orders prior writes visible device-wide (not a barrier)',
       'It flushes the L2 cache to host',
       'It synchronizes the warp',
     ],
@@ -120,7 +120,7 @@ export default defineQuestions('synchronization', [
     q: 'In the classic "threadfence reduction" / last-block trick, atomicInc + __threadfence is used to…',
     o: [
       'Speed up shared-memory reductions',
-      'Let the last block to finish detect that all other blocks’ partial results are written and visible, so it can do the final combine in one launch',
+      'The last block detects all partials are visible',
       'Avoid using shared memory',
       'Synchronize warps',
     ],
@@ -134,7 +134,7 @@ export default defineQuestions('synchronization', [
     q: 'A data race in a CUDA kernel occurs when…',
     o: [
       'Two threads read the same value',
-      'Two or more threads access the same memory location concurrently, at least one writes, with no synchronization ordering them',
+      'Concurrent same-location access, ≥1 write, unordered',
       'A thread reads constant memory',
       'A warp diverges',
     ],
@@ -148,7 +148,7 @@ export default defineQuestions('synchronization', [
     q: 'Why can atomics on global memory become a serialization bottleneck?',
     o: [
       'They disable caching',
-      'When many threads target the same address, the hardware serializes the updates, so contention scales poorly',
+      'Same-address updates are serialized',
       'They require __syncthreads',
       'They always go to local memory',
     ],
@@ -162,7 +162,7 @@ export default defineQuestions('synchronization', [
     q: 'Warp-aggregated atomics improve performance by…',
     o: [
       'Using one atomic per thread but in shared memory',
-      'Having the warp compute a single combined update (e.g. via ballot/prefix-sum) and issuing one atomic per warp instead of per thread',
+      'One combined atomic per warp, not per thread',
       'Disabling atomics for diverged warps',
       'Replacing atomics with __syncthreads',
     ],
@@ -176,7 +176,7 @@ export default defineQuestions('synchronization', [
     q: 'On Hopper, the asynchronous transaction barrier (mbarrier) is used primarily to…',
     o: [
       'Replace __syncthreads for all kernels',
-      'Coordinate completion of asynchronous operations (e.g. TMA/cp.async copies) so consumer threads wait until data has arrived in shared memory',
+      'Signal completion of async copies (TMA/cp.async)',
       'Synchronize across GPUs',
       'Order atomic operations',
     ],
@@ -190,7 +190,7 @@ export default defineQuestions('synchronization', [
     q: 'After writing to shared memory in one phase and reading it in the next, you must place __syncthreads() because…',
     o: [
       'Shared memory is slow',
-      'Without the barrier, a thread might read a location before the producing thread has written it',
+      'A read could beat the producing write',
       'It resets shared memory',
       'It improves coalescing',
     ],

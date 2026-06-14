@@ -10,7 +10,7 @@ export default defineQuestions(
       q: 'Theoretical peak memory bandwidth from cudaDeviceProp is computed as…',
       o: [
         'memoryClockRate × multiProcessorCount',
-        '(memoryClockRate(kHz) × 1000 × memoryBusWidth(bits)/8 × 2) — clock × bus width, ×2 for DDR',
+        'clock × bus width / 8 × 2 (for DDR)',
         'totalGlobalMem / clockRate',
         'busWidth × warpSize',
       ],
@@ -29,7 +29,7 @@ export default defineQuestions(
       q: 'cudaDriverGetVersion and cudaRuntimeGetVersion can differ; the compatibility rule is…',
       o: [
         'They must be identical',
-        'The installed driver version must be ≥ the CUDA runtime/toolkit version the app was built with (newer driver runs older runtime)',
+        'Driver version must be ≥ the runtime version',
         'The runtime must be newer than the driver',
         'Versions are unrelated',
       ],
@@ -48,7 +48,7 @@ export default defineQuestions(
       q: 'Lazy module loading (CUDA_MODULE_LOADING=LAZY, default in recent CUDA) improves startup by…',
       o: [
         'Compiling kernels faster',
-        'Loading kernels/modules into the context only when first used, reducing initial load time and memory for large binaries with many unused kernels',
+        'It loads modules only when first used',
         'Disabling JIT',
         'Skipping error checks',
       ],
@@ -67,7 +67,7 @@ export default defineQuestions(
       q: 'cudaSetDeviceFlags(cudaDeviceScheduleBlockingSync) changes how the host waits at synchronization to…',
       o: [
         'Spin on the CPU (busy-wait)',
-        'Block the host thread (yielding the CPU) instead of spinning, lowering CPU usage at the cost of slightly higher wake-up latency',
+        'Block (sleep) the host thread instead of spinning',
         'Disable synchronization',
         'Use more GPUs',
       ],
@@ -86,7 +86,7 @@ export default defineQuestions(
       q: 'CUDA IPC (cudaIpcGetMemHandle / cudaIpcOpenMemHandle) lets you…',
       o: [
         'Copy memory faster',
-        'Share a device memory allocation between separate PROCESSES on the same node (e.g. for zero-copy producer/consumer across processes)',
+        'Share device memory between processes on a node',
         'Share memory across nodes',
         'Allocate pinned memory',
       ],
@@ -105,7 +105,7 @@ export default defineQuestions(
       q: 'The __half and __half2 types (from cuda_fp16.h) are used to…',
       o: [
         'Store FP32',
-        'Represent FP16 values; __half2 packs two halves so packed instructions (hadd2, hmul2) process two at once',
+        'Represent FP16; __half2 packs two',
         'Represent FP64',
         'Store integers',
       ],
@@ -124,7 +124,7 @@ export default defineQuestions(
       q: '__popc(x) computes…',
       o: [
         'The position of the highest set bit',
-        'The population count — the number of set (1) bits in x',
+        'The number of set bits in x',
         'x modulo the population',
         'The parity only',
       ],
@@ -143,7 +143,7 @@ export default defineQuestions(
       q: 'cudaMemsetAsync differs from cudaMemset in that it…',
       o: [
         'Sets a different value',
-        'Is stream-ordered/asynchronous (returns immediately, runs on the given stream), enabling overlap',
+        'It is stream-ordered and asynchronous',
         'Runs on the host',
         'Sets 4-byte words',
       ],
@@ -162,7 +162,7 @@ export default defineQuestions(
       q: 'The device printf buffer size is controlled by…',
       o: [
         'It is unlimited',
-        'cudaDeviceSetLimit(cudaLimitPrintfFifoSize, bytes) — raising it prevents dropped output when many threads print',
+        'cudaLimitPrintfFifoSize',
         'The block size',
         'cudaMemset',
       ],
@@ -181,7 +181,7 @@ export default defineQuestions(
       q: 'GPU "compute mode" (e.g. EXCLUSIVE_PROCESS via nvidia-smi -c) controls…',
       o: [
         'The precision',
-        'Whether multiple processes/contexts may use the GPU concurrently — exclusive modes restrict it to one process, preventing accidental sharing',
+        'Whether processes may share the GPU',
         'The clock speed',
         'The memory size',
       ],
@@ -200,7 +200,7 @@ export default defineQuestions(
       q: 'Enabling "persistence mode" (nvidia-smi -pm 1) helps because it…',
       o: [
         'Saves GPU memory',
-        'Keeps the driver loaded/initialized so the first CUDA call in a process doesn’t pay the (slow) driver init cost each time',
+        'Keeps the driver loaded to avoid re-init',
         'Increases clocks',
         'Enables MIG',
       ],
@@ -219,7 +219,7 @@ export default defineQuestions(
       q: 'A "primary context" (driver API) is…',
       o: [
         'A user-created context',
-        'The per-device context the CUDA runtime manages and shares; most apps use it implicitly via the runtime API, rather than creating their own contexts',
+        'The shared per-device context',
         'A host thread',
         'A stream',
       ],
@@ -238,7 +238,7 @@ export default defineQuestions(
       q: 'A downside of allocating large amounts of pinned (page-locked) host memory is that it…',
       o: [
         'Is slower to access on the host',
-        'Reduces the pageable memory available to the OS/other processes (it can’t be swapped), so over-pinning can degrade overall system performance',
+        'It reduces pageable memory for the system',
         'Cannot be used for transfers',
         'Is stored on the GPU',
       ],
@@ -257,7 +257,7 @@ export default defineQuestions(
       q: 'make_float4(a,b,c,d) and the float4 type are used to…',
       o: [
         'Allocate memory',
-        'Construct a 16-byte vector type so a single load/store moves 4 floats (vectorized memory access), improving memory-instruction efficiency',
+        'Loads/stores 4 floats at once',
         'Run on the host only',
         'Store a matrix',
       ],
@@ -276,7 +276,7 @@ export default defineQuestions(
       q: 'Atomic operations on 8-bit (char) or 16-bit (short) types are…',
       o: [
         'Fully supported natively',
-        'Not directly supported for most ops — you typically operate on a 32-bit container with atomicCAS and bit-masking to update a sub-word',
+        'Mostly unsupported; emulate via 32-bit atomicCAS',
         'Faster than 32-bit atomics',
         'Only on the host',
       ],
@@ -295,7 +295,7 @@ export default defineQuestions(
       q: 'On compute capability 6.0+, managed memory supports concurrent access by CPU and GPU because…',
       o: [
         'It is copied each time',
-        'Hardware page faulting allows on-demand migration at page granularity, so CPU and GPU can access managed memory concurrently (with proper synchronization) rather than requiring exclusive phases',
+        'Page faulting migrates pages on demand',
         'It is read-only',
         'It uses constant memory',
       ],
@@ -314,7 +314,7 @@ export default defineQuestions(
       q: 'A kernel launches fine on your dev GPU but fails with "invalid device function" on a deployment GPU. The cause is usually…',
       o: [
         'Out of memory',
-        'The binary lacks SASS/PTX compatible with the deployment GPU’s architecture (wrong -gencode), so no matching kernel image exists',
+        'No SASS/PTX matches the deployment GPU',
         'A race condition',
         'Too many registers',
       ],
@@ -333,7 +333,7 @@ export default defineQuestions(
       q: '__half2 packed math (e.g. __hadd2) is beneficial because it…',
       o: [
         'Improves accuracy',
-        'Performs two FP16 operations per instruction (SIMD within a 32-bit register), roughly doubling FP16 elementwise throughput on the CUDA cores',
+        'Two FP16 ops per instruction',
         'Uses tensor cores',
         'Reduces memory',
       ],
@@ -352,7 +352,7 @@ export default defineQuestions(
       q: 'cudaDeviceProp.sharedMemPerMultiprocessor vs sharedMemPerBlock tells you…',
       o: [
         'They are the same',
-        'The total shared memory per SM vs. the per-block default limit; the per-SM total bounds how many blocks’ shared memory can coexist (occupancy)',
+        'Shared memory per SM vs. per-block limit',
         'The register count',
         'The L2 size',
       ],
@@ -371,7 +371,7 @@ export default defineQuestions(
       q: 'In CUDA 12’s dynamic parallelism (CDP2), a notable change is that a parent kernel…',
       o: [
         'Can no longer launch children',
-        'Cannot call cudaDeviceSynchronize on the device to wait for child grids (that legacy behavior was removed); synchronization uses other mechanisms (e.g. tail launch / streams)',
+        'Device-side cudaDeviceSynchronize was removed',
         'Must run on the host',
         'Always waits for children',
       ],
@@ -390,7 +390,7 @@ export default defineQuestions(
       q: 'cudaMemcpy with cudaMemcpyDefault (instead of an explicit kind) works because…',
       o: [
         'It guesses randomly',
-        'Under Unified Virtual Addressing the runtime infers the direction from the pointers’ memory types',
+        'UVA lets the runtime infer the direction',
         'It always copies host-to-device',
         'It runs on the CPU',
       ],
@@ -409,7 +409,7 @@ export default defineQuestions(
       q: '__funnelshift_l/_r and bit intrinsics like __brev are useful for…',
       o: [
         'Floating-point math',
-        'Efficient bit-level operations (funnel shifts, bit reversal) used in hashing, bit-packing, sorting (radix), and crypto-style kernels',
+        'Efficient bit-level ops (shifts, reversal)',
         'Memory allocation',
         'Reductions only',
       ],
@@ -428,7 +428,7 @@ export default defineQuestions(
       q: 'On WSL2 (Windows Subsystem for Linux), CUDA works because…',
       o: [
         'It emulates the GPU on the CPU',
-        'A GPU-paravirtualization path lets the Linux CUDA stack use the Windows host’s NVIDIA driver, exposing the real GPU to WSL2',
+        'Linux CUDA uses the Windows host GPU driver',
         'It uses a software renderer',
         'It requires a second GPU',
       ],
@@ -447,7 +447,7 @@ export default defineQuestions(
       q: 'cudaDeviceProp.regsPerBlock and regsPerMultiprocessor matter because…',
       o: [
         'They set the clock',
-        'They cap the total registers available; per-thread register usage × resident threads must fit, so they bound occupancy alongside shared memory',
+        'They cap total registers, bounding occupancy',
         'They set the L2 size',
         'They are unused',
       ],
@@ -466,7 +466,7 @@ export default defineQuestions(
       q: 'Why might two host threads sharing one device benefit from each having its own stream and using the per-thread default stream?',
       o: [
         'It is required',
-        'The legacy default stream serializes across threads; per-thread default streams (or explicit streams) let each thread’s work proceed concurrently without implicit cross-thread synchronization',
+        'Per-thread default streams avoid serialization',
         'It saves memory',
         'It increases precision',
       ],
@@ -485,7 +485,7 @@ export default defineQuestions(
       q: 'cudaDeviceProp.concurrentKernels indicates…',
       o: [
         'The number of kernels',
-        'Whether the device supports running multiple kernels concurrently (on different streams) — a capability flag',
+        'Whether kernels can run concurrently',
         'The grid size',
         'The warp size',
       ],
@@ -504,7 +504,7 @@ export default defineQuestions(
       q: 'asyncEngineCount in cudaDeviceProp tells you…',
       o: [
         'The number of SMs',
-        'How many copy engines (DMA) the GPU has — e.g. 2 means it can overlap H2D and D2H transfers with compute simultaneously',
+        'How many copy (DMA) engines the GPU has',
         'The number of streams',
         'The register count',
       ],
@@ -523,7 +523,7 @@ export default defineQuestions(
       q: 'min(a,b) and max(a,b) for integers in CUDA typically compile to…',
       o: [
         'A branch (if/else)',
-        'Single hardware min/max instructions (branchless), so using them avoids divergence versus a manual comparison',
+        'Single branchless min/max instructions',
         'A function call',
         'A loop',
       ],
@@ -542,7 +542,7 @@ export default defineQuestions(
       q: 'cuModuleLoadDataEx (driver API) with JIT options lets you…',
       o: [
         'Run kernels on the CPU',
-        'Load PTX and JIT-compile it at runtime with control over options (target arch, optimization, register cap) and retrieve the compilation log — used by frameworks/JIT systems',
+        'JIT-compile PTX at runtime with options',
         'Profile kernels',
         'Allocate pinned memory',
       ],

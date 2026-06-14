@@ -18,7 +18,7 @@ export default defineQuestions(
     {
       d: 4,
       q: 'The register file per SM on recent architectures (e.g. Ampere/Hopper) is about…',
-      o: ['8 KB', '64 KB', '256 KB (65,536 32-bit registers)', '4 MB'],
+      o: ['8 KB', '64 KB', '256 KB (65,536 registers)', '4 MB'],
       a: 2,
       x: ['16 KB', '128 KB', '1 MB'],
       e: 'Each SM has a 256 KB register file = 65,536 32-bit registers, shared by all resident threads. With a 255-register-per-thread cap and 2048 resident threads, register demand directly limits occupancy.',
@@ -30,7 +30,7 @@ export default defineQuestions(
       q: 'Ampere added "structured sparsity" (2:4). What does it accelerate?',
       o: [
         'Random sparse matrices',
-        'Matrices pruned so that 2 of every 4 elements are zero, letting tensor cores skip the zeros for ~2× throughput',
+        '2:4 pruned matrices; skip zeros for ~2×',
         'Sparse graph traversal',
         'All-reduce',
       ],
@@ -49,7 +49,7 @@ export default defineQuestions(
       q: 'Hopper’s DPX instructions accelerate…',
       o: [
         'Double-precision matmul',
-        'Dynamic programming algorithms (e.g. Smith-Waterman, Floyd-Warshall) via fused min/max/add operations',
+        'Dynamic programming (fused min/max/add)',
         'Data prefetching',
         'Display output',
       ],
@@ -68,7 +68,7 @@ export default defineQuestions(
       q: 'Multi-Instance GPU (MIG) on A100/H100 lets you…',
       o: [
         'Combine multiple GPUs into one',
-        'Partition one GPU into several isolated instances, each with dedicated SMs, L2 slices, and memory',
+        'Partition a GPU into isolated instances',
         'Overclock the GPU',
         'Share a GPU across nodes',
       ],
@@ -87,7 +87,7 @@ export default defineQuestions(
       q: 'Why do data-center GPUs use HBM while most consumer GPUs use GDDR?',
       o: [
         'HBM is cheaper',
-        'HBM offers much higher bandwidth (wide stacked interface) suited to HPC/AI, at higher cost; GDDR is cheaper and adequate for graphics',
+        'HBM: higher bandwidth, higher cost; GDDR cheaper',
         'GDDR is faster',
         'HBM has more capacity always',
       ],
@@ -106,7 +106,7 @@ export default defineQuestions(
       q: 'Unified Virtual Addressing (UVA) provides…',
       o: [
         'Automatic data migration',
-        'A single virtual address space so the runtime can infer from a pointer whether it is host or device memory (enabling cudaMemcpyDefault and P2P)',
+        'One address space across host and device',
         'More physical memory',
         'Faster kernels',
       ],
@@ -135,7 +135,7 @@ export default defineQuestions(
       q: 'GPUDirect RDMA enables…',
       o: [
         'GPUs to render directly to a display',
-        'A network adapter (NIC) to DMA directly to/from GPU memory, bypassing a staging copy through host memory',
+        'A NIC to DMA directly to/from GPU memory',
         'Direct CPU access to registers',
         'Faster PCIe enumeration',
       ],
@@ -164,7 +164,7 @@ export default defineQuestions(
       q: 'Blackwell (B200) is notable architecturally for…',
       o: [
         'Being a single small die',
-        'Using two reticle-limited dies connected by a high-bandwidth die-to-die link (NV-HBI), presented as one unified GPU',
+        'Two dies joined by NV-HBI as one GPU',
         'Removing tensor cores',
         'Dropping NVLink',
       ],
@@ -193,7 +193,7 @@ export default defineQuestions(
       q: 'The Grace Hopper superchip connects the Grace CPU and Hopper GPU with…',
       o: [
         'PCIe Gen4',
-        'NVLink-C2C, a coherent ~900 GB/s CPU–GPU link giving the GPU fast access to CPU (LPDDR) memory',
+        'NVLink-C2C, a coherent ~900 GB/s CPU–GPU link',
         'A standard Ethernet link',
         'Shared HBM',
       ],
@@ -212,7 +212,7 @@ export default defineQuestions(
       q: 'Each SM has a small, fast instruction cache. Why does instruction footprint sometimes matter for performance?',
       o: [
         'It never matters',
-        'Very large/unrolled kernels can exceed the I-cache, causing instruction fetch stalls',
+        'Large kernels can overflow the I-cache',
         'It changes occupancy directly',
         'It controls coalescing',
       ],
@@ -231,7 +231,7 @@ export default defineQuestions(
       q: 'GPU boost clocks mean a kernel’s runtime can vary because…',
       o: [
         'The code changes',
-        'The GPU dynamically scales clocks with thermal/power headroom, so back-to-back runs may clock differently',
+        'Clocks scale with thermal/power headroom',
         'Occupancy changes each run',
         'Memory size changes',
       ],
@@ -250,7 +250,7 @@ export default defineQuestions(
       q: 'A "GPC" (GPU Processing Cluster) groups together…',
       o: [
         'Several GPUs',
-        'A set of SMs (plus shared front-end/raster resources) within the GPU',
+        'A set of SMs within the GPU',
         'The memory controllers only',
         'A single warp',
       ],
@@ -269,7 +269,7 @@ export default defineQuestions(
       q: 'The memory subsystem is partitioned: each memory partition has a slice of L2 and a set of DRAM channels. A consequence is that…',
       o: [
         'All addresses map to one channel',
-        'Addresses are interleaved across partitions/channels, so spreading accesses across the address space maximizes achievable bandwidth',
+        'Addresses interleave across channels',
         'L2 is per-SM',
         'DRAM has a single channel',
       ],
@@ -298,7 +298,7 @@ export default defineQuestions(
       q: 'Compute preemption (CC 6.0+) allows…',
       o: [
         'Kernels to run faster',
-        'A long-running kernel to be preempted at instruction granularity so other contexts (e.g. the desktop/debugger) can use the GPU',
+        'Preempt a kernel at instruction granularity',
         'Two kernels to share a warp',
         'Blocks to migrate between SMs',
       ],
@@ -317,7 +317,7 @@ export default defineQuestions(
       q: 'Why does TMA on Hopper pair naturally with thread block clusters and DSMEM?',
       o: [
         'They are unrelated',
-        'TMA can multicast a loaded tile into the shared memory of multiple blocks in a cluster, amortizing a global load across the cluster',
+        'TMA can multicast a tile to cluster blocks',
         'TMA requires clusters to compile',
         'Clusters disable TMA',
       ],
@@ -336,7 +336,7 @@ export default defineQuestions(
       q: 'Tensor cores deliver their headline FLOP numbers only for workloads shaped like…',
       o: [
         'Elementwise vector ops',
-        'Dense matrix multiply / convolution (GEMM-shaped) in supported precisions',
+        'Dense matmul/convolution (GEMM-shaped)',
         'Pointer-chasing/graph traversal',
         'Random scatter/gather',
       ],
@@ -355,7 +355,7 @@ export default defineQuestions(
       q: 'Why are the per-SM "FP32 cores" sometimes able to also execute INT32, and what is the effect on a mixed loop?',
       o: [
         'They cannot do INT32',
-        'Some lanes are shared FP32/INT32 units, so heavy integer index math competes with FP32 throughput on those lanes',
+        'Shared FP32/INT32 lanes; integer math competes',
         'INT32 always runs on tensor cores',
         'INT32 is free',
       ],
@@ -374,7 +374,7 @@ export default defineQuestions(
       q: 'The constant cache and read-only (texture) cache both serve reads; the constant cache is optimized for…',
       o: [
         'Large streaming data',
-        'Uniform access where all threads in a warp read the same address (broadcast), with a small (64 KB) backing store',
+        'Uniform broadcast reads (same address)',
         'Random writes',
         'Atomic operations',
       ],
@@ -393,7 +393,7 @@ export default defineQuestions(
       q: 'On Hopper, "thread block clusters" map to hardware such that all blocks in a cluster reside…',
       o: [
         'On any SMs across the GPU',
-        'On SMs within a single GPC, enabling the SM-to-SM network for DSMEM and cluster barriers',
+        'On SMs within a single GPC',
         'On different GPUs',
         'On the same SM',
       ],
@@ -412,7 +412,7 @@ export default defineQuestions(
       q: 'Why is the L2 cache size relevant when choosing a tiling/blocking strategy across thread blocks?',
       o: [
         'It is not relevant',
-        'Data reused by many blocks (e.g. a shared operand) ideally fits in L2 so it is served on-chip rather than re-fetched from HBM',
+        'Cross-block reused data ideally fits in L2',
         'L2 holds registers',
         'L2 is per-thread',
       ],
@@ -431,7 +431,7 @@ export default defineQuestions(
       q: 'A reason FP64 matters far less for deep learning than for HPC is that…',
       o: [
         'DL never uses floating point',
-        'DL tolerates low precision (FP16/BF16/FP8) for speed, while HPC simulations often need FP64 accuracy/stability',
+        'DL tolerates low precision; HPC needs FP64',
         'FP64 is faster on all GPUs',
         'HPC uses only integers',
       ],
@@ -450,7 +450,7 @@ export default defineQuestions(
       q: 'Why can a kernel that fits more shared memory per block on Hopper (up to ~228 KB) than on older GPUs enable better performance?',
       o: [
         'Larger shared memory is always slower',
-        'Bigger tiles fit on-chip, raising data reuse (arithmetic intensity) and enabling deeper pipelines for GEMM/attention',
+        'Bigger tiles raise reuse and deepen pipelines',
         'It increases the clock',
         'It removes the need for registers',
       ],
@@ -469,7 +469,7 @@ export default defineQuestions(
       q: 'The "LSU" (Load/Store Unit) count per sub-partition limits…',
       o: [
         'FP32 throughput',
-        'The rate at which memory (global/shared/local) instructions can be issued, so memory-instruction-heavy kernels can bottleneck on it',
+        'The rate memory instructions can issue',
         'Tensor-core throughput',
         'Register allocation',
       ],
@@ -488,7 +488,7 @@ export default defineQuestions(
       q: 'Blackwell’s 2nd-gen Transformer Engine adds micro-tensor scaling. Compared to Hopper’s per-tensor FP8 scaling, this…',
       o: [
         'Removes scaling entirely',
-        'Applies finer-grained (per-block) scale factors, preserving accuracy at FP4/FP6 where a single per-tensor scale would lose too much range',
+        'Finer per-block scale factors for FP4/FP6',
         'Uses FP32 everywhere',
         'Only works for inference of small models',
       ],

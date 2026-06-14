@@ -31,7 +31,7 @@ export default defineQuestions('memory', [
     q: 'What is "memory coalescing" on a GPU?',
     o: [
       'Compressing data to fit in cache',
-      'Combining the global-memory accesses of a warp into the fewest possible memory transactions',
+      'Merging a warp’s accesses into fewer transactions',
       'Merging multiple kernels into one',
       'Reusing registers across threads',
     ],
@@ -45,7 +45,7 @@ export default defineQuestions('memory', [
     q: 'For best coalescing when a warp reads an array, consecutive threads should access…',
     o: [
       'The same address',
-      'Consecutive addresses (thread i reads element base+i)',
+      'Consecutive addresses (thread i → base+i)',
       'Addresses stride-32 apart',
       'Random addresses to spread the load',
     ],
@@ -59,7 +59,7 @@ export default defineQuestions('memory', [
     q: 'Constant memory is best suited for data that is…',
     o: [
       'Written frequently by all threads',
-      'Read-only and accessed uniformly (same address) by all threads in a warp',
+      'Read-only and accessed uniformly by a warp',
       'Per-thread scratch space',
       'Larger than global memory',
     ],
@@ -101,7 +101,7 @@ export default defineQuestions('memory', [
     q: 'Roughly, how does shared-memory latency compare to global-memory latency?',
     o: [
       'About the same',
-      'Shared memory is roughly an order of magnitude lower latency',
+      'Roughly an order of magnitude lower latency',
       'Shared memory is slower but higher bandwidth',
       'Global memory has lower latency due to L2',
     ],
@@ -115,7 +115,7 @@ export default defineQuestions('memory', [
     q: 'Shared memory is divided into banks. A bank conflict occurs when…',
     o: [
       'Two threads in a warp write the same value',
-      'Multiple threads in a warp access different addresses that map to the same bank (and not via broadcast)',
+      'Warp threads hit different words in the same bank',
       'A block uses more than 48 KB of shared memory',
       'Threads access global memory through shared memory',
     ],
@@ -129,7 +129,7 @@ export default defineQuestions('memory', [
     q: 'A 32×32 float shared-memory tile is accessed column-wise (tile[threadIdx.x][k] varying k along the warp dimension). Why is padding to [32][33] a common fix?',
     o: [
       'It improves coalescing of global loads',
-      'It shifts each row so column accesses by a warp land in distinct banks, avoiding 32-way conflicts',
+      'It shifts rows so columns hit distinct banks',
       'It reduces register pressure',
       'It enables vectorized loads',
     ],
@@ -143,7 +143,7 @@ export default defineQuestions('memory', [
     q: 'Pinned (page-locked) host memory, allocated with cudaHostAlloc/cudaMallocHost, primarily helps because…',
     o: [
       'It is faster to read on the device',
-      'It enables higher-bandwidth and asynchronous (DMA, overlapping) host↔device transfers',
+      'Faster, async DMA host↔device transfers',
       'It doubles available device memory',
       'It avoids the need for cudaMemcpy',
     ],
@@ -157,7 +157,7 @@ export default defineQuestions('memory', [
     q: 'On modern GPUs (Volta+), how do L1 cache and shared memory relate on an SM?',
     o: [
       'They are completely separate fixed-size units',
-      'They share a unified on-chip memory whose split is configurable',
+      'Unified on-chip memory with a configurable split',
       'L1 is disabled when shared memory is used',
       'Shared memory is a region of L2',
     ],
@@ -171,7 +171,7 @@ export default defineQuestions('memory', [
     q: 'You want a warp to load 128 bytes from global memory in as few instructions as possible. Which approach helps?',
     o: [
       'Have each thread issue four separate float loads',
-      'Use vectorized loads (e.g. float4) so each thread loads 16 contiguous bytes',
+      'Vectorized loads (float4): 16 bytes per thread',
       'Use constant memory',
       'Increase the block size to 1024',
     ],
@@ -185,7 +185,7 @@ export default defineQuestions('memory', [
     q: 'The __restrict__ qualifier on kernel pointer arguments allows the compiler to…',
     o: [
       'Force the pointers into constant memory',
-      'Assume the pointers do not alias, enabling more aggressive caching/reordering of loads',
+      'Assume no aliasing, enabling caching/reordering',
       'Restrict access to a single thread',
       'Guarantee 128-byte alignment',
     ],
@@ -199,7 +199,7 @@ export default defineQuestions('memory', [
     q: 'The read-only data cache (accessed via const __restrict__ or __ldg) is beneficial for data that is…',
     o: [
       'Written by the kernel many times',
-      'Read-only for the kernel’s lifetime and reused across threads',
+      'Read-only and reused across threads',
       'Always uniform across the warp',
       'Stored in shared memory',
     ],
@@ -213,7 +213,7 @@ export default defineQuestions('memory', [
     q: 'Why is global memory often described as the main performance bottleneck in naive kernels?',
     o: [
       'It is too small',
-      'Its bandwidth and latency are far worse than on-chip memory, so uncached/repeated accesses dominate runtime',
+      'Far worse bandwidth/latency than on-chip memory',
       'It cannot be accessed by all threads',
       'It requires atomic operations',
     ],
@@ -227,7 +227,7 @@ export default defineQuestions('memory', [
     q: 'On Hopper, what new on-chip capability lets thread blocks within a cluster directly access each other’s shared memory?',
     o: [
       'Unified Memory',
-      'Distributed Shared Memory (DSMEM) via the SM-to-SM network within a thread block cluster',
+      'Distributed Shared Memory (DSMEM)',
       'Texture memory',
       'L3 cache',
     ],
@@ -241,7 +241,7 @@ export default defineQuestions('memory', [
     q: 'Misaligned global accesses (e.g. starting at byte offset 4 for 128-byte transactions) hurt performance because…',
     o: [
       'They cause compile errors',
-      'A warp’s request may straddle cache-line boundaries, requiring extra transactions',
+      'It straddles cache lines, adding transactions',
       'They disable the L2 cache',
       'They force use of local memory',
     ],
@@ -255,7 +255,7 @@ export default defineQuestions('memory', [
     q: 'What is the typical size limit of static shared memory per block without opting in to extra, and how do you exceed it?',
     o: [
       'No limit; shared memory is unbounded',
-      '48 KB by default; request more (up to the architecture max) via cudaFuncSetAttribute with MaxDynamicSharedMemorySize',
+      '48 KB; opt into more via cudaFuncSetAttribute',
       '16 KB default, unchangeable',
       '256 KB default',
     ],
@@ -269,7 +269,7 @@ export default defineQuestions('memory', [
     q: 'A struct-of-arrays (SoA) layout usually outperforms array-of-structs (AoS) on the GPU because…',
     o: [
       'It uses less total memory',
-      'When a warp accesses one field across elements, SoA yields contiguous, coalesced accesses',
+      'SoA makes one field contiguous and coalesced',
       'AoS cannot be allocated with cudaMalloc',
       'SoA avoids all bank conflicts',
     ],
@@ -283,7 +283,7 @@ export default defineQuestions('memory', [
     q: 'On Hopper/Blackwell, the Tensor Memory Accelerator (TMA) is used to…',
     o: [
       'Accelerate atomic operations in global memory',
-      'Asynchronously copy large multidimensional tiles between global and shared memory with a single descriptor-driven instruction',
+      'Async copy multidim tiles global↔shared',
       'Replace the register file',
       'Perform reductions across the grid',
     ],

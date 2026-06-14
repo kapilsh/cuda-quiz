@@ -8,7 +8,7 @@ export default defineQuestions('optimization', [
     q: 'In tiled matrix multiplication, what is the primary purpose of loading tiles into shared memory?',
     o: [
       'To reduce register usage',
-      'To reuse each loaded element across many threads, cutting global-memory traffic',
+      'Reuse each element, cutting global traffic',
       'To avoid using __syncthreads',
       'To increase the block size',
     ],
@@ -31,7 +31,7 @@ export default defineQuestions('optimization', [
     q: 'What is "arithmetic intensity"?',
     o: [
       'The number of registers used per thread',
-      'The ratio of compute operations (FLOPs) to bytes of memory traffic',
+      'FLOPs per byte of memory traffic',
       'The clock frequency of the GPU',
       'The fraction of threads doing math',
     ],
@@ -45,7 +45,7 @@ export default defineQuestions('optimization', [
     q: 'Register blocking (having each thread compute multiple output elements) helps GEMM because…',
     o: [
       'It reduces the number of threads needed',
-      'It increases per-thread data reuse and ILP, amortizing shared-memory loads over more FLOPs',
+      'More per-thread reuse and ILP',
       'It eliminates shared memory',
       'It avoids divergence',
     ],
@@ -59,7 +59,7 @@ export default defineQuestions('optimization', [
     q: 'Loop unrolling with #pragma unroll primarily helps by…',
     o: [
       'Reducing the binary size',
-      'Removing loop-overhead instructions and exposing more independent work for the scheduler (ILP)',
+      'Cuts loop overhead and exposes ILP',
       'Lowering register usage',
       'Forcing coalescing',
     ],
@@ -73,7 +73,7 @@ export default defineQuestions('optimization', [
     q: 'Kernel fusion (combining several elementwise kernels into one) improves performance mainly by…',
     o: [
       'Increasing occupancy',
-      'Avoiding extra round-trips to global memory for intermediate results, raising arithmetic intensity',
+      'Keeps intermediates off global memory',
       'Reducing register usage',
       'Enabling tensor cores',
     ],
@@ -96,7 +96,7 @@ export default defineQuestions('optimization', [
     q: 'On the roofline model, a kernel sits at the "ridge point." This means…',
     o: [
       'It is using zero bandwidth',
-      'Its arithmetic intensity is exactly where the memory-bandwidth roof meets the peak-compute roof — balanced',
+      'Intensity where the two roofs meet (balanced)',
       'It has 100% occupancy',
       'It is purely latency-bound',
     ],
@@ -110,7 +110,7 @@ export default defineQuestions('optimization', [
     q: 'Using __fmaf_rn / fused multiply-add (a*b+c in one instruction) helps because…',
     o: [
       'It uses less memory',
-      'It performs the multiply and add in a single rounding step, improving both throughput and accuracy',
+      'One rounding step; faster and more accurate',
       'It avoids tensor cores',
       'It reduces divergence',
     ],
@@ -124,7 +124,7 @@ export default defineQuestions('optimization', [
     q: 'Software pipelining / double buffering in a tiled kernel means…',
     o: [
       'Running two kernels at once',
-      'Prefetching the next tile (e.g. via async copy) into a second buffer while computing on the current tile, hiding load latency',
+      'Prefetch the next tile while computing the current',
       'Using two GPUs',
       'Doubling the block size',
     ],
@@ -138,7 +138,7 @@ export default defineQuestions('optimization', [
     q: 'cp.async (asynchronous global-to-shared copy, Ampere+) improves pipelined kernels because it…',
     o: [
       'Compresses the data',
-      'Copies global→shared without staging through registers and lets compute proceed while the copy is in flight',
+      'Global→shared without registers, overlapping compute',
       'Guarantees coalescing',
       'Eliminates the need for __syncthreads',
     ],
@@ -152,7 +152,7 @@ export default defineQuestions('optimization', [
     q: 'Why is grid-stride looping a recommended kernel pattern?',
     o: [
       'It avoids using blockIdx',
-      'One kernel handles arbitrary input sizes with a tunable, occupancy-sized grid, improving reuse and portability',
+      'One kernel handles any size with a tuned grid',
       'It eliminates bounds checks',
       'It guarantees coalescing',
     ],
@@ -166,7 +166,7 @@ export default defineQuestions('optimization', [
     q: 'Replacing integer division/modulo by a constant in a hot loop with shifts/masks (for powers of two) helps because…',
     o: [
       'Division by a runtime value is free on GPUs',
-      'Integer division and modulo are relatively expensive on GPUs; bitwise ops are much cheaper',
+      'Div/mod are costly; bitwise ops are cheap',
       'It improves coalescing',
       'It reduces register count',
     ],
@@ -180,7 +180,7 @@ export default defineQuestions('optimization', [
     q: 'In a high-performance GEMM, the dominant inner-loop instruction on tensor-core hardware (Hopper) is typically…',
     o: [
       'FFMA on CUDA cores',
-      'wgmma (warpgroup-level matrix-multiply-accumulate) consuming operands from shared memory/registers',
+      'wgmma (warpgroup MMA)',
       'atomicAdd',
       '__shfl_sync',
     ],
@@ -194,7 +194,7 @@ export default defineQuestions('optimization', [
     q: 'A kernel is "latency-bound" (low occupancy, neither bandwidth nor compute saturated). A good first remedy is to…',
     o: [
       'Reduce the block size to 1',
-      'Increase parallelism/ILP — more independent work in flight (more warps, or more independent instructions per thread)',
+      'More parallelism/ILP: more work in flight',
       'Add more atomics',
       'Switch to double precision',
     ],
@@ -208,7 +208,7 @@ export default defineQuestions('optimization', [
     q: 'Using multiple independent accumulators in a reduction/dot-product inner loop primarily helps by…',
     o: [
       'Reducing memory traffic',
-      'Breaking the serial dependency chain through the single accumulator, exposing ILP to hide FMA latency',
+      'Breaks the dependency chain, exposing ILP',
       'Avoiding shared memory',
       'Improving coalescing',
     ],
@@ -222,7 +222,7 @@ export default defineQuestions('optimization', [
     q: 'The CUDA Occupancy API cudaOccupancyMaxPotentialBlockSize is used to…',
     o: [
       'Measure achieved occupancy at runtime',
-      'Suggest a block size that maximizes theoretical occupancy for a given kernel',
+      'Suggest a block size maximizing occupancy',
       'Set the grid size automatically',
       'Profile memory bandwidth',
     ],
@@ -236,7 +236,7 @@ export default defineQuestions('optimization', [
     q: 'In FlashAttention-style kernels, why is the softmax computed in an "online" (streaming) fashion?',
     o: [
       'To use tensor cores for softmax',
-      'To avoid materializing the full N×N attention matrix in memory by updating running max and sum as tiles are processed',
+      'Avoid materializing the N×N matrix (running max/sum)',
       'To reduce register count',
       'To enable double precision',
     ],
@@ -250,7 +250,7 @@ export default defineQuestions('optimization', [
     q: 'Why might increasing occupancy by shrinking the block’s shared-memory usage actually HURT a tiled GEMM?',
     o: [
       'Higher occupancy is always bad',
-      'Smaller tiles reduce data reuse, raising global-memory traffic — the lost reuse can outweigh the occupancy gain',
+      'Smaller tiles lose reuse, raising DRAM traffic',
       'It causes compile errors',
       'It disables tensor cores',
     ],
@@ -264,7 +264,7 @@ export default defineQuestions('optimization', [
     q: 'Bank-conflict-free shared-memory access for tensor-core operands often requires "swizzling." Swizzling means…',
     o: [
       'Randomizing the data',
-      'Permuting the shared-memory layout so that the access pattern of an mma/ldmatrix maps to distinct banks',
+      'Permuting the layout to hit distinct banks',
       'Compressing the tile',
       'Transposing in global memory',
     ],
@@ -278,7 +278,7 @@ export default defineQuestions('optimization', [
     q: 'Using rsqrtf(x) instead of 1.0f/sqrtf(x) in a hot kernel is an example of…',
     o: [
       'Reducing memory traffic',
-      'Using a faster hardware intrinsic/approximation for a common math operation',
+      'A faster hardware intrinsic for the op',
       'Avoiding divergence',
       'Improving coalescing',
     ],

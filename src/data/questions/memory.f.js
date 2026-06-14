@@ -20,7 +20,7 @@ export default defineQuestions(
       q: 'SAXPY (y[i] = a*x[i] + y[i]) in FP32 has an arithmetic intensity of about…',
       o: [
         '1 FLOP/byte',
-        '~0.17 FLOP/byte (2 FLOPs per element ÷ 12 bytes: read x, read y, write y)',
+        '~0.17 FLOP/byte (2 FLOPs ÷ 12 bytes)',
         '10 FLOP/byte',
         '2 FLOP/byte',
       ],
@@ -35,7 +35,7 @@ export default defineQuestions(
       q: 'A warp accesses a shared float array as s[threadIdx.x * 2] (stride 2). The bank conflict degree is…',
       o: [
         'Conflict-free',
-        '2-way: stride-2 over 32 banks maps two threads to each bank (threads i and i+16 collide), serializing into 2 transactions',
+        '2-way (threads i and i+16 collide)',
         '32-way',
         '16-way',
       ],
@@ -78,7 +78,7 @@ export default defineQuestions(
     {
       d: 4,
       q: 'Hopper’s configurable shared-memory carveout offers discrete sizes up to…',
-      o: ['48 KB', '96 KB', '~228 KB per SM (opt-in via cudaFuncSetAttribute)', '1 MB'],
+      o: ['48 KB', '96 KB', '~228 KB per SM (opt-in)', '1 MB'],
       a: 2,
       x: ['64 KB', '164 KB', '512 KB'],
       e: 'Hopper allows up to ~228 KB shared memory per block (opt-in), selected from discrete carveout sizes. Larger shared memory enables bigger tiles/deeper pipelines for GEMM/attention — you request it explicitly via the max-dynamic-shared-memory attribute.',
@@ -90,7 +90,7 @@ export default defineQuestions(
       q: 'Unified Memory page migration on demand operates at a granularity of…',
       o: [
         '1 byte',
-        'Memory pages (e.g. 4 KB, often migrated in larger 2 MB blocks) — so a single byte access can trigger migrating a whole page/block',
+        'Memory pages (4 KB, often 2 MB blocks)',
         'The whole allocation',
         '32 bytes',
       ],
@@ -105,7 +105,7 @@ export default defineQuestions(
       q: 'cp.async copies are batched into commit groups; cp.async.wait_group(N) waits until…',
       o: [
         'All copies finish',
-        'All but the N most-recently-committed groups have completed — letting you keep N groups in flight (pipeline depth) while consuming earlier ones',
+        'All but the N most recent groups finished',
         'The kernel ends',
         'A barrier is reached',
       ],
@@ -134,7 +134,7 @@ export default defineQuestions(
       q: 'A warp reads field .x of an array-of-structs where each struct is 32 bytes. Compared to SoA, the AoS read…',
       o: [
         'Is equally efficient',
-        'Wastes ~7/8 of each cache line: a warp’s 32 .x reads are 32 bytes apart, so each 128-byte line delivers only 4 useful floats (16 of 128 bytes used)',
+        'Wastes ~7/8 of each cache line',
         'Is faster',
         'Causes a compile error',
       ],
@@ -153,7 +153,7 @@ export default defineQuestions(
       q: 'XOR-based shared-memory "swizzling" eliminates bank conflicts for tensor-core operand loads by…',
       o: [
         'Randomizing addresses',
-        'Permuting the column index with an XOR of (some bits of) the row, so each row’s elements land in different banks — making the ldmatrix/wgmma access pattern conflict-free',
+        'XOR the column index with the row',
         'Padding rows',
         'Compressing data',
       ],
@@ -170,7 +170,7 @@ export default defineQuestions(
     {
       d: 3,
       q: 'On modern SMs, the unified L1/shared SRAM is about…',
-      o: ['16 KB', '48 KB', '~192–256 KB per SM (split between L1 and shared)', '4 MB'],
+      o: ['16 KB', '48 KB', '~192–256 KB per SM', '4 MB'],
       a: 2,
       x: ['64 KB', '1 MB', '128 KB'],
       e: 'Recent SMs have ~192–256 KB of unified L1/shared SRAM per SM, partitioned by the carveout. This pool backs both the L1 data cache and the configurable shared memory — a big increase over earlier generations, aiding tiling/caching.',
@@ -192,7 +192,7 @@ export default defineQuestions(
       q: 'A kernel’s effective bandwidth is 1.5 TB/s on a GPU with 3 TB/s peak. The most useful conclusion is…',
       o: [
         'It is compute-bound',
-        'It achieves ~50% of peak — if it should be bandwidth-bound, investigate coalescing/vectorization/alignment to push toward ~80–90% of peak',
+        '~50% of peak — check coalescing/alignment',
         'It is optimal',
         'It is latency-bound on compute',
       ],
@@ -211,7 +211,7 @@ export default defineQuestions(
       q: 'The constant cache works best when a warp’s accesses to __constant__ data are…',
       o: [
         'Scattered',
-        'To the SAME address (uniform) — served as a single broadcast; divergent constant addresses serialize and can miss the small (~8 KB working set) constant cache',
+        'To the same address (broadcast)',
         'Strided',
         'Random',
       ],
@@ -230,7 +230,7 @@ export default defineQuestions(
       q: 'ldmatrix loads a matrix tile from shared memory into registers in the layout mma.sync expects. Combined with a swizzled shared layout, it…',
       o: [
         'Avoids tensor cores',
-        'Delivers operands conflict-free and in the right per-lane fragment arrangement, so the tensor cores are fed without bank-conflict stalls or manual transposes',
+        'Feeds operands conflict-free in MMA layout',
         'Compresses the tile',
         'Runs on the host',
       ],
@@ -249,7 +249,7 @@ export default defineQuestions(
       q: 'Setting the shared-memory bank mode to 8 bytes (cudaSharedMemBankSizeEightByte) helps when…',
       o: [
         'Using floats',
-        'A kernel heavily accesses DOUBLE (8-byte) shared data — 8-byte banks let a warp’s doubles map to distinct banks, reducing conflicts that the default 4-byte mode would cause',
+        'A kernel uses double shared data',
         'Using INT8',
         'Always',
       ],
@@ -278,7 +278,7 @@ export default defineQuestions(
       q: 'A persistent reuse buffer of 30 MB accessed by all blocks fits in H100’s ~50 MB L2. Marking it persisting helps because…',
       o: [
         'It is too big',
-        'The 30 MB working set fits within the L2 set-aside, so persisting access keeps it resident across blocks — cross-block reads hit L2 instead of HBM, cutting DRAM traffic',
+        'It fits the L2 set-aside, staying resident',
         'It uses registers',
         'It needs constant memory',
       ],
@@ -297,7 +297,7 @@ export default defineQuestions(
       q: 'Measuring pinned vs pageable H2D bandwidth on PCIe Gen4 x16 (~25 GB/s peak each way), you’d expect pinned to be…',
       o: [
         'Slower',
-        'Near peak (~24 GB/s) while pageable is notably lower (staged through an internal pinned buffer) — confirming pinned memory’s transfer advantage',
+        'Near peak; pageable is lower',
         'The same',
         'Over 50 GB/s',
       ],
@@ -316,7 +316,7 @@ export default defineQuestions(
       q: 'A kernel’s DRAM read bytes (from Nsight) are 3× the minimum needed for its data. The most likely cause is…',
       o: [
         'Perfect coalescing',
-        'Uncoalesced/strided access fetching cache-line sectors that are only partly used (over-fetch), or missing reuse causing re-reads — both inflate DRAM bytes beyond the ideal',
+        'Over-fetch from uncoalesced access',
         'Too many registers',
         'A divergent branch',
       ],
@@ -335,7 +335,7 @@ export default defineQuestions(
       q: 'Hopper TMA can copy multi-dimensional tiles up to (per the descriptor) several dimensions. A key benefit for a 2D tile copy is…',
       o: [
         'Compression',
-        'The hardware handles boundary/stride logic and out-of-bounds padding for the tile, so partial edge tiles are copied correctly without per-thread bounds checks',
+        'Hardware handles edge tiles',
         'Higher precision',
         'Running on the host',
       ],
@@ -364,7 +364,7 @@ export default defineQuestions(
       q: 'Why does a swizzled shared-memory layout avoid the extra memory that padding to [N][N+1] costs, while still being conflict-free?',
       o: [
         'It compresses data',
-        'Swizzling permutes addresses via XOR (no extra storage) to spread accesses across banks, whereas padding adds a column of unused elements per row — both fix conflicts, but swizzle uses no extra shared memory',
+        'XOR permutes addresses, no extra storage',
         'It uses registers',
         'It disables banks',
       ],
@@ -393,7 +393,7 @@ export default defineQuestions(
       q: 'Why might cudaMemcpyAsync H2D NOT overlap with a kernel even with pinned memory and separate streams?',
       o: [
         'Pinned memory blocks it',
-        'The kernel and copy may both be on the legacy default stream (which serializes), or the GPU has a single copy engine already busy — check streams and asyncEngineCount',
+        'Both on the default stream, or copy engine busy',
         'Async copies never overlap',
         'Kernels never overlap copies',
       ],
@@ -412,7 +412,7 @@ export default defineQuestions(
       q: 'For a GEMM, increasing the shared-memory tile from 64×64 to 128×128 (FP16) raises operand reuse by ~2× but the shared memory needed goes from…',
       o: [
         '16 KB to 64 KB (operands roughly 4×)',
-        '~16 KB to ~64 KB for the A+B tiles — quadrupling shared memory (each dimension doubled), which may drop occupancy; the reuse gain must outweigh that',
+        '~16 KB to ~64 KB (4×)',
         '8 KB to 16 KB',
         'No change',
       ],
@@ -431,7 +431,7 @@ export default defineQuestions(
       q: 'A managed-memory program is slow with many "page fault" migration events; prefetching the working set to the GPU helps because…',
       o: [
         'It compresses pages',
-        'It moves the pages to the device BEFORE the kernel accesses them (one bulk transfer), eliminating the per-access fault-and-migrate stalls during execution',
+        'Bulk-moves pages to the device beforehand',
         'It pins host memory',
         'It disables the L2',
       ],
@@ -450,7 +450,7 @@ export default defineQuestions(
       q: 'The texture/read-only data cache is most beneficial for data that is…',
       o: [
         'Written frequently',
-        'Read-only and reused with spatial locality (or scattered reuse) — it caches such loads (via const __restrict__/__ldg or texture objects), reducing redundant global reads',
+        'Read-only and reused with spatial locality',
         'Per-thread scratch',
         'In registers',
       ],
