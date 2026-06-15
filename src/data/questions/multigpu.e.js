@@ -10,7 +10,7 @@ export default defineQuestions(
       q: 'NCCL "PXN" (PCI × NVLink) routing improves multi-node collectives by…',
       o: [
         'Disabling NVLink',
-        'Letting a GPU reach a remote NIC via a PEER GPU over NVLink (instead of a slower local PCIe path), so traffic egresses through the best-connected NIC — improving inter-node bandwidth on certain topologies',
+        'GPU routes via peer NVLink to best NIC',
         'Using the CPU',
         'Compressing data',
       ],
@@ -29,7 +29,7 @@ export default defineQuestions(
       q: 'NCCL_TOPO_FILE / NCCL_TOPO_DUMP_FILE let you…',
       o: [
         'Set the precision',
-        'Inspect the topology NCCL detected (dump) or override it with a hand-specified topology (file) — useful when auto-detection is wrong or for tuning on custom hardware',
+        'Dump detected topology or load a custom one',
         'Pick the batch size',
         'Disable NCCL',
       ],
@@ -48,7 +48,7 @@ export default defineQuestions(
       q: 'A NCCL "tuner plugin" allows…',
       o: [
         'Training tuning',
-        'Customizing NCCL’s algorithm/protocol selection (and channel counts) for a specific cluster, overriding the built-in heuristics to extract more performance',
+        'Override NCCL algorithm/protocol per cluster',
         'Quantizing gradients',
         'Disabling RDMA',
       ],
@@ -67,7 +67,7 @@ export default defineQuestions(
       q: 'Device-initiated communication (NVSHMEM) differs from NCCL fundamentally because…',
       o: [
         'It is slower',
-        'A running KERNEL issues the communication (one-sided put/get) itself, enabling fine-grained overlap of comm with compute, whereas NCCL collectives are launched from the HOST as bulk operations',
+        'Kernel-initiated one-sided comm; fine overlap',
         'It uses the CPU',
         'It only does broadcast',
       ],
@@ -86,7 +86,7 @@ export default defineQuestions(
       q: 'On a fat-tree network with 2:1 oversubscription, scaling an all-reduce across many nodes can underperform because…',
       o: [
         'Bandwidth is unlimited',
-        'The bisection bandwidth is half the full-bandwidth ideal, so cross-cluster collective traffic contends on oversubscribed uplinks — limiting achievable inter-node bandwidth at scale',
+        'Half bisection BW; oversubscribed uplinks',
         'Latency is zero',
         'It uses NVLink',
       ],
@@ -105,7 +105,7 @@ export default defineQuestions(
       q: 'InfiniBand adaptive routing helps large collectives by…',
       o: [
         'Compressing data',
-        'Dynamically spreading flows across alternative network paths to avoid congestion hotspots, improving achieved bandwidth under heavy all-to-all/all-reduce load',
+        'Spreads flows to avoid congestion hotspots',
         'Lowering precision',
         'Using the CPU',
       ],
@@ -124,7 +124,7 @@ export default defineQuestions(
       q: 'Why does capturing an iteration’s NCCL collectives into a CUDA Graph help at scale?',
       o: [
         'It compresses gradients',
-        'It removes per-collective CPU launch overhead and reduces jitter, so the (already overlapped) communication and compute replay with less host-side variability — tightening step time across ranks',
+        'Removes per-collective overhead and jitter',
         'It increases bandwidth',
         'It disables NCCL',
       ],
@@ -143,7 +143,7 @@ export default defineQuestions(
       q: 'NCCL_NVLS_ENABLE / detecting NVLS support matters because in-network reduction (NVLS) is only available…',
       o: [
         'On any GPU',
-        'On systems with NVSwitch + the requisite hardware/driver support (NVLink SHARP) — otherwise NCCL falls back to ring/tree without the in-fabric reduction benefit',
+        'NVSwitch + SHARP only; else ring/tree',
         'On PCIe systems',
         'On the CPU',
       ],
@@ -162,7 +162,7 @@ export default defineQuestions(
       q: 'Fusing communication with computation (e.g. overlapping a reduce-scatter with the matmul that produces its input) is most beneficial when…',
       o: [
         'Communication is free',
-        'The workload is communication-bound or comm is a large fraction of step time — overlapping/fusing hides it behind compute, improving scaling efficiency; if comm is already tiny, the benefit is small',
+        'Comm is large fraction of step; hiding matters',
         'There is one GPU',
         'Precision is low',
       ],
@@ -181,7 +181,7 @@ export default defineQuestions(
       q: 'A simple model: with per-GPU compute time C and exposed (non-overlapped) communication time M per step, data-parallel scaling efficiency is roughly…',
       o: [
         'Always 1',
-        'C / (C + M) — efficiency drops as exposed communication M grows relative to compute C; perfect overlap drives M→0',
+        'C/(C+M); perfect overlap drives M to zero',
         'M / C',
         'C × M',
       ],
@@ -200,7 +200,7 @@ export default defineQuestions(
       q: 'Why must NCCL operations across ranks use a CONSISTENT data type, count, and op?',
       o: [
         'For logging',
-        'A collective is a coordinated operation — every rank must agree on the buffer size/type/operation; mismatches cause hangs, corruption, or errors',
+        'All ranks must agree on op/type/count',
         'For speed only',
         'For precision',
       ],
@@ -219,7 +219,7 @@ export default defineQuestions(
       q: 'MNNVL (multi-node NVLink, e.g. NVL72) changes the collective landscape by…',
       o: [
         'Using PCIe',
-        'Extending the high-bandwidth NVLink domain across nodes, so collectives that would cross a slow inter-node network instead use NVLink — dramatically improving large-scale TP/EP communication',
+        'NVLink spans nodes; cross-node at speed',
         'Lowering precision',
         'Disabling NCCL',
       ],
@@ -238,7 +238,7 @@ export default defineQuestions(
       q: 'For inter-node collectives, missing GPUDirect RDMA means…',
       o: [
         'Faster transfers',
-        'Data must stage through HOST memory (extra copies, CPU involvement), reducing bandwidth and increasing latency — the NIC can’t DMA directly to/from GPU memory',
+        'Host bounce; NIC cannot DMA to GPU',
         'Higher precision',
         'No effect',
       ],
@@ -257,7 +257,7 @@ export default defineQuestions(
       q: 'The busbw metric is used (over algbw) to compare collective performance across GPU counts because it…',
       o: [
         'Ignores data size',
-        'Normalizes by the collective’s communication pattern (e.g. the 2(N-1)/N factor for all-reduce), so it reflects achieved LINK bandwidth and is comparable across N',
+        'Normalized per-link bandwidth (collective)',
         'Measures latency',
         'Counts FLOPs',
       ],
@@ -276,7 +276,7 @@ export default defineQuestions(
       q: 'A symmetric-memory model for collectives (each rank exposes a region at a known offset) helps NCCL/NVSHMEM by…',
       o: [
         'Compressing data',
-        'Letting peers address each other’s buffers directly (registered/symmetric), enabling efficient one-sided/zero-copy transfers without per-op handshakes',
+        'Registered buffers; one-sided zero-copy',
         'Lowering precision',
         'Using the CPU',
       ],
@@ -295,7 +295,7 @@ export default defineQuestions(
       q: 'When data-parallel training is communication-bound, increasing the per-GPU batch (more compute per step) can improve scaling efficiency because…',
       o: [
         'It reduces accuracy',
-        'It raises the compute time C relative to the (roughly fixed) gradient communication M per step, so the C/(C+M) efficiency improves — more compute to hide the same comm behind',
+        'Raises C vs fixed M; improves C/(C+M) efficiency',
         'It removes communication',
         'It uses FP64',
       ],
@@ -314,7 +314,7 @@ export default defineQuestions(
       q: 'Expert-parallel MoE often pairs all-to-all with computation overlap because…',
       o: [
         'All-to-all is free',
-        'The dispatch/combine all-to-alls are large and latency/bandwidth-sensitive; overlapping them with expert (FFN) compute — and balancing routing — keeps the network from serializing the experts',
+        'Balance routing; overlap all-to-alls',
         'It uses FP64',
         'It avoids experts',
       ],
@@ -333,7 +333,7 @@ export default defineQuestions(
       q: 'NCCL_DEBUG=INFO showing "Channel 00/02 : ... [NVLink]" confirms…',
       o: [
         'The precision',
-        'NCCL set up its communication channels over NVLink for those GPU connections — verifying the fast intra-node path is in use (vs PCIe/SHM)',
+        'NVLink channels confirmed (vs PCIe/SHM)',
         'The batch size',
         'The optimizer',
       ],
@@ -352,7 +352,7 @@ export default defineQuestions(
       q: 'Why is one-process-per-GPU with proper device binding important for NCCL bandwidth (not just correctness)?',
       o: [
         'It looks cleaner',
-        'It ensures each rank drives its own GPU with correct GPU↔NIC/NVLink affinity; wrong binding (or one process for many GPUs) can route traffic over suboptimal paths and serialize host-side launches',
+        'Correct GPU-NIC affinity; wrong binding hurts',
         'It reduces precision',
         'It compresses data',
       ],
@@ -371,7 +371,7 @@ export default defineQuestions(
       q: 'A reason large-scale training tolerates slow INTER-node links for pipeline parallelism but not tensor parallelism is…',
       o: [
         'PP uses more data',
-        'PP sends only stage-boundary activations occasionally (light, latency-tolerant), while TP does latency-sensitive all-reduces every layer (heavy) — so PP maps to inter-node, TP to intra-node NVLink',
+        'PP: light P2P; TP: heavy per-layer all-reduces',
         'TP uses no communication',
         'They are identical',
       ],
@@ -390,7 +390,7 @@ export default defineQuestions(
       q: 'NCCL collective LATENCY (not bandwidth) is what dominates when…',
       o: [
         'Messages are huge',
-        'Messages are SMALL (e.g. tiny gradient tensors, or many separate small collectives) — fixed per-step costs dominate, which is why gradient bucketing and low-latency protocols/algorithms help',
+        'Small messages; fixed per-step costs dominate',
         'Using FP64',
         'On one GPU',
       ],
@@ -409,7 +409,7 @@ export default defineQuestions(
       q: 'GPU-to-GPU bandwidth measured by nccl-tests being ~half NVLink peak on an all-reduce is…',
       o: [
         'A bug',
-        'Expected — ring all-reduce moves ~2× the data per GPU, so busbw (which factors that out) should approach peak even though raw per-direction throughput looks like a fraction; check busbw, not raw algbw',
+        'Expected; busbw approaches NVLink peak',
         'A failure',
         'Too high',
       ],
@@ -428,7 +428,7 @@ export default defineQuestions(
       q: 'A practical first step when multi-node training is unexpectedly slow is to…',
       o: [
         'Rewrite the model',
-        'Run nccl-tests across the same ranks/topology and check busbw against expected IB/NVLink peak — isolating whether the bottleneck is the network/collectives or the model code',
+        'nccl-tests: busbw vs IB/NVLink peak',
         'Lower precision',
         'Add more GPUs',
       ],
@@ -447,7 +447,7 @@ export default defineQuestions(
       q: 'Why might overlapping the optimizer’s all-gather (FSDP) of the NEXT layer with the current layer’s backward fail to fully hide communication at very large scale?',
       o: [
         'Overlap always works',
-        'As the model/cluster grows, the per-layer all-gather volume or network contention can exceed the current layer’s backward compute, so the gather isn’t fully hidden — exposing communication',
+        'All-gather exceeds backward compute; exposed',
         'Backward is free',
         'For FP64 only',
       ],
@@ -466,7 +466,7 @@ export default defineQuestions(
       q: 'For TP within a node on NVSwitch, the all-reduce per layer is fast because…',
       o: [
         'It uses PCIe',
-        'NVSwitch provides full all-to-all NVLink bandwidth and (with NVLS) in-network reduction, so the per-layer all-reduce completes with low latency/high bandwidth — making frequent TP collectives affordable',
+        'NVSwitch all-to-all + NVLS; TP per-layer fast',
         'It uses the CPU',
         'It compresses data',
       ],
@@ -485,7 +485,7 @@ export default defineQuestions(
       q: 'A correctness/robustness reason to set a finite NCCL collective timeout is…',
       o: [
         'Speed',
-        'Without a timeout, a hung collective (failed/slow rank, mismatch) blocks forever; a timeout converts it into an error the framework can detect and recover from (abort/restart)',
+        'Hung collective → error via timeout',
         'Precision',
         'Memory savings',
       ],
@@ -504,7 +504,7 @@ export default defineQuestions(
       q: 'AllReduce being decomposable into ReduceScatter + AllGather is why…',
       o: [
         'It is slower',
-        'Ring all-reduce is bandwidth-optimal (each phase moves (N-1)/N of the data) and ZeRO/FSDP can use just ReduceScatter (gradients) + AllGather (params) for sharded training',
+        'Ring optimality; enables FSDP/ZeRO sharding',
         'It needs the CPU',
         'For FP64',
       ],
@@ -523,7 +523,7 @@ export default defineQuestions(
       q: 'Why can adding more NCCL channels stop helping (or hurt) beyond a point?',
       o: [
         'Channels are free',
-        'Channels consume SMs/copy resources and link bandwidth; once the links are saturated, more channels add contention/overhead without raising throughput — there’s an optimal channel count per topology/size',
+        'Past saturation, channels add overhead only',
         'They lower precision',
         'They disable NVLink',
       ],
@@ -542,7 +542,7 @@ export default defineQuestions(
       q: 'For elastic training that can lose a node mid-run, the distributed stack must support…',
       o: [
         'Nothing special',
-        'Communicator teardown/recreation (re-rendezvous) and resume-from-checkpoint, so the surviving ranks re-form the group and continue — turning a node failure into a recoverable event',
+        'Re-rendezvous + resume from checkpoint',
         'FP64',
         'Larger batches',
       ],

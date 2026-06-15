@@ -10,7 +10,7 @@ export default defineQuestions(
       q: 'Triton (OpenAI) is…',
       o: [
         'A profiler',
-        'A Python-based DSL/compiler for writing GPU kernels at block granularity, where you express tile-level work and it handles much of the low-level scheduling',
+        'Python DSL/compiler for GPU tile-granularity kernels',
         'A collective communications library',
         'A linear algebra library',
       ],
@@ -29,7 +29,7 @@ export default defineQuestions(
       q: 'CuPy is best described as…',
       o: [
         'A C++ template library',
-        'A NumPy-compatible array library that runs on the GPU (drop-in ndarray with CUDA-backed operations)',
+        'NumPy-compatible GPU array library',
         'A profiler',
         'A communication library',
       ],
@@ -48,7 +48,7 @@ export default defineQuestions(
       q: 'Numba’s @cuda.jit lets you…',
       o: [
         'Compile C++ templates',
-        'Write CUDA kernels in a subset of Python that Numba JIT-compiles to PTX/SASS, with threadIdx/blockIdx-style indexing',
+        'JIT-compile Python CUDA kernels to PTX/SASS',
         'Run NumPy on the CPU faster only',
         'Manage NCCL communicators',
       ],
@@ -67,7 +67,7 @@ export default defineQuestions(
       q: 'TensorRT is primarily a…',
       o: [
         'Training framework',
-        'Deep-learning inference optimizer and runtime: it fuses layers, selects kernels/precisions (FP16/INT8/FP8), and builds an optimized engine for deployment',
+        'DL inference optimizer and runtime',
         'Collective library',
         'Profiler',
       ],
@@ -86,7 +86,7 @@ export default defineQuestions(
       q: 'TensorRT-LLM specializes TensorRT for…',
       o: [
         'Image classification',
-        'Large language model inference — with optimized attention (paged KV cache), in-flight batching, tensor/pipeline parallelism, and quantization',
+        'LLM inference optimizer and runtime',
         'Training LLMs',
         'Data loading',
       ],
@@ -105,7 +105,7 @@ export default defineQuestions(
       q: 'The Transformer Engine (TE) library’s main job is…',
       o: [
         'Data loading',
-        'Providing FP8 (and FP16/BF16) transformer building blocks with automatic scaling/recipe management so models train/infer in FP8 with maintained accuracy',
+        'FP8 transformer layers with auto scaling/recipe',
         'Collective communication',
         'Graph capture',
       ],
@@ -124,7 +124,7 @@ export default defineQuestions(
       q: 'NVIDIA DALI accelerates…',
       o: [
         'Matrix multiply',
-        'Data loading and preprocessing (decode, resize, augment) on the GPU, removing CPU input-pipeline bottlenecks in training',
+        'GPU data loading/preprocessing pipeline',
         'Collective communication',
         'Kernel compilation',
       ],
@@ -143,7 +143,7 @@ export default defineQuestions(
       q: 'cuSPARSELt is specialized for…',
       o: [
         'Dense GEMM only',
-        'Structured-sparse (2:4) matrix multiply on Sparse Tensor Cores, exploiting pruned weights for ~2× throughput',
+        'Structured-sparse (2:4) matmul',
         'FFTs',
         'Random numbers',
       ],
@@ -162,7 +162,7 @@ export default defineQuestions(
       q: 'CUB’s DeviceSelect::Flagged / DevicePartition are used for…',
       o: [
         'Sorting',
-        'Stream compaction — selecting/partitioning elements that satisfy a predicate (or flag) into a compact output, device-wide and efficiently',
+        'Stream compaction by predicate',
         'Matrix multiply',
         'Random sampling',
       ],
@@ -181,7 +181,7 @@ export default defineQuestions(
       q: 'thrust::transform_reduce fuses…',
       o: [
         'Two sorts',
-        'An elementwise transform with a reduction in one pass (e.g. sum of squares = transform x→x*x then reduce +), avoiding a temporary array',
+        'Transform then reduce in one fused pass',
         'A scan and a gather',
         'A copy and a sort',
       ],
@@ -200,7 +200,7 @@ export default defineQuestions(
       q: 'A thrust::zip_iterator is handy for SoA data because it…',
       o: [
         'Compresses the arrays',
-        'Presents several separate arrays as a single sequence of tuples, so an algorithm can process corresponding elements together without interleaving storage',
+        'Presents multiple arrays as virtual tuples',
         'Sorts the arrays',
         'Allocates memory',
       ],
@@ -219,7 +219,7 @@ export default defineQuestions(
       q: 'The RAPIDS library cuDF provides…',
       o: [
         'GPU deep learning',
-        'A GPU DataFrame (pandas-like) for ETL/analytics — joins, group-bys, filters executed on the GPU',
+        'GPU DataFrame (pandas-like) for ETL/analytics',
         'Collective communication',
         'Kernel compilation',
       ],
@@ -238,7 +238,7 @@ export default defineQuestions(
       q: 'NVIDIA stdpar (via nvc++) lets you…',
       o: [
         'Write PTX by hand',
-        'Run C++17 standard parallel algorithms (std::transform with std::execution::par) on the GPU automatically, without explicit CUDA code',
+        'Run C++ parallel STL on the GPU via nvc++',
         'Profile kernels',
         'Manage NCCL',
       ],
@@ -257,7 +257,7 @@ export default defineQuestions(
       q: 'NPP (NVIDIA Performance Primitives) provides…',
       o: [
         'Neural network layers',
-        'Optimized image, video, and signal processing primitives (filters, transforms, statistics) on the GPU',
+        'GPU image/video/signal processing primitives',
         'Collective communication',
         'Sparse solves',
       ],
@@ -276,7 +276,7 @@ export default defineQuestions(
       q: 'The WMMA API (nvcuda::wmma namespace) lets you use tensor cores from CUDA C++ by…',
       o: [
         'Calling cuBLAS',
-        'Declaring fragment types, load_matrix_sync/store_matrix_sync, and mma_sync to perform warp-collective tile multiply-accumulate',
+        'Warp-collective MMA via WMMA fragments',
         'Using atomics',
         'Writing PTX only',
       ],
@@ -295,7 +295,7 @@ export default defineQuestions(
       q: 'cuBLASLt is the path to use FP8 matmul because it…',
       o: [
         'Only supports FP32',
-        'Exposes per-tensor scale factors and FP8 (E4M3/E5M2) operand types in its matmul descriptor, with epilogues for dequant/bias/activation',
+        'FP8 operand types with per-tensor scales',
         'Runs on the CPU',
         'Disables tensor cores',
       ],
@@ -314,7 +314,7 @@ export default defineQuestions(
       q: 'nvJPEG is used to…',
       o: [
         'Train classifiers',
-        'Decode (and encode) JPEG images on the GPU, accelerating image input pipelines',
+        'GPU JPEG decode/encode',
         'Reduce gradients',
         'Sort arrays',
       ],
@@ -333,7 +333,7 @@ export default defineQuestions(
       q: 'PyTorch’s default GPU backend dispatches a matmul to which library, and an attention op might use…',
       o: [
         'Always a custom kernel',
-        'cuBLAS/cuBLASLt for GEMM; attention may use cuDNN or a fused (FlashAttention) kernel, sometimes generated via Triton/inductor',
+        'cuBLAS(Lt) for GEMM; FlashAttn for attention',
         'NCCL for both',
         'cuFFT',
       ],
@@ -352,7 +352,7 @@ export default defineQuestions(
       q: 'CUB’s DeviceHistogram differs from a naive atomic histogram by…',
       o: [
         'Using the CPU',
-        'Implementing an optimized device-wide histogram (privatization, efficient binning) so you avoid hand-tuning shared/global atomic strategies',
+        'Privatized histogram; no manual atomic tuning',
         'Sorting first',
         'Using constant memory',
       ],
@@ -371,7 +371,7 @@ export default defineQuestions(
       q: 'A custom Thrust functor (a struct with __host__ __device__ operator()) is used to…',
       o: [
         'Allocate memory',
-        'Define the per-element operation passed to algorithms like transform/transform_reduce, so the GPU runs your logic',
+        'Per-element op for Thrust transform/reduce',
         'Launch kernels manually',
         'Manage streams',
       ],
@@ -390,7 +390,7 @@ export default defineQuestions(
       q: 'RAPIDS cuGraph provides…',
       o: [
         'CUDA Graphs capture',
-        'GPU-accelerated graph analytics algorithms (PageRank, BFS, connected components, etc.) over large graphs',
+        'GPU graph analytics: PageRank, BFS, components',
         'A kernel compiler',
         'Collective communication',
       ],
@@ -409,7 +409,7 @@ export default defineQuestions(
       q: 'JAX/XLA accelerates GPU code by…',
       o: [
         'Interpreting Python at runtime',
-        'Tracing and compiling array programs into fused, optimized kernels (operator fusion, layout choices) via the XLA compiler, targeting GPU/TPU',
+        'XLA trace+compile: fused kernels for GPU/TPU',
         'Calling cuBLAS only',
         'Using NCCL for everything',
       ],
@@ -428,7 +428,7 @@ export default defineQuestions(
       q: 'For accelerating an existing CPU code with minimal rewriting, OpenACC offers…',
       o: [
         'A new language',
-        'Compiler directives (#pragma acc) that offload loops/regions to the GPU, managing data movement, similar in spirit to OpenMP offload',
+        'Pragma directives offloading loops to the GPU',
         'A kernel debugger',
         'A collective library',
       ],
@@ -447,7 +447,7 @@ export default defineQuestions(
       q: 'cuTENSOR is preferred over reshaping-to-GEMM-then-cuBLAS for tensor contractions when…',
       o: [
         'Never',
-        'The contraction’s index pattern would require expensive explicit transposes/copies; cuTENSOR fuses the permutation into the contraction',
+        'Complex permutations cuTENSOR fuses directly',
         'The tensors are 2D',
         'You need random numbers',
       ],
@@ -464,7 +464,7 @@ export default defineQuestions(
     {
       d: 2,
       q: 'Which library is the right choice for an FFT-based convolution?',
-      o: ['NCCL', 'cuFFT (forward FFT, pointwise multiply, inverse FFT)', 'cuRAND', 'cuDF'],
+      o: ['NCCL', 'cuFFT', 'cuRAND', 'cuDF'],
       a: 1,
       x: ['cuBLAS', 'NPP', 'Thrust'],
       e: 'Convolution can be done as elementwise multiplication in the frequency domain: cuFFT to transform, multiply, and inverse-transform. For small filters, direct/Winograd convolution (cuDNN) is usually faster; FFT wins for large kernels.',
@@ -476,7 +476,7 @@ export default defineQuestions(
       q: 'CUTLASS also ships a Python interface. Its main benefit is…',
       o: [
         'Running kernels on the CPU',
-        'Letting you configure, emit, and autotune CUTLASS GEMM/conv kernels from Python (e.g. generate a specialized kernel) without hand-writing the C++ template instantiation',
+        'Configure and emit CUTLASS kernels from Python',
         'Profiling',
         'Data loading',
       ],
@@ -495,7 +495,7 @@ export default defineQuestions(
       q: 'cuda-python (the official bindings) gives Python access to…',
       o: [
         'Only NumPy',
-        'The CUDA Driver and Runtime APIs (and NVRTC) from Python, so tools/frameworks can manage contexts, modules, memory, and launches without C++',
+        'Driver/Runtime/NVRTC from Python',
         'Just cuBLAS',
         'A dataframe',
       ],
@@ -514,7 +514,7 @@ export default defineQuestions(
       q: 'A practical reason to use a tuned library (cuBLAS/cuDNN/CUTLASS) instead of Triton/hand-written kernels for standard ops is…',
       o: [
         'Libraries are always slower',
-        'They are maintained and re-tuned for each new GPU generation and cover many shapes, so you inherit peak performance and forward support for free',
+        'Re-tuned per GPU gen; inherit peak perf for free',
         'They cannot use tensor cores',
         'They only run on CPUs',
       ],

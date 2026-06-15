@@ -7,7 +7,7 @@ export default defineQuestions('libraries', [
     q: 'What does cuBLAS provide?',
     o: [
       'A deep-learning training framework',
-      'GPU-accelerated BLAS (Basic Linear Algebra Subprograms): GEMM, GEMV, dot, axpy, etc.',
+      'GPU-accelerated BLAS: GEMM, GEMV, dot, axpy, etc.',
       'A profiler',
       'A graph compiler',
     ],
@@ -35,7 +35,7 @@ export default defineQuestions('libraries', [
     q: 'What is cuDNN used for?',
     o: [
       'General linear algebra',
-      'Primitives for deep neural networks: convolution, pooling, normalization, activation, attention',
+      'DNN primitives: conv, pool, norm, activations',
       'Multi-GPU communication',
       'Memory allocation',
     ],
@@ -49,7 +49,7 @@ export default defineQuestions('libraries', [
     q: 'Thrust is best described as…',
     o: [
       'A low-level PTX assembler',
-      'A C++ parallel algorithms library (STL-like: sort, reduce, scan, transform) for the GPU',
+      'C++ parallel algorithms (STL-like) for the GPU',
       'A profiler',
       'A networking library',
     ],
@@ -63,7 +63,7 @@ export default defineQuestions('libraries', [
     q: 'CUB differs from Thrust in that it…',
     o: [
       'Only runs on the CPU',
-      'Provides reusable, tuned building blocks at warp/block/device scope (e.g. BlockReduce, DeviceScan) for use inside your own kernels',
+      'Warp/block/device-scope reusable primitives',
       'Is a Python library',
       'Replaces cuBLAS',
     ],
@@ -77,7 +77,7 @@ export default defineQuestions('libraries', [
     q: 'What is CUTLASS?',
     o: [
       'A closed-source replacement for cuBLAS',
-      'An open-source collection of CUDA C++ template abstractions for high-performance GEMM/convolution, exposing the building blocks of tensor-core kernels',
+      'Open-source C++ templates for GEMM/conv with tensor cores',
       'A Python autodiff framework',
       'A profiler GUI',
     ],
@@ -91,7 +91,7 @@ export default defineQuestions('libraries', [
     q: 'In CUTLASS/CuTe, a "Layout" is fundamentally…',
     o: [
       'A memory allocator',
-      'A mapping from logical coordinates to a linear index, described by a Shape and a Stride (composable, hierarchical)',
+      '(Shape, Stride) map',
       'A thread scheduler',
       'A precision format',
     ],
@@ -105,7 +105,7 @@ export default defineQuestions('libraries', [
     q: 'In CuTe, what does a Tensor combine?',
     o: [
       'Two GPUs',
-      'An engine (a pointer/iterator into memory) together with a Layout that maps coordinates to offsets',
+      'Engine + Layout',
       'A kernel and a stream',
       'A shape and a precision',
     ],
@@ -119,7 +119,7 @@ export default defineQuestions('libraries', [
     q: 'A key advantage of CuTe’s layout algebra for kernel authors is…',
     o: [
       'It removes the need for shared memory',
-      'Operations like tiling, partitioning across threads, and swizzling are expressed as composable layout transforms instead of error-prone manual index math',
+      'Tiling/partition/swizzle as composable layout algebra',
       'It automatically picks the GPU',
       'It compiles to Python',
     ],
@@ -133,7 +133,7 @@ export default defineQuestions('libraries', [
     q: 'cuBLASLt and the "epilogue" concept allow you to…',
     o: [
       'Run BLAS on the CPU',
-      'Fuse post-GEMM operations (bias add, ReLU/GELU, scaling) into the GEMM kernel, avoiding extra memory passes',
+      'Fuse bias/activation/scaling into the GEMM',
       'Skip the matmul',
       'Compress the output',
     ],
@@ -147,7 +147,7 @@ export default defineQuestions('libraries', [
     q: 'Why might you choose cuBLAS over a hand-written GEMM kernel for production?',
     o: [
       'cuBLAS is always slower but simpler',
-      'It is heavily autotuned per architecture and per problem shape, usually matching or beating hand-written kernels with far less effort',
+      'Autotuned per arch/shape; usually matches hand-tuned',
       'cuBLAS supports only tiny matrices',
       'Hand-written kernels cannot use tensor cores',
     ],
@@ -161,7 +161,7 @@ export default defineQuestions('libraries', [
     q: 'For a batched many-small-matrix multiply, the most efficient cuBLAS entry point is usually…',
     o: [
       'A loop calling cublasSgemm once per matrix',
-      'cublasGemmStridedBatched / cublasGemmBatched, which process all matrices in one launch',
+      'cublasGemmStridedBatched in one launch',
       'cuDNN convolution',
       'Thrust transform',
     ],
@@ -189,7 +189,7 @@ export default defineQuestions('libraries', [
     q: 'CUTLASS 3.x organizes a GEMM into a hierarchy that maps onto the architecture. Which ordering (largest to smallest tile) is correct?',
     o: [
       'Instruction → Warp → Threadblock',
-      'Threadblock (cluster) tile → Warp/Warpgroup tile → Instruction (MMA) tile',
+      'Cluster → Warpgroup → MMA tile',
       'Grid → Block → Thread',
       'Device → Stream → Kernel',
     ],
@@ -203,7 +203,7 @@ export default defineQuestions('libraries', [
     q: 'ldmatrix (used by CUTLASS/CuTe) is a hardware instruction that…',
     o: [
       'Loads a matrix from global to global memory',
-      'Cooperatively loads shared-memory data into registers in the fragment layout the tensor-core MMA expects',
+      'Warp-loads SMEM into tensor-core register fragments',
       'Multiplies two matrices',
       'Transposes a matrix in DRAM',
     ],
@@ -217,7 +217,7 @@ export default defineQuestions('libraries', [
     q: 'Which library would you reach for to compute a device-wide radix sort of 100M keys with minimal code?',
     o: [
       'cuBLAS',
-      'Thrust (thrust::sort) or CUB (DeviceRadixSort)',
+      'Thrust or CUB',
       'cuDNN',
       'NCCL',
     ],

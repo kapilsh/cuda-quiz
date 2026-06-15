@@ -469,7 +469,7 @@ export default defineQuestions(
       q: 'Across one GPU generation, the main reason a kernel runs faster on the data-center part than the consumer part (same architecture) is often…',
       o: [
         'A different ISA',
-        'More SMs, bandwidth, and FP64/tensor throughput',
+        'More SMs, bandwidth, and FP64/TC support',
         'A faster CPU',
         'Lower precision',
       ],

@@ -8,7 +8,7 @@ export default defineQuestions('distributed', [
     q: 'In pure data parallelism, what is replicated and what is split across GPUs?',
     o: [
       'Model is split; data is replicated',
-      'The full model is replicated on every GPU; each GPU processes a different shard of the input batch',
+      'Full model replicated on every GPU; batch sharded',
       'Both model and data are split',
       'Neither is split',
     ],
@@ -22,7 +22,7 @@ export default defineQuestions('distributed', [
     q: 'What is the main limitation that data parallelism alone cannot solve?',
     o: [
       'Slow data loading',
-      'A model that does not fit in a single GPU’s memory — data parallelism replicates the whole model on each GPU',
+      'Model too big for one GPU; DP cannot shard it',
       'Too many GPUs',
       'Gradient averaging',
     ],
@@ -36,7 +36,7 @@ export default defineQuestions('distributed', [
     q: 'Tensor (model) parallelism splits…',
     o: [
       'The batch across GPUs',
-      'Individual layers’ weight matrices across GPUs, so a single matmul is computed cooperatively with communication (e.g. all-reduce) within the layer',
+      'Weight matrices across GPUs; cooperative matmul',
       'The training steps across GPUs',
       'The dataset files',
     ],
@@ -50,7 +50,7 @@ export default defineQuestions('distributed', [
     q: 'In Megatron-style tensor parallelism for an MLP (two linear layers), the standard split is…',
     o: [
       'Both layers split the same way with two all-reduces',
-      'First layer column-parallel (no comm), second layer row-parallel, with a single all-reduce after the second to combine partial sums',
+      'First column-parallel (no comm); second row-parallel, one all-reduce after',
       'Replicate both layers',
       'Split only the activation',
     ],
@@ -64,7 +64,7 @@ export default defineQuestions('distributed', [
     q: 'Pipeline parallelism splits the model by…',
     o: [
       'Splitting each weight matrix',
-      'Assigning consecutive layers (stages) to different GPUs and streaming micro-batches through the stages',
+      'Layers split into stages; micro-batches streamed through',
       'Replicating layers',
       'Splitting the optimizer state',
     ],
@@ -78,7 +78,7 @@ export default defineQuestions('distributed', [
     q: 'The "bubble" in pipeline parallelism refers to…',
     o: [
       'A memory leak',
-      'Idle time at the start/end of the pipeline (and at the fill/drain) when not all stages have work, reducing efficiency',
+      'Idle fill/drain time when not all stages have work',
       'A communication buffer',
       'A type of all-reduce',
     ],
@@ -92,7 +92,7 @@ export default defineQuestions('distributed', [
     q: 'ZeRO (Zero Redundancy Optimizer) reduces memory by…',
     o: [
       'Using lower precision only',
-      'Sharding optimizer states (Stage 1), gradients (Stage 2), and parameters (Stage 3) across data-parallel ranks instead of replicating them',
+      'Shards optimizer states, grads, and params across DP ranks',
       'Removing the optimizer',
       'Compressing activations',
     ],
@@ -104,7 +104,7 @@ export default defineQuestions('distributed', [
   {
     d: 4,
     q: 'FSDP (Fully Sharded Data Parallel) is conceptually equivalent to which ZeRO stage?',
-    o: ['ZeRO Stage 0', 'ZeRO Stage 3 (parameters, gradients, and optimizer states all sharded)', 'Pipeline parallelism', 'Tensor parallelism'],
+    o: ['ZeRO Stage 0', 'ZeRO Stage 3 (all three components sharded)', 'Pipeline parallelism', 'Tensor parallelism'],
     a: 1,
     e: 'PyTorch FSDP shards parameters, gradients, and optimizer states across data-parallel ranks — equivalent to ZeRO-3. It all-gathers a layer’s full params just-in-time for compute, then frees them, trading communication for memory.',
     ref: 'PyTorch FSDP docs; ZeRO paper',
@@ -115,7 +115,7 @@ export default defineQuestions('distributed', [
     q: 'In ZeRO-3 / FSDP, the extra communication compared to plain data parallelism is…',
     o: [
       'Nothing extra',
-      'An all-gather of parameters before each layer’s forward/backward (since params are sharded) in addition to the gradient reduce-scatter',
+      'All-gather params per layer + reduce-scatter grads',
       'Only a broadcast at startup',
       'A pipeline send/recv',
     ],
@@ -129,7 +129,7 @@ export default defineQuestions('distributed', [
     q: 'Sequence/context parallelism is introduced primarily to address…',
     o: [
       'Too-small batch sizes',
-      'The activation memory and compute of very long sequences, by splitting the sequence dimension across GPUs',
+      'Long-sequence activation memory; seq dim sharded across GPUs',
       'Slow optimizers',
       'Gradient noise',
     ],
@@ -152,7 +152,7 @@ export default defineQuestions('distributed', [
     q: '"3D parallelism" in large-model training combines which three?',
     o: [
       'Three different optimizers',
-      'Data parallelism + tensor (model) parallelism + pipeline parallelism',
+      'Data + tensor + pipeline parallelism',
       'FP32 + FP16 + FP8',
       'Three GPUs',
     ],
@@ -166,7 +166,7 @@ export default defineQuestions('distributed', [
     q: 'Gradient accumulation lets you…',
     o: [
       'Train without gradients',
-      'Simulate a larger effective batch size by summing gradients over several micro-batches before one optimizer step, trading compute time for memory',
+      'Accumulate grads over micro-batches before one optimizer step',
       'Skip the backward pass',
       'Average across GPUs without NCCL',
     ],
@@ -180,7 +180,7 @@ export default defineQuestions('distributed', [
     q: 'Activation checkpointing (gradient checkpointing) trades…',
     o: [
       'Accuracy for speed',
-      'Extra recomputation (recompute activations during backward) for reduced activation memory',
+      'Recompute activations (backward) for less memory',
       'Communication for compute',
       'Precision for range',
     ],
@@ -194,7 +194,7 @@ export default defineQuestions('distributed', [
     q: 'Why is tensor parallelism usually kept within a single node while pipeline/data parallelism span nodes?',
     o: [
       'Tensor parallelism needs more GPUs',
-      'Tensor parallelism communicates a lot (all-reduce every layer) and needs the high bandwidth/low latency of intra-node NVLink; pipeline/data parallelism communicate less and tolerate slower inter-node links',
+      'TP needs NVLink BW (all-reduce/layer); PP/DP tolerate inter-node',
       'Pipeline parallelism cannot cross nodes',
       'Data parallelism only works on one node',
     ],
@@ -208,7 +208,7 @@ export default defineQuestions('distributed', [
     q: 'In synchronous data-parallel SGD, why must gradients be all-reduced before the optimizer step?',
     o: [
       'To save memory',
-      'So every replica applies the same globally-averaged gradient and the model copies stay identical across GPUs',
+      'Replicas apply same averaged gradient; stay identical',
       'To increase the learning rate',
       'To shuffle the data',
     ],
@@ -222,7 +222,7 @@ export default defineQuestions('distributed', [
     q: 'The 1F1B (one-forward-one-backward) pipeline schedule improves over naive GPipe by…',
     o: [
       'Eliminating the bubble entirely',
-      'Interleaving forward and backward passes to bound the number of in-flight activations, reducing peak activation memory per stage',
+      'Bounds in-flight activations by interleaving fwd/bwd',
       'Removing pipeline parallelism',
       'Using larger micro-batches',
     ],

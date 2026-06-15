@@ -10,7 +10,7 @@ export default defineQuestions(
       q: 'Why did NVIDIA add a dedicated asynchronous-copy datapath (cp.async on Ampere) instead of relying on the existing load/store path?',
       o: [
         'To compress data',
-        'The old path staged global→shared through registers (occupying them and blocking the thread); a direct async global→shared path frees registers and overlaps the copy with compute',
+        'Async global→shared; skips registers',
         'To increase clocks',
         'To add tensor cores',
       ],
@@ -29,7 +29,7 @@ export default defineQuestions(
       q: 'TMA on Hopper is a single-thread, descriptor-driven engine. Compared to all 32 lanes issuing cp.async, this reduces…',
       o: [
         'Precision',
-        'Address-generation work and register pressure — one thread launches a bulk multidimensional copy instead of every lane computing addresses and holding them in registers',
+        'Register use and address-gen work',
         'Shared memory',
         'The clock',
       ],
@@ -48,7 +48,7 @@ export default defineQuestions(
       q: 'The unified L1/shared-memory design (Volta+) lets a kernel…',
       o: [
         'Use both at full size always',
-        'Trade the on-chip SRAM between L1 cache and shared memory via a configurable carveout, matching the kernel’s needs (cache-heavy vs shared-memory-heavy)',
+        'Tune the L1/shared split via a carveout',
         'Disable both',
         'Move them off-chip',
       ],
@@ -67,7 +67,7 @@ export default defineQuestions(
       q: 'The Sparse Tensor Core processes 2:4 structured-sparse matrices by…',
       o: [
         'Skipping random zeros',
-        'Storing 2 nonzeros per 4-element group plus 2-bit metadata indices, and feeding only the nonzeros (with the dense operand selected by the indices) to double throughput',
+        '2:4 metadata; feed only nonzeros for ~2×',
         'Compressing to FP8',
         'Using the CPU',
       ],
@@ -86,7 +86,7 @@ export default defineQuestions(
       q: 'A GPU hides memory latency primarily through massive multithreading, whereas a CPU primarily uses…',
       o: [
         'More threads',
-        'Large caches, out-of-order execution, prefetchers, and branch prediction to reduce/hide latency for a few threads',
+        'Large caches, OoO, and prefetchers',
         'Tensor cores',
         'Higher bandwidth',
       ],
@@ -105,7 +105,7 @@ export default defineQuestions(
       q: 'wgmma (Hopper warpgroup MMA) is "asynchronous," meaning…',
       o: [
         'It runs on the host',
-        'The instruction launches the matrix multiply and the warpgroup can proceed (e.g. issue more loads) while it executes, with completion tracked via a commit/wait — overlapping math with data movement',
+        'Math and data movement overlap via commit/wait',
         'It skips accumulation',
         'It uses the CPU',
       ],
@@ -124,7 +124,7 @@ export default defineQuestions(
       q: 'Why are tensor cores far more area/energy efficient than CUDA cores for matmul?',
       o: [
         'They run at higher clocks',
-        'A single tensor-core instruction performs a whole small matrix multiply-accumulate, amortizing instruction fetch/decode/scheduling over many MACs and using dense systolic-like datapaths',
+        'Many MACs per instruction; amortizes control',
         'They use the CPU',
         'They avoid memory',
       ],
@@ -143,7 +143,7 @@ export default defineQuestions(
       q: 'The "GigaThread" global scheduler distributes blocks; within an SM, what assigns warps to execution each cycle?',
       o: [
         'The global scheduler',
-        'The per-sub-partition warp schedulers (4 per SM), each selecting an eligible warp to issue from its assigned warps',
+        'The 4 per-SM sub-partition warp schedulers',
         'The host',
         'The memory controller',
       ],
@@ -162,7 +162,7 @@ export default defineQuestions(
       q: 'On Hopper, a thread block cluster’s blocks can access each other’s shared memory because the hardware provides…',
       o: [
         'A shared L1',
-        'A dedicated SM-to-SM interconnect within the GPC, mapping a peer block’s shared memory into the accessing block’s address space (DSMEM)',
+        'Intra-GPC SM-to-SM network (DSMEM)',
         'NVLink',
         'A global barrier',
       ],
@@ -181,7 +181,7 @@ export default defineQuestions(
       q: 'Blackwell’s 5th-gen tensor cores (tcgen05) operate at the granularity of…',
       o: [
         'A single thread',
-        'A larger cooperative unit (e.g. multiple warps / the whole CTA via the 2-SM "pair") feeding much wider MMAs from Tensor Memory, beyond Hopper’s warpgroup',
+        'CTA-level MMA unit using Tensor Memory',
         'One warp only',
         'The host',
       ],
@@ -200,7 +200,7 @@ export default defineQuestions(
       q: 'The reason GPUs schedule work in warps (rather than individual threads) is fundamentally to…',
       o: [
         'Save memory',
-        'Amortize control logic (one instruction fetch/decode/schedule drives 32 lanes), trading some flexibility (divergence cost) for huge throughput efficiency',
+        'Amortize fetch/decode over 32 lanes',
         'Enable atomics',
         'Increase clocks',
       ],
@@ -219,7 +219,7 @@ export default defineQuestions(
       q: 'The L2 cache being the device-wide coherence point means…',
       o: [
         'L1 is coherent across SMs',
-        'Atomics and cross-SM visibility resolve at L2; per-SM L1s are not coherent with each other, so cross-block communication needs fences/L1-bypass to reach the L2 coherence point',
+        'Cross-SM visibility and atomics resolve at L2',
         'Registers are shared',
         'Shared memory is global',
       ],
@@ -238,7 +238,7 @@ export default defineQuestions(
       q: 'Why does the data-center A100/H100 have a much higher FP64 ratio than a same-generation GeForce card?',
       o: [
         'Software emulation',
-        'They include dedicated FP64 units (and FP64 tensor cores) sized for HPC; consumer cards minimize FP64 hardware to save area/cost since games don’t need it',
+        'FP64 units + FP64 TCs; consumer cuts area',
         'Higher clocks',
         'More memory',
       ],
@@ -257,7 +257,7 @@ export default defineQuestions(
       q: 'NVLink-C2C (Grace Hopper) gives the GPU coherent access to CPU memory, which architecturally enables…',
       o: [
         'Faster tensor cores',
-        'Treating the large CPU LPDDR as an extended, coherent memory tier for the GPU (e.g. for huge models / KV caches) at ~900 GB/s, beyond HBM capacity',
+        'CPU LPDDR as coherent extended memory tier',
         'More SMs',
         'Lower precision',
       ],
@@ -276,7 +276,7 @@ export default defineQuestions(
       q: 'The number of warp schedulers per SM (4 on modern GPUs) sets…',
       o: [
         'The register file size',
-        'The maximum instructions that can be issued per cycle from distinct warps (up to ~4, more with dual-issue) — bounding per-SM instruction throughput',
+        'Issue rate: up to ~4 instructions per cycle',
         'The L2 size',
         'The number of SMs',
       ],
@@ -295,7 +295,7 @@ export default defineQuestions(
       q: 'Why is HBM placed on the same package (via an interposer) as the GPU die?',
       o: [
         'To save cost',
-        'A very wide interface (thousands of bits) needs short, dense connections an interposer provides, delivering the enormous bandwidth (TB/s) that off-package GDDR buses cannot',
+        'Wide bus on interposer → TB/s bandwidth',
         'For cooling',
         'To reduce capacity',
       ],
@@ -314,7 +314,7 @@ export default defineQuestions(
       q: 'A thread block cluster adds a tier between block and grid. The three cooperation tiers on Hopper are…',
       o: [
         'Thread, warp, block',
-        'Block (__syncthreads), cluster (cluster.sync + DSMEM), and grid (cooperative launch grid.sync)',
+        'Block, cluster (DSMEM), and grid',
         'Warp, block, grid',
         'SM, GPC, GPU',
       ],
@@ -333,7 +333,7 @@ export default defineQuestions(
       q: 'Why does Blackwell’s NVFP4 (with micro-scaling) roughly double inference throughput vs Hopper FP8 for some models?',
       o: [
         'Higher clocks',
-        'FP4 packs twice the elements per byte of FP8, so tensor cores process about double the elements per cycle — with per-block micro-scaling preserving enough accuracy',
+        'FP4 = 2× elems/byte; micro-scaling OK',
         'More SMs only',
         'Larger HBM',
       ],
@@ -371,7 +371,7 @@ export default defineQuestions(
       q: 'Why can two GPUs connected only by PCIe (no NVLink) bottleneck multi-GPU training more than an NVLink-connected pair?',
       o: [
         'PCIe is more reliable',
-        'PCIe bandwidth (tens of GB/s) is far below NVLink (hundreds of GB/s), so gradient all-reduce / activation exchange takes much longer, limiting scaling',
+        'PCIe far below NVLink; collectives bottleneck',
         'PCIe has higher latency only',
         'PCIe disables P2P always',
       ],
@@ -390,7 +390,7 @@ export default defineQuestions(
       q: 'The "Transformer Engine" is partly hardware (FP8 tensor cores) and partly software because…',
       o: [
         'Hardware alone suffices',
-        'The hardware does fast FP8 matmul, but software manages the per-tensor scaling/amax statistics and chooses precision per layer to keep accuracy — both are needed for usable FP8 training',
+        'HW FP8 matmul + SW scaling/amax per layer',
         'It is pure software',
         'It runs on the CPU',
       ],
@@ -409,7 +409,7 @@ export default defineQuestions(
       q: 'The register file’s large size (256 KB/SM) relative to L1/shared exists because…',
       o: [
         'Registers are cheap',
-        'Thousands of resident threads each need private fast storage simultaneously; the large register file is what makes zero-overhead warp switching (keeping all contexts live) possible',
+        'Holds contexts of all resident warps live',
         'It caches global memory',
         'It stores the program',
       ],
@@ -428,7 +428,7 @@ export default defineQuestions(
       q: 'Why does TMA multicast specifically reduce HBM reads in a CLUSTER GEMM but not a single-block GEMM?',
       o: [
         'It compresses data',
-        'Multicast writes one HBM-loaded tile into MULTIPLE cluster blocks’ shared memory at once; a single block has no peers to share the load with, so there is nothing to multicast to',
+        'Tiles shared across cluster peers; no benefit alone',
         'It is faster on one block',
         'Single blocks can’t use TMA',
       ],
@@ -447,7 +447,7 @@ export default defineQuestions(
       q: 'Across architecture generations, a recurring theme enabling higher tensor throughput is…',
       o: [
         'Higher clocks only',
-        'Lower-precision formats (FP16→TF32/BF16→FP8→FP4) plus better operand feeding (async copy → TMA) and larger cooperative MMA units (warp → warpgroup → wider)',
+        'Lower precision + wider MMAs + better feeding',
         'More FP64',
         'Bigger registers only',
       ],
@@ -466,7 +466,7 @@ export default defineQuestions(
       q: 'Why are CUDA cores and tensor cores both present on the same SM rather than choosing one?',
       o: [
         'For redundancy',
-        'Real kernels mix general scalar/vector work (CUDA cores: indexing, activations, reductions) with dense matmul (tensor cores); both are needed and they often run cooperatively',
+        'General work (CUDA cores) + matmul (TCs) coexist',
         'Tensor cores are backups',
         'CUDA cores are deprecated',
       ],
@@ -485,7 +485,7 @@ export default defineQuestions(
       q: 'MIG partitions an A100/H100 into instances with dedicated SMs, L2 slices, and memory because…',
       o: [
         'It overclocks',
-        'Some workloads (inference, multi-tenant) underuse a whole GPU; hard partitioning gives each tenant guaranteed, isolated resources with predictable performance (QoS)',
+        'Isolated resources and QoS for multi-tenant use',
         'It increases bandwidth',
         'It enables tensor cores',
       ],
@@ -504,7 +504,7 @@ export default defineQuestions(
       q: 'The trend toward rack-scale NVLink domains (e.g. NVL72) is driven by…',
       o: [
         'Cheaper GPUs',
-        'Very large models needing tensor/expert parallelism across many GPUs with high all-to-all bandwidth; a unified NVLink fabric makes dozens of GPUs behave like one large accelerator',
+        'Huge models need high-BW GPU-all-to-all',
         'Lower precision',
         'Graphics',
       ],
@@ -523,7 +523,7 @@ export default defineQuestions(
       q: 'The achievable fraction of peak tensor FLOP/s on a real GEMM is limited mainly by…',
       o: [
         'The ISA',
-        'How well the operand-feeding path (shared memory / TMA / registers) keeps the tensor cores fed — memory feeding, not the tensor cores, is usually the practical limit',
+        'How well the feeding path keeps TCs fed',
         'The number of SMs',
         'The host',
       ],
@@ -542,7 +542,7 @@ export default defineQuestions(
       q: 'Why does each successive architecture tend to increase shared-memory capacity per SM (e.g. 48→96→164→228 KB)?',
       o: [
         'To reduce registers',
-        'Larger on-chip tiles enable more data reuse and deeper pipelines for the growing tensor-core throughput, keeping the math units fed — capacity scales with compute',
+        'Bigger tiles + pipelines feed growing TCs',
         'For graphics',
         'To replace HBM',
       ],

@@ -8,7 +8,7 @@ export default defineQuestions('multigpu', [
     q: 'What is NCCL?',
     o: [
       'A CUDA debugger',
-      'The NVIDIA Collective Communications Library — optimized multi-GPU/multi-node collectives (all-reduce, broadcast, etc.)',
+      'NVIDIA multi-GPU collective library',
       'A linear algebra library',
       'A graph compiler',
     ],
@@ -31,7 +31,7 @@ export default defineQuestions('multigpu', [
     q: 'The ring all-reduce algorithm is bandwidth-optimal because…',
     o: [
       'It sends all data to a single root',
-      'Each GPU sends/receives only ~2×(N-1)/N of the data over its links, and total traffic per GPU is independent of the number of GPUs',
+      '~2×(N-1)/N data per GPU, constant regardless of N',
       'It uses broadcast internally',
       'It avoids the network entirely',
     ],
@@ -59,7 +59,7 @@ export default defineQuestions('multigpu', [
     q: 'What does AllGather do?',
     o: [
       'Sums tensors across GPUs',
-      'Each GPU contributes a shard; afterwards every GPU holds the full concatenation of all shards',
+      'All ranks get the full concatenation of shards',
       'Sends data to one root',
       'Splits a tensor across GPUs',
     ],
@@ -73,7 +73,7 @@ export default defineQuestions('multigpu', [
     q: 'ReduceScatter differs from Reduce in that…',
     o: [
       'It does no reduction',
-      'It reduces across ranks but each rank keeps only a distinct shard of the result (not the whole thing on one root)',
+      'Reduces across ranks; each keeps only its own shard',
       'It only works on two GPUs',
       'It is the same as Broadcast',
     ],
@@ -87,7 +87,7 @@ export default defineQuestions('multigpu', [
     q: 'What is a NCCL "communicator"?',
     o: [
       'A network cable',
-      'An object that defines a group of ranks (GPUs) participating in collectives, each with a unique rank id',
+      'A handle defining a collective rank group',
       'A CUDA stream',
       'A profiler session',
     ],
@@ -101,7 +101,7 @@ export default defineQuestions('multigpu', [
     q: 'NCCL collectives are stream-ordered and asynchronous. What does this imply for correctness?',
     o: [
       'You must call cudaDeviceSynchronize after every collective',
-      'The collective is enqueued on a CUDA stream and runs ordered with other GPU work on that stream; you synchronize the stream (not necessarily the whole device) to know it completed',
+      'Enqueued on a stream, ordered with GPU work; sync the stream to know it completed',
       'They run on the CPU',
       'They block the host by default',
     ],
@@ -115,7 +115,7 @@ export default defineQuestions('multigpu', [
     q: 'Why must all ranks call NCCL collectives in the same order with matching arguments?',
     o: [
       'For logging',
-      'Collectives are collective operations — every participating rank must launch the matching call; mismatched order/counts/types cause hangs or corruption',
+      'All ranks must match the call; mismatches deadlock',
       'It is only a style preference',
       'To reduce memory usage',
     ],
@@ -129,7 +129,7 @@ export default defineQuestions('multigpu', [
     q: 'Peer-to-peer (P2P) access between two GPUs enables…',
     o: [
       'GPUs to share the same memory chip',
-      'One GPU to directly read/write another GPU’s memory (e.g. over NVLink/PCIe) without staging through host memory',
+      'Direct GPU-to-GPU read/write without host staging',
       'Faster host-to-device copies',
       'Shared L2 cache',
     ],
@@ -143,7 +143,7 @@ export default defineQuestions('multigpu', [
     q: 'For multi-node (across servers) all-reduce, NCCL typically uses which transport?',
     o: [
       'PCIe only',
-      'InfiniBand/RoCE via GPUDirect RDMA (and sockets as fallback), often with NVLink/NVSwitch inside each node',
+      'InfiniBand/RoCE with GPUDirect RDMA',
       'NVLink across nodes',
       'USB',
     ],
@@ -157,7 +157,7 @@ export default defineQuestions('multigpu', [
     q: 'NCCL uses tree algorithms (in addition to rings) primarily to…',
     o: [
       'Increase per-link bandwidth',
-      'Reduce latency at large scale, since tree depth grows logarithmically with the number of ranks',
+      'Reduce latency via O(log N) tree steps',
       'Avoid using NVLink',
       'Support only small messages',
     ],
@@ -185,7 +185,7 @@ export default defineQuestions('multigpu', [
     q: 'How does NCCL overlap communication with computation efficiently during backprop in data-parallel training?',
     o: [
       'It waits for all gradients before any communication',
-      'Gradients are bucketed and an all-reduce is launched on a separate stream as soon as each bucket is ready, overlapping with ongoing backward compute',
+      'Buckets launched on a comm stream as ready, overlapping with backward',
       'It runs all-reduce on the CPU',
       'It disables computation during communication',
     ],
@@ -199,7 +199,7 @@ export default defineQuestions('multigpu', [
     q: 'ncclGroupStart()/ncclGroupEnd() are used to…',
     o: [
       'Create a new GPU group physically',
-      'Batch multiple NCCL calls so they are launched together (e.g. aggregating many send/recv to avoid deadlock and improve efficiency)',
+      'Batch NCCL calls into one launch to avoid deadlock',
       'Synchronize the host',
       'Allocate communicators',
     ],
@@ -213,7 +213,7 @@ export default defineQuestions('multigpu', [
     q: 'In a node with NVSwitch (e.g. DGX H100), why can all-reduce among 8 GPUs approach full NVLink bandwidth regardless of pairing?',
     o: [
       'NVSwitch compresses the data',
-      'NVSwitch provides a non-blocking all-to-all fabric so every GPU pair has full bandwidth, making the topology effectively a fully-connected mesh',
+      'All-to-all NVSwitch fabric; any pair at full speed',
       'It uses PCIe instead',
       'It reduces the data size',
     ],

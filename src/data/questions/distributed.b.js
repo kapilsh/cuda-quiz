@@ -10,7 +10,7 @@ export default defineQuestions(
       q: 'For a model with P parameters trained with Adam in FP32, the optimizer states (momentum + variance) alone consume roughly…',
       o: [
         '0 bytes',
-        '8P bytes (two FP32 buffers, m and v)',
+        '8P bytes (FP32 m and v)',
         '2P bytes',
         '16P bytes',
       ],
@@ -25,7 +25,7 @@ export default defineQuestions(
       q: 'The four main consumers of training memory are parameters, gradients, optimizer states, and…',
       o: [
         'The dataset',
-        'Activations (intermediate forward results kept for the backward pass)',
+        'Activations stored for the backward pass',
         'The CUDA context',
         'The kernel code',
       ],
@@ -44,7 +44,7 @@ export default defineQuestions(
       q: 'ZeRO-Offload moves which state to CPU memory to fit larger models?',
       o: [
         'The activations',
-        'Optimizer states (and the optimizer step / FP32 master weights) to CPU RAM, with gradients offloaded for the CPU-side update',
+        'Optimizer states to CPU; update runs on CPU',
         'The dataset',
         'The model architecture',
       ],
@@ -63,7 +63,7 @@ export default defineQuestions(
       q: 'GPipe’s pipeline schedule (all forwards, then all backwards) has a larger activation-memory footprint than 1F1B because…',
       o: [
         'It uses more stages',
-        'It must store activations for ALL in-flight micro-batches before any backward frees them',
+        'Holds all micro-batch activations till backward',
         'It has no bubble',
         'It uses lower precision',
       ],
@@ -82,7 +82,7 @@ export default defineQuestions(
       q: 'The interleaved (virtual-pipeline) schedule reduces the pipeline bubble further by…',
       o: [
         'Adding more micro-batches only',
-        'Assigning each device multiple non-contiguous "virtual" stages (model chunks), so there is more fine-grained work to fill the pipeline',
+        'Multiple virtual stages per GPU; finer pipeline fill',
         'Removing pipeline parallelism',
         'Using FP8',
       ],
@@ -101,7 +101,7 @@ export default defineQuestions(
       q: '"Zero-bubble" pipeline schedules aim to eliminate the bubble by…',
       o: [
         'Removing backward passes',
-        'Splitting the backward into input-grad and weight-grad parts and scheduling the weight-grad work to fill idle slots',
+        'Schedule weight-grad work into idle bubble slots',
         'Using one micro-batch',
         'Disabling the optimizer',
       ],
@@ -120,7 +120,7 @@ export default defineQuestions(
       q: 'The "linear scaling rule" for large-batch training says when you multiply the global batch size by k, you should…',
       o: [
         'Divide the learning rate by k',
-        'Multiply the learning rate by k (with warmup), to keep the per-step update magnitude consistent',
+        'Multiply LR by k (with warmup)',
         'Keep the learning rate fixed',
         'Square the learning rate',
       ],
@@ -139,7 +139,7 @@ export default defineQuestions(
       q: 'In DDP, wrapping the loss.backward() of non-final gradient-accumulation micro-steps with model.no_sync() avoids…',
       o: [
         'Computing gradients',
-        'Triggering an all-reduce on every micro-step — you only sync on the last accumulation step',
+        'Triggering an all-reduce on every micro-step',
         'Using the optimizer',
         'Storing activations',
       ],
@@ -158,7 +158,7 @@ export default defineQuestions(
       q: 'Megatron "sequence parallelism" complements tensor parallelism by parallelizing the parts of a layer that TP leaves replicated (LayerNorm, dropout). The added communication is…',
       o: [
         'A single broadcast',
-        'all-gather (before the TP region) and reduce-scatter (after), which together cost about the same as the all-reduce they replace',
+        'All-gather + reduce-scatter around TP; same cost',
         'Nothing',
         'A pipeline send',
       ],
@@ -177,7 +177,7 @@ export default defineQuestions(
       q: 'Compared to all-reduce-based data parallelism, the classic parameter-server approach…',
       o: [
         'Always scales better',
-        'Centralizes gradient aggregation/parameter serving on server nodes, which can bottleneck on the servers’ bandwidth and is largely superseded by all-reduce for dense models',
+        'Hub bottleneck; superseded by all-reduce',
         'Uses no network',
         'Requires no servers',
       ],
@@ -196,7 +196,7 @@ export default defineQuestions(
       q: 'Model FLOPs Utilization (MFU) measures…',
       o: [
         'GPU temperature',
-        'Achieved model FLOP/s as a fraction of the hardware’s peak FLOP/s — an end-to-end efficiency metric for training',
+        'Model FLOP/s as fraction of hardware peak FLOP/s',
         'Memory usage',
         'Network bandwidth',
       ],
@@ -215,7 +215,7 @@ export default defineQuestions(
       q: 'Tensor parallelism for multi-head attention naturally splits across GPUs by…',
       o: [
         'Splitting the sequence',
-        'Partitioning attention heads across GPUs (each computes a subset of heads), then combining via the output projection',
+        'Each GPU gets a subset of heads; output projection combines',
         'Splitting the batch',
         'Replicating all heads',
       ],
@@ -234,7 +234,7 @@ export default defineQuestions(
       q: 'Ring Attention enables extremely long context by…',
       o: [
         'Storing the full attention matrix',
-        'Distributing the sequence across GPUs and passing K/V blocks around a ring so each device attends to all keys without any single device holding the whole sequence',
+        'K/V blocks circulate a ring; each GPU attends all keys',
         'Using FP8 only',
         'Replicating the sequence',
       ],
@@ -253,7 +253,7 @@ export default defineQuestions(
       q: 'A "straggler" in synchronous data-parallel training is…',
       o: [
         'A slow data file',
-        'A rank that finishes its step late (slow GPU, contention, imbalance), forcing all other ranks to wait at the gradient all-reduce',
+        'Slow rank; others wait at the all-reduce',
         'A diverged gradient',
         'A failed optimizer',
       ],
@@ -272,7 +272,7 @@ export default defineQuestions(
       q: 'Sharded checkpointing (each rank saves its own shard) is used in large-scale training because…',
       o: [
         'It is required by the optimizer',
-        'Gathering the full state to one rank to save would be slow and memory-prohibitive; sharded saves are parallel and fit memory',
+        'All-gather to save is too slow and memory-prohibitive',
         'It reduces model accuracy',
         'It avoids the need to checkpoint',
       ],
@@ -291,7 +291,7 @@ export default defineQuestions(
       q: 'Selective activation recomputation (vs. recomputing everything) chooses to…',
       o: [
         'Recompute nothing',
-        'Recompute only the cheap-to-recompute / memory-heavy activations (e.g. attention) while storing others, balancing memory savings against recompute cost',
+        'Recompute heavy activations; store cheap ones',
         'Recompute the optimizer',
         'Store all activations',
       ],
@@ -310,7 +310,7 @@ export default defineQuestions(
       q: 'Ranking the per-step communication volume (lowest to highest) for the three classic parallelisms is roughly…',
       o: [
         'Tensor < Pipeline < Data',
-        'Pipeline (P2P activations) < Data (one all-reduce/step) < Tensor (all-reduce every layer)',
+        'PP (P2P) < DP (one all-reduce) < TP (per-layer)',
         'Data < Tensor < Pipeline',
         'They are all equal',
       ],
@@ -329,7 +329,7 @@ export default defineQuestions(
       q: 'Why does ZeRO Stage 1 (sharding only optimizer states) already give a large memory saving for Adam?',
       o: [
         'It shards activations',
-        'Optimizer states (m, v) + FP32 master weights are the largest component (~12 bytes/param), so sharding them across N ranks cuts that by N',
+        '12 B/param optimizer state; sharding cuts by N',
         'It removes gradients',
         'It uses FP8',
       ],
@@ -348,7 +348,7 @@ export default defineQuestions(
       q: 'FSDP wrapping granularity (which submodules become FSDP units) matters because it controls…',
       o: [
         'The learning rate',
-        'The size of each all-gather/reduce-scatter and how much can overlap with compute — too coarse hurts overlap and peak memory, too fine adds overhead',
+        'All-gather size and overlap granularity',
         'The model accuracy',
         'The dataset order',
       ],
@@ -367,7 +367,7 @@ export default defineQuestions(
       q: 'Gradient compression (e.g. quantization or top-k sparsification) for distributed training trades…',
       o: [
         'Memory for compute',
-        'Reduced communication volume for some loss of gradient fidelity (and extra encode/decode work), helping when bandwidth-bound',
+        'Less comm volume; loses some gradient fidelity',
         'Accuracy for memory',
         'Latency for precision',
       ],
@@ -386,7 +386,7 @@ export default defineQuestions(
       q: 'The effective (global) batch size in 3D-parallel training is computed as…',
       o: [
         'micro_batch × tensor_parallel_size',
-        'micro_batch × gradient_accumulation_steps × data_parallel_size',
+        'micro_batch × grad_accum_steps × data_parallel_size',
         'micro_batch × pipeline_stages',
         'micro_batch only',
       ],
@@ -405,7 +405,7 @@ export default defineQuestions(
       q: 'Overlapping the FSDP all-gather of layer N+1’s parameters with the compute of layer N is possible because…',
       o: [
         'They use the same stream',
-        'The all-gather is issued on a separate stream/prefetch ahead of when the params are needed, hiding communication behind the current layer’s compute',
+        'Separate prefetch stream; overlaps with current layer',
         'Communication is instantaneous',
         'Parameters are never sharded',
       ],
@@ -424,7 +424,7 @@ export default defineQuestions(
       q: 'Why is pipeline parallelism often placed ACROSS nodes while tensor parallelism stays within a node?',
       o: [
         'Pipeline needs more memory',
-        'Pipeline’s point-to-point, infrequent activation transfers tolerate slower inter-node links, whereas TP’s frequent per-layer all-reduces need intra-node NVLink',
+        'PP infrequent transfers tolerate inter-node; TP needs NVLink',
         'Tensor parallelism cannot cross GPUs',
         'Pipeline parallelism only works on one GPU',
       ],
@@ -443,7 +443,7 @@ export default defineQuestions(
       q: 'Asynchronous SGD (no global gradient barrier) can speed up throughput but risks…',
       o: [
         'Nothing',
-        '"Stale gradients" — updates computed on outdated parameters — which can slow or destabilize convergence',
+        'Stale gradients; degraded convergence',
         'Running out of GPUs',
         'Higher precision',
       ],
@@ -462,7 +462,7 @@ export default defineQuestions(
       q: 'In MoE training, the two All-to-All exchanges (dispatch and combine) can dominate cost. A common mitigation is…',
       o: [
         'Removing the experts',
-        'Capacity limits + expert/token routing balanced across GPUs, and overlapping the All-to-Alls with expert compute',
+        'Balance routing + capacity; overlap All-to-Alls',
         'Using a parameter server',
         'Disabling tensor parallelism',
       ],
@@ -481,7 +481,7 @@ export default defineQuestions(
       q: 'A simple way to estimate whether data-parallel training will scale well is to compare gradient all-reduce time to…',
       o: [
         'The dataset size',
-        'The backward (compute) time — if comm can be fully overlapped/hidden behind compute, scaling stays near-linear; if comm > compute, it bottlenecks',
+        'Backward compute time; all-reduce must fit within it',
         'The learning rate',
         'The number of parameters only',
       ],

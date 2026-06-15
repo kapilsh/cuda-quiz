@@ -10,7 +10,7 @@ export default defineQuestions(
       q: 'torch.compile (TorchInductor) speeds up PyTorch primarily by…',
       o: [
         'Replacing CUDA with the CPU',
-        'Tracing the graph and generating fused kernels (often Triton) that combine elementwise/reduction ops, cutting kernel launches and HBM round-trips',
+        'Trace graph; fuse ops into fewer Triton/C++ kernels',
         'Using FP64',
         'Disabling autograd',
       ],
@@ -29,7 +29,7 @@ export default defineQuestions(
       q: 'The flash-attn library provides…',
       o: [
         'A general BLAS',
-        'Optimized fused attention kernels (FlashAttention) that compute attention without materializing the N×N score matrix in HBM',
+        'Fused attention; avoids N×N HBM materialization',
         'A data loader',
         'Collective communication',
       ],
@@ -48,7 +48,7 @@ export default defineQuestions(
       q: 'vLLM’s "PagedAttention" improves LLM serving by…',
       o: [
         'Quantizing weights',
-        'Managing the KV cache in non-contiguous fixed-size pages (like OS virtual memory), reducing fragmentation and enabling higher batch concurrency / memory utilization',
+        'Paged KV cache; cuts fragmentation',
         'Using FP64',
         'Disabling attention',
       ],
@@ -67,7 +67,7 @@ export default defineQuestions(
       q: 'CUDA Graphs are integrated into frameworks (e.g. torch.cuda.graphs / make_graphed_callables) to…',
       o: [
         'Improve accuracy',
-        'Capture a training/inference step and replay it, cutting per-step CPU launch overhead for workloads with many small kernels (small models, short sequences)',
+        'Capture and replay; cuts launch overhead',
         'Shard the model',
         'Quantize weights',
       ],
@@ -86,7 +86,7 @@ export default defineQuestions(
       q: 'CUB’s device-wide algorithms are tuned per architecture via "tuning policies." This means…',
       o: [
         'They run on the CPU',
-        'CUB selects block sizes/items-per-thread/algorithm variants specialized for each GPU architecture, so the same call achieves near-optimal performance across generations',
+        'Per-arch block size/variant selection baked in',
         'They are slower on new GPUs',
         'They need manual tuning',
       ],
@@ -105,7 +105,7 @@ export default defineQuestions(
       q: 'thrust::device_vector vs a raw cudaMalloc pointer: device_vector…',
       o: [
         'Is slower to access in kernels',
-        'Is an RAII container managing allocation/deallocation and offering iterators for algorithms, while raw pointers require manual cudaMalloc/cudaFree',
+        'RAII wrapper with iterators for Thrust algorithms',
         'Runs on the host',
         'Cannot be passed to kernels',
       ],
@@ -124,7 +124,7 @@ export default defineQuestions(
       q: 'OptiX is NVIDIA’s library/SDK for…',
       o: [
         'Deep learning',
-        'GPU ray tracing — programmable ray-traversal/intersection (using RT cores) for rendering and, increasingly, scientific/visualization workloads',
+        'GPU ray tracing via RT cores',
         'Collective communication',
         'Sparse linear algebra',
       ],
@@ -143,7 +143,7 @@ export default defineQuestions(
       q: 'cuDNN’s "fused" multi-head attention / scaled-dot-product-attention path competes with FlashAttention by…',
       o: [
         'Materializing the score matrix',
-        'Providing a tuned fused attention implementation (tiling + online softmax) within cuDNN, so frameworks can call a library SDPA kernel instead of a third-party one',
+        'Tuned fused SDPA kernel inside cuDNN',
         'Using the CPU',
         'Disabling tensor cores',
       ],
@@ -162,7 +162,7 @@ export default defineQuestions(
       q: 'NCCL is to collective communication as ____ is to single-GPU GEMM.',
       o: [
         'cuDNN',
-        'cuBLAS (the tuned vendor library you call rather than hand-writing the kernel)',
+        'cuBLAS',
         'Thrust',
         'cuRAND',
       ],
@@ -181,7 +181,7 @@ export default defineQuestions(
       q: 'A reason Triton is popular for research kernels (vs raw CUDA C++) is…',
       o: [
         'It is always faster than CUTLASS',
-        'You write tile-level Python and the compiler handles coalescing, shared-memory management, and scheduling — far less boilerplate to get a performant fused kernel',
+        'Tile-level Python; compiler handles coalescing/shared mem',
         'It runs on the CPU',
         'It avoids the GPU',
       ],
@@ -200,7 +200,7 @@ export default defineQuestions(
       q: 'thrust::sort_by_key is used to…',
       o: [
         'Sort one array only',
-        'Sort keys while permuting an associated values array in the same order — e.g. sorting indices alongside data',
+        'Co-sort keys with a paired values array',
         'Reduce by key',
         'Scan keys',
       ],
@@ -219,7 +219,7 @@ export default defineQuestions(
       q: 'cuBLASLt is needed (over legacy cuBLAS) for fused GEMM epilogues because…',
       o: [
         'Legacy cuBLAS is faster',
-        'The Lt API exposes an epilogue enum (bias, ReLU/GELU, scaling) and layout/precision descriptors to fuse post-GEMM ops into the matmul; the legacy API lacks this flexibility',
+        'Descriptor-based matmul with fused epilogues',
         'It runs on the CPU',
         'It only does FP64',
       ],
@@ -238,7 +238,7 @@ export default defineQuestions(
       q: 'RAPIDS cuML provides…',
       o: [
         'Deep learning training',
-        'GPU-accelerated classical machine-learning algorithms (k-means, random forests, PCA, regression) with a scikit-learn-like API',
+        'GPU classical ML: k-means, forests, PCA',
         'Collective communication',
         'Ray tracing',
       ],
@@ -257,7 +257,7 @@ export default defineQuestions(
       q: 'When PyTorch dispatches scaled_dot_product_attention, it may choose among backends. The selection depends on…',
       o: [
         'Random choice',
-        'Shapes, dtypes, head dim, masking, and hardware — picking flash, memory-efficient (xFormers-style), cuDNN, or a math fallback that best supports the case',
+        'Shape/dtype/arch picks flash/cuDNN/math',
         'The optimizer',
         'The batch size only',
       ],
@@ -276,7 +276,7 @@ export default defineQuestions(
       q: 'cuSPARSELt vs cuSPARSE: cuSPARSELt is specialized for…',
       o: [
         'General unstructured sparse solves',
-        'Structured (2:4) sparse matmul on Sparse Tensor Cores, whereas cuSPARSE handles general sparse formats (CSR/COO) and operations like SpMV/SpMM',
+        '2:4 sparse matmul; cuSPARSE is for general formats',
         'Dense GEMM',
         'FFTs',
       ],
@@ -295,7 +295,7 @@ export default defineQuestions(
       q: 'CUTLASS is most appropriate (over cuBLAS) when you need…',
       o: [
         'A simple one-off matmul',
-        'A CUSTOM or fused GEMM/conv kernel (novel epilogue, unusual data movement, research variant) built from composable, tunable components — more flexibility than the closed cuBLAS',
+        'Custom fused GEMM via composable components',
         'To avoid the GPU',
         'FP64 only',
       ],
@@ -314,7 +314,7 @@ export default defineQuestions(
       q: 'A practical reason to prefer cuBLASLt FP8 GEMM over a hand-written FP8 kernel is…',
       o: [
         'Hand-written is impossible',
-        'It correctly handles the per-tensor scaling, supported tile shapes, and tensor-core paths for FP8 with tuned heuristics — getting accuracy and performance without reimplementing the scaling machinery',
+        'Validated FP8 matmul with scaling handled for you',
         'It runs on the CPU',
         'It uses FP64',
       ],
@@ -333,7 +333,7 @@ export default defineQuestions(
       q: 'TensorRT achieves low-latency inference partly by "layer/tensor fusion," which…',
       o: [
         'Quantizes the model',
-        'Merges adjacent layers (e.g. conv+bias+activation, or attention sub-ops) into single kernels, reducing launches and intermediate memory traffic at build time',
+        'Merges layers into single kernels',
         'Shards the model',
         'Trains the model',
       ],
@@ -352,7 +352,7 @@ export default defineQuestions(
       q: 'thrust::reduce_by_key is used for…',
       o: [
         'Sorting',
-        'Segmented reduction — reducing consecutive runs of equal keys into one result per key (e.g. summing values per group in sorted data)',
+        'Reduces consecutive equal-key runs',
         'Scanning all elements',
         'Hashing',
       ],
@@ -371,7 +371,7 @@ export default defineQuestions(
       q: 'The DeepSpeed / Megatron-Core libraries primarily provide…',
       o: [
         'Single-GPU kernels',
-        'Distributed-training infrastructure (ZeRO sharding, tensor/pipeline parallelism, optimized transformer layers) so you compose large-scale parallel training without building it from scratch',
+        'ZeRO/TP/PP infra for large-scale training',
         'A profiler',
         'Image decoding',
       ],
@@ -390,7 +390,7 @@ export default defineQuestions(
       q: 'CUB BlockRadixSort sorts within a block by…',
       o: [
         'Calling the host',
-        'Cooperatively radix-sorting the block’s elements using shared memory and warp primitives, returning a sorted (blocked) arrangement — a building block for device-wide sorts and per-block ordering',
+        'Block-scope radix sort via shared mem and warp ops',
         'Using global atomics',
         'A comparison network only',
       ],
@@ -409,7 +409,7 @@ export default defineQuestions(
       q: 'When PyTorch eager mode is launch-overhead-bound (tiny kernels), the two main remedies are…',
       o: [
         'Lower precision and bigger models',
-        'CUDA Graphs (capture+replay the step) and torch.compile (fuse ops into fewer, larger kernels) — both reduce the number/overhead of launches',
+        'Graphs (capture+replay) and compile (fusion) cut launches',
         'More data loaders',
         'A faster CPU only',
       ],
@@ -428,7 +428,7 @@ export default defineQuestions(
       q: 'A subtle correctness requirement when using CUDA Graphs for a training step is that…',
       o: [
         'Shapes can change freely',
-        'Input/output buffers must be STATIC (fixed addresses) across replays — captured graphs replay the same pointers, so you copy new data into the same buffers (or use graph update)',
+        'Static buffer addresses required per replay',
         'Gradients must be FP64',
         'The optimizer is skipped',
       ],
@@ -447,7 +447,7 @@ export default defineQuestions(
       q: 'cuFFT performance is best when transform sizes are…',
       o: [
         'Large primes',
-        'Products of small primes (2,3,5,7) — highly composite sizes factor into efficient radix kernels; large prime factors fall back to slower Bluestein-style algorithms',
+        'Products of small primes (2,3,5,7)',
         'Powers of 10',
         'Always odd',
       ],
@@ -466,7 +466,7 @@ export default defineQuestions(
       q: 'A reason to use the official cuda-python bindings over ctypes hacks is…',
       o: [
         'They are slower',
-        'They provide maintained, typed access to the Driver/Runtime/NVRTC APIs, used by frameworks/tools to manage GPU resources from Python robustly',
+        'Maintained typed Driver/Runtime/NVRTC API',
         'They run on the CPU',
         'They avoid the driver',
       ],
@@ -485,7 +485,7 @@ export default defineQuestions(
       q: 'TensorRT-LLM’s "in-flight batching" (continuous batching) improves LLM serving throughput by…',
       o: [
         'Padding all sequences equally',
-        'Adding/removing requests from the running batch as sequences finish and new ones arrive, instead of waiting for a whole static batch to complete — keeping the GPU busy',
+        'Dynamically swaps finished seqs for new ones each step',
         'Quantizing the KV cache',
         'Using FP64',
       ],
@@ -504,7 +504,7 @@ export default defineQuestions(
       q: 'Thrust’s execution policy thrust::cuda::par.on(stream) lets you…',
       o: [
         'Run on the host',
-        'Execute a Thrust algorithm asynchronously on a specific CUDA stream, so it overlaps/orders with your other stream work instead of the default stream',
+        'Runs on that stream; enables overlap',
         'Disable parallelism',
         'Use pinned memory',
       ],
@@ -523,7 +523,7 @@ export default defineQuestions(
       q: 'A reason xFormers / memory-efficient attention existed alongside FlashAttention is…',
       o: [
         'They are identical',
-        'They offered fused, memory-efficient attention variants (supporting different masks/biases/head dims) and were integrated as backends before/around FlashAttention’s broad adoption',
+        'Fused mem-efficient attention variants',
         'They run on the CPU',
         'They train models',
       ],
@@ -542,7 +542,7 @@ export default defineQuestions(
       q: 'For a custom fused kernel that needs a block-wide prefix sum inside it, the right tool is…',
       o: [
         'cuBLAS',
-        'CUB’s BlockScan (a cooperative block-scope scan primitive you compose inside your kernel)',
+        'CUB BlockScan in-kernel',
         'Thrust::sort',
         'NCCL',
       ],

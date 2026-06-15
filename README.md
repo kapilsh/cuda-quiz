@@ -133,14 +133,14 @@ no automated trim suffices — it must be a manual rewrite).
 | synchronization | …{,.b–f}.js | ✅ DONE | 0% obvious, meanGap 14.7 |
 | optimization | …{,.b–f}.js | ✅ DONE | 0% obvious, meanGap 14.0 |
 | profiling | …{,.b–f}.js | ✅ DONE | 0% obvious, meanGap 14.4 |
-| architecture | …{,.b–f}.js | ⏳ NEXT | |
-| libraries | …{,.b–f}.js | ⬜ pending | |
-| multigpu | …{,.b–f}.js | ⬜ pending | |
-| distributed | …{,.b–f}.js | ⬜ pending | |
+| architecture | …{,.b–f}.js | ✅ DONE | 0% obvious, meanGap 15.4 |
+| libraries | …{,.b–f}.js | ✅ DONE | 0% obvious, meanGap 15.3 |
+| multigpu | …{,.b–f}.js | ✅ DONE | 0% obvious, meanGap 19.8 |
+| distributed | …{,.b–f}.js | ⏳ NEXT | |
 | streams | …{,.b–f}.js | ⬜ pending | |
 | precision | …{,.b–f}.js | ⬜ pending | |
 
-**36 of 72 files done (6 categories). 36 files remain.**
+**54 of 72 files done (9 categories). 18 files remain.**
 
 ### Method (per file)
 1. **Read the whole file** (~550 lines). The harness sometimes drops Read-state;

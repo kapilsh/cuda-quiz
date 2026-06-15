@@ -10,7 +10,7 @@ export default defineQuestions(
       q: 'Synchronized BatchNorm (SyncBN) across data-parallel GPUs is needed when…',
       o: [
         'The model has no BN',
-        'The per-GPU batch is small, so each GPU’s local BN statistics are noisy; SyncBN all-reduces mean/variance across ranks to compute statistics over the global batch',
+        'Small per-GPU batch; SyncBN all-reduces stats',
         'Using LayerNorm',
         'The learning rate is high',
       ],
@@ -29,7 +29,7 @@ export default defineQuestions(
       q: 'Global-norm gradient clipping in data-parallel training requires…',
       o: [
         'Clipping each rank independently',
-        'All-reducing the (squared) gradient norm across ranks first, so every rank clips by the SAME global norm — independent local clipping would diverge replicas',
+        'All-reduce global norm first; all clip uniformly',
         'No communication',
         'FP64 gradients',
       ],
@@ -48,7 +48,7 @@ export default defineQuestions(
       q: 'Large-batch optimizers like LARS/LAMB were developed because…',
       o: [
         'They are simpler',
-        'Plain SGD/Adam with the linearly-scaled LR can become unstable at very large batches; layer-wise adaptive learning rates (LARS/LAMB) stabilize training at huge batch sizes',
+        'Linear LR unstable at huge batches; LARS/LAMB',
         'They use less memory',
         'They avoid communication',
       ],
@@ -67,7 +67,7 @@ export default defineQuestions(
       q: 'PyTorch FSDP2 / DTensor represents a sharded parameter as…',
       o: [
         'A plain tensor on one GPU',
-        'A distributed tensor with an explicit sharding spec (placement on a device mesh), so per-parameter sharding and operations are described declaratively rather than via flat-buffer bucketing',
+        'Distributed tensor with explicit shard spec',
         'A NumPy array',
         'A CPU tensor',
       ],
@@ -86,7 +86,7 @@ export default defineQuestions(
       q: 'Overlapping tensor-parallel communication with compute (e.g. "Domino"/async TP) works by…',
       o: [
         'Removing the all-reduce',
-        'Decomposing the layer so part of the matmul’s output is being all-reduced while the next part is still computing — hiding the per-layer collective behind compute',
+        'All-reduce one chunk while computing the next',
         'Using FP64',
         'Skipping layers',
       ],
@@ -105,7 +105,7 @@ export default defineQuestions(
       q: 'Strong scaling vs weak scaling in training: STRONG scaling means…',
       o: [
         'Bigger model per GPU',
-        'Fixed total problem size as you add GPUs (each does less work) — limited by communication/overhead since per-GPU compute shrinks while comm may not',
+        'Fixed total problem; per-GPU work shrinks',
         'More data per GPU',
         'Higher precision',
       ],
@@ -124,7 +124,7 @@ export default defineQuestions(
       q: 'The compute-to-communication ratio per step largely predicts data-parallel scaling efficiency because…',
       o: [
         'Communication is free',
-        'If compute time per step ≫ communication time (and they overlap), adding GPUs scales near-linearly; as the ratio falls (more GPUs, slower links, smaller per-GPU work), comm dominates and efficiency drops',
+        'High compute:comm ratio → near-linear scaling',
         'Compute is irrelevant',
         'Memory determines it',
       ],
@@ -143,7 +143,7 @@ export default defineQuestions(
       q: 'Speculative decoding speeds up LLM inference by…',
       o: [
         'Quantizing the model',
-        'Using a small draft model to propose several tokens that the large model VERIFIES in one parallel forward pass — accepting the agreed prefix, so multiple tokens are produced per big-model step',
+        'Draft proposes tokens; target verifies in one pass',
         'Sharding the KV cache',
         'Disabling attention',
       ],
@@ -162,7 +162,7 @@ export default defineQuestions(
       q: 'Combining FSDP (data) with tensor parallelism (2D parallelism) is done to…',
       o: [
         'Reduce accuracy',
-        'Use TP to split a layer’s compute/memory within a node (NVLink) AND FSDP to shard the remaining replicated state across nodes — fitting and scaling models neither handles alone',
+        'TP intra-node; FSDP across nodes',
         'Avoid communication',
         'Use one GPU',
       ],
@@ -181,7 +181,7 @@ export default defineQuestions(
       q: 'Asynchronous checkpointing (save in the background) helps long training by…',
       o: [
         'Improving accuracy',
-        'Copying state to host/staging quickly and writing to storage in a background thread, so the GPU resumes training while the (slow) disk write proceeds — minimizing the checkpoint stall',
+        'Snapshot to host; write to disk in background',
         'Reducing model size',
         'Quantizing weights',
       ],

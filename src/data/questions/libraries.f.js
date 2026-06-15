@@ -10,7 +10,7 @@ export default defineQuestions(
       q: 'You pass a row-major C++ matrix to cublasSgemm and get a transposed/garbled result. The clean fix is…',
       o: [
         'Manually transpose every matrix',
-        'Exploit that cuBLAS is column-major: compute Cᵀ = BᵀAᵀ by swapping operands and using the transpose flags / swapped dimensions, so row-major data is interpreted correctly',
+        'Swap operands: Cᵀ = BᵀAᵀ (cuBLAS column-major trick)',
         'Use FP64',
         'Use the CPU',
       ],
@@ -29,7 +29,7 @@ export default defineQuestions(
       q: 'For 1000 independent 32×32 GEMMs, the fastest cuBLAS path is…',
       o: [
         'A loop of cublasSgemm',
-        'cublasGemmStridedBatched (or grouped GEMM) — one launch processes the whole batch, amortizing per-call overhead and filling the GPU',
+        'cublasGemmStridedBatched; one launch for all',
         'cuFFT',
         'The CPU',
       ],
@@ -48,7 +48,7 @@ export default defineQuestions(
       q: 'Your inference model has DYNAMIC input shapes and cuDNN’s exhaustive "find" mode is too slow per call. A better approach is…',
       o: [
         'Always exhaustive search',
-        'Use heuristic algorithm selection (predicts a good algorithm fast) and/or cache the chosen algorithm per shape — avoiding re-benchmarking every call',
+        'Heuristic selection + shape caching',
         'Disable cuDNN',
         'Use FP64',
       ],
@@ -67,7 +67,7 @@ export default defineQuestions(
       q: 'To run a Thrust reduce asynchronously on a specific stream (overlapping with other GPU work), you use…',
       o: [
         'thrust::reduce only',
-        'thrust::cuda::par.on(stream) as the execution policy (or thrust::async::reduce) so it runs on that stream instead of synchronizing the default stream',
+        'thrust::cuda::par.on(stream)',
         'The CPU',
         'cudaDeviceSynchronize',
       ],
@@ -86,7 +86,7 @@ export default defineQuestions(
       q: 'CUB device primitives use a two-call pattern (query size, then run) because…',
       o: [
         'For thread safety',
-        'CUB never allocates internally — the first call returns the temp-storage bytes; you allocate (and can reuse) it, then call again to execute, giving you allocation control',
+        'First call returns size; call again to run',
         'To validate inputs',
         'For error checking',
       ],
@@ -105,7 +105,7 @@ export default defineQuestions(
       q: 'A large cuBLASLt GEMM needs split-K but fails to pick that algorithm. The likely missing ingredient is…',
       o: [
         'A bigger matrix',
-        'A workspace — split-K (and some tensor-core paths) need scratch memory; providing cublasLtMatmul a sufficient workspace lets the heuristic choose them',
+        'Workspace enables split-K paths',
         'FP64',
         'The CPU',
       ],
@@ -124,7 +124,7 @@ export default defineQuestions(
       q: 'PyTorch’s scaled_dot_product_attention dispatches to flash-attn / cuDNN / memory-efficient backends based on…',
       o: [
         'Random choice',
-        'Shapes, dtype, head dim, mask type, and GPU arch — picking the fastest applicable kernel (or a math fallback) for that configuration',
+        'Shape/dtype/arch picks the SDPA backend',
         'The optimizer',
         'The batch size only',
       ],
@@ -143,7 +143,7 @@ export default defineQuestions(
       q: 'torch.compile speeds up a transformer mostly by…',
       o: [
         'Using FP64',
-        'Fusing the many small memory-bound ops (norms, activations, residuals, bias) around the matmuls into fewer Triton/C++ kernels — cutting launches and HBM round-trips',
+        'Fuses small ops; cuts HBM traffic',
         'Sharding the model',
         'Quantizing weights',
       ],
@@ -162,7 +162,7 @@ export default defineQuestions(
       q: 'cuFFT performance for a repeated transform of the same size is best when you…',
       o: [
         'Recreate the plan each call',
-        'Create the plan ONCE and reuse it across executions — plan creation (algorithm selection, twiddle setup) is expensive and shouldn’t be repeated per transform',
+        'Create plan once; reuse across many executions',
         'Use the CPU',
         'Use FP64',
       ],
@@ -181,7 +181,7 @@ export default defineQuestions(
       q: 'For reproducible per-thread dropout inside a kernel, cuRAND’s recommended generator is…',
       o: [
         'XORWOW with shared state',
-        'Philox (a counter-based generator) — it produces reproducible, independent streams per thread from a (seed, counter) without large per-thread state',
+        'Philox counter-based; per-thread streams',
         'The host API only',
         'rand() from libc',
       ],
@@ -200,7 +200,7 @@ export default defineQuestions(
       q: 'A GNN aggregates neighbor features via a sparse adjacency × dense feature matmul. The right library call is…',
       o: [
         'cuBLAS GEMM',
-        'cuSPARSE SpMM (sparse × dense) — designed for exactly this sparse-matrix times dense-matrix pattern',
+        'cuSPARSE SpMM for GNN aggregation',
         'cuFFT',
         'cuRAND',
       ],
@@ -219,7 +219,7 @@ export default defineQuestions(
       q: 'You need fine-grained overlap of communication with computation INSIDE a kernel across GPUs. The right tool is…',
       o: [
         'NCCL collectives',
-        'NVSHMEM — device-initiated one-sided put/get lets a kernel communicate while computing, finer-grained than NCCL’s host-launched bulk collectives',
+        'NVSHMEM in-kernel put/get',
         'cuBLAS',
         'cuFFT',
       ],
@@ -238,7 +238,7 @@ export default defineQuestions(
       q: 'You want a fused GEMM with a custom epilogue (e.g. matmul + custom activation + residual) at near-peak tensor-core speed. Best fit:',
       o: [
         'cuBLAS (closed)',
-        'CUTLASS — composable templates let you build a custom fused kernel (custom epilogue, layouts) while hitting tensor-core peak; cuBLASLt covers common epilogues',
+        'CUTLASS composable templates',
         'cuFFT',
         'NCCL',
       ],
@@ -257,7 +257,7 @@ export default defineQuestions(
       q: 'Triton’s @triton.autotune helps by…',
       o: [
         'Compiling once',
-        'Benchmarking several kernel configurations (block sizes, num_warps, num_stages) for the given problem and caching the best — so the kernel adapts to shape/hardware',
+        'Sweeps configs; caches best per input',
         'Running on the CPU',
         'Disabling the GPU',
       ],
@@ -276,7 +276,7 @@ export default defineQuestions(
       q: 'TensorRT INT8 deployment requires a calibration step to…',
       o: [
         'Train the model',
-        'Determine per-tensor activation scales (via representative data, e.g. entropy/percentile calibration) so quantization preserves accuracy',
+        'Calibration data → per-tensor scales',
         'Shard the model',
         'Lower the batch',
       ],
@@ -295,7 +295,7 @@ export default defineQuestions(
       q: 'vLLM serves many concurrent LLM requests efficiently primarily via…',
       o: [
         'Quantizing weights',
-        'PagedAttention (paged KV cache, less fragmentation/more concurrency) + continuous batching (swap finished sequences for new ones each step) — maximizing GPU utilization',
+        'PagedAttention + continuous batching',
         'FP64',
         'A single big batch',
       ],
@@ -314,7 +314,7 @@ export default defineQuestions(
       q: 'For an in-kernel block-wide prefix sum inside your own fused kernel, use…',
       o: [
         'thrust::inclusive_scan',
-        'CUB BlockScan — a cooperative block-scope primitive you compose inside the kernel (Thrust/CUB device-wide calls are whole-kernel, not in-kernel building blocks)',
+        'CUB BlockScan: in-kernel block-scope prefix sum',
         'cuBLAS',
         'NCCL',
       ],
@@ -333,7 +333,7 @@ export default defineQuestions(
       q: 'A fused optimizer (e.g. Apex FusedAdam) speeds training by…',
       o: [
         'Using FP64 states',
-        'Updating ALL parameter tensors in one (or few) multi-tensor kernels instead of many small per-parameter kernels — cutting launch overhead and memory passes',
+        'All tensors in one launch',
         'Sharding the model',
         'Quantizing gradients',
       ],
@@ -352,7 +352,7 @@ export default defineQuestions(
       q: 'For a dense LU factorization too large for one GPU, the right NVIDIA library is…',
       o: [
         'cuBLAS',
-        'cuSOLVERMg — multi-GPU dense linear algebra (distributed LU/Cholesky/etc.) for matrices exceeding a single GPU’s memory',
+        'cuSOLVERMg',
         'cuFFT',
         'NCCL',
       ],
@@ -371,7 +371,7 @@ export default defineQuestions(
       q: 'For RAG, the GPU library to serve high-QPS nearest-neighbor search over millions of embeddings is…',
       o: [
         'cuBLAS',
-        'RAFT/cuVS (or FAISS-GPU) — GPU-accelerated ANN indexes deliver the throughput/latency retrieval needs to feed the LLM',
+        'RAFT/cuVS or FAISS-GPU',
         'cuFFT',
         'NCCL',
       ],
@@ -390,7 +390,7 @@ export default defineQuestions(
       q: 'CCCL (Thrust + CUB + libcu++) interoperate well because…',
       o: [
         'They conflict',
-        'They are designed together (Thrust uses CUB; both use libcu++ types) with consistent versioning — so high-level algorithms, in-kernel primitives, and device std facilities compose seamlessly',
+        'Designed together; consistent versioning',
         'They run on the CPU',
         'They replace cuBLAS',
       ],
@@ -409,7 +409,7 @@ export default defineQuestions(
       q: 'To atomically update an element of an existing (non-atomic) device array with explicit scope/ordering, use…',
       o: [
         'A plain assignment',
-        'cuda::atomic_ref<T, scope>(elem).fetch_add(v, order) — it applies scoped, ordered atomics to ordinary memory without making the whole array atomic',
+        'Scoped atomic on plain memory',
         'cuBLAS',
         'A spinlock',
       ],
@@ -428,7 +428,7 @@ export default defineQuestions(
       q: 'TensorRT-LLM improves LLM serving throughput notably via…',
       o: [
         'Static batching',
-        'In-flight (continuous) batching plus paged KV cache and optimized fused attention — adding/removing requests each step to keep the GPU busy',
+        'Continuous batching + paged KV cache',
         'FP64',
         'A single request',
       ],
@@ -447,7 +447,7 @@ export default defineQuestions(
       q: 'A reason to prefer a tuned library (cuBLAS/cuDNN/CUTLASS) over a hand-written kernel for STANDARD ops is…',
       o: [
         'Libraries are slower',
-        'They are re-tuned for each GPU generation and cover many shapes, so you inherit near-peak performance and forward support with far less maintenance',
+        'Re-tuned per GPU gen; inherit near-peak for free',
         'They cannot use tensor cores',
         'They only run on CPUs',
       ],
@@ -466,7 +466,7 @@ export default defineQuestions(
       q: 'cuDNN’s graph (frontend) API enables better performance than the legacy per-op API by…',
       o: [
         'Validating inputs only',
-        'Representing a computation as fused nodes (e.g. conv + bias + activation) that cuDNN matches to optimized fused engines — reducing launches and intermediate traffic',
+        'Fused-node graph matches to optimized engines',
         'Running on the CPU',
         'Disabling tensor cores',
       ],
@@ -485,7 +485,7 @@ export default defineQuestions(
       q: 'For deterministic training results, putting cuBLAS/cuDNN in deterministic mode typically…',
       o: [
         'Has no cost',
-        'Selects algorithms that avoid atomic-based / variable-order reductions (fixed accumulation order) — trading some speed for run-to-run reproducibility',
+        'Fixed-order algorithms; reproducible but slower',
         'Increases precision to FP64',
         'Disables tensor cores entirely',
       ],
@@ -504,7 +504,7 @@ export default defineQuestions(
       q: 'Triton is popular for research kernels because…',
       o: [
         'It is always faster than CUTLASS',
-        'You write tile-level Python and the compiler handles coalescing, shared memory, vectorization, and scheduling — far less boilerplate to get a performant fused kernel (peak GEMM still favors CUTLASS/cuBLAS)',
+        'Tile-level Python; compiler handles coalescing/shared mem',
         'It runs on the CPU',
         'It needs no GPU knowledge',
       ],
@@ -523,7 +523,7 @@ export default defineQuestions(
       q: 'For a device-wide sort of 100M FP32 keys with values, the simplest high-performance call is…',
       o: [
         'A hand-written sort',
-        'thrust::sort_by_key (or CUB DeviceRadixSort) — tuned GPU radix sort, far faster and simpler than rolling your own',
+        'thrust::sort_by_key or CUB DeviceRadixSort',
         'cuBLAS',
         'cuFFT',
       ],
@@ -542,7 +542,7 @@ export default defineQuestions(
       q: 'cuBLASLt is required (over legacy cuBLAS) for FP8 GEMM because it…',
       o: [
         'Runs on the CPU',
-        'Exposes FP8 operand types with per-tensor scale pointers and fused epilogues in its descriptor-based matmul — the legacy API can’t express FP8 scaling',
+        'FP8 operand types with per-tensor scales',
         'Only does FP64',
         'Disables tensor cores',
       ],

@@ -10,7 +10,7 @@ export default defineQuestions(
       q: 'NVSHMEM provides…',
       o: [
         'A profiler',
-        'A PGAS (partitioned global address space) communication model for GPUs — fine-grained, one-sided put/get and device-initiated communication across GPUs, often overlapping comm with compute inside kernels',
+        'PGAS one-sided in-kernel put/get',
         'A BLAS',
         'A data loader',
       ],
@@ -29,7 +29,7 @@ export default defineQuestions(
       q: 'cuBLASXt / cuBLASMg are used to…',
       o: [
         'Run BLAS on the CPU',
-        'Perform BLAS (e.g. GEMM) across MULTIPLE GPUs, partitioning the matrices so large problems exceeding one GPU’s memory/throughput are handled',
+        'Multi-GPU GEMM via matrix partitioning',
         'Profile GEMM',
         'Quantize weights',
       ],
@@ -48,7 +48,7 @@ export default defineQuestions(
       q: 'cuSOLVERMg extends cuSOLVER to…',
       o: [
         'The CPU',
-        'Multi-GPU dense linear algebra (e.g. distributed LU/Cholesky) for matrices larger than one GPU’s memory',
+        'Multi-GPU LU/Cholesky',
         'Sparse only',
         'FFTs',
       ],
@@ -67,7 +67,7 @@ export default defineQuestions(
       q: 'cuSPARSE SpGEMM computes…',
       o: [
         'Dense × dense',
-        'Sparse-matrix × sparse-matrix multiplication (producing a sparse result) — harder than SpMM (sparse × dense) due to the unknown output structure',
+        'Sparse × sparse matmul',
         'A reduction',
         'An FFT',
       ],
@@ -86,7 +86,7 @@ export default defineQuestions(
       q: 'CUB DeviceRunLengthEncode is used to…',
       o: [
         'Sort data',
-        'Compute run-length encoding — collapsing consecutive equal elements into (value, count) pairs in parallel, useful for compression and sparse processing',
+        'Parallel run-length encoding',
         'Reduce a sum',
         'Scan',
       ],
@@ -105,7 +105,7 @@ export default defineQuestions(
       q: 'CUB DeviceMergeSort differs from DeviceRadixSort in that it…',
       o: [
         'Is always faster',
-        'Sorts via comparisons (supports arbitrary comparators / custom key types), whereas radix sort needs a radix decomposition of keys (fast for fixed-width integer/float keys)',
+        'Comparison-based sort for custom types',
         'Runs on the CPU',
         'Is unstable only',
       ],
@@ -124,7 +124,7 @@ export default defineQuestions(
       q: 'thrust::async (e.g. thrust::async::reduce) returns…',
       o: [
         'A result immediately',
-        'A future/event so the algorithm runs ASYNCHRONOUSLY on a stream and you can overlap it with other work, synchronizing on the future when you need the result',
+        'A future on a stream; async overlap',
         'A host value',
         'A new vector',
       ],
@@ -143,7 +143,7 @@ export default defineQuestions(
       q: 'NVIDIA Warp (the Python framework) is used for…',
       o: [
         'Warp-level intrinsics in C++',
-        'Writing differentiable, GPU-accelerated simulation/graphics kernels in Python that JIT-compile to CUDA — popular for physics, robotics, and geometry',
+        'Differentiable Python GPU kernels for simulation',
         'Collective communication',
         'A BLAS',
       ],
@@ -162,7 +162,7 @@ export default defineQuestions(
       q: 'MatX is…',
       o: [
         'A profiler',
-        'A C++17 GPU-accelerated tensor/numerical library with a NumPy-like, expression-based API that fuses operations and uses cuBLAS/cuFFT under the hood',
+        'C++17 NumPy-like GPU tensor library',
         'A collective library',
         'A data loader',
       ],
@@ -181,7 +181,7 @@ export default defineQuestions(
       q: 'cuNumeric / Legate aims to…',
       o: [
         'Replace CUDA C++',
-        'Run NumPy programs at scale across multiple GPUs/nodes transparently (a drop-in distributed NumPy), via the Legate runtime',
+        'Distributed NumPy via Legate runtime',
         'Profile kernels',
         'Decode images',
       ],
@@ -200,7 +200,7 @@ export default defineQuestions(
       q: 'Apex/Transformer Engine "fused" optimizers (e.g. FusedAdam) speed up training by…',
       o: [
         'Using FP64',
-        'Combining the per-parameter optimizer update (and often gradient unscale/clip) into a single kernel over all parameters, reducing many small launches and memory passes',
+        'Fuses all params into one kernel launch',
         'Sharding the model',
         'Quantizing weights',
       ],
@@ -219,7 +219,7 @@ export default defineQuestions(
       q: 'bitsandbytes provides 8-bit optimizers that…',
       o: [
         'Quantize activations',
-        'Store optimizer states (e.g. Adam m, v) in 8-bit (with block-wise quantization) to cut optimizer memory ~4×, enabling larger models on limited memory',
+        '8-bit optimizer states; ~4× memory reduction',
         'Run on the CPU',
         'Disable the optimizer',
       ],
@@ -238,7 +238,7 @@ export default defineQuestions(
       q: 'RAFT / cuVS (RAPIDS) accelerate…',
       o: [
         'Dense GEMM',
-        'Vector search / nearest-neighbor and ML primitives on the GPU (e.g. approximate nearest neighbor for embeddings/RAG)',
+        'GPU ANN / vector search for embeddings and RAG',
         'Collective communication',
         'FFTs',
       ],
@@ -257,7 +257,7 @@ export default defineQuestions(
       q: 'FAISS (GPU) is used for…',
       o: [
         'Training transformers',
-        'Efficient similarity search and clustering of dense vectors (exact and approximate nearest neighbor) on the GPU — common for retrieval/embeddings',
+        'GPU ANN for dense-vector retrieval',
         'Collective communication',
         'FFTs',
       ],
@@ -276,7 +276,7 @@ export default defineQuestions(
       q: 'NVBench is a library for…',
       o: [
         'Profiling a single kernel’s counters',
-        'Benchmarking CUDA kernels/algorithms systematically (parameter sweeps, warm-up, statistics, throughput/bandwidth reporting) — beyond ad-hoc event timing',
+        'Systematic CUDA benchmarking with sweeps and stats',
         'Collective communication',
         'Compiling kernels',
       ],
@@ -295,7 +295,7 @@ export default defineQuestions(
       q: 'ONNX Runtime’s CUDA Execution Provider lets you…',
       o: [
         'Train models',
-        'Run ONNX models on the GPU by dispatching ops to CUDA/cuDNN/cuBLAS (and TensorRT via the TensorRT EP) — a portable inference path across frameworks',
+        'GPU-accelerated ONNX inference runtime',
         'Profile kernels',
         'Do collectives',
       ],
@@ -314,7 +314,7 @@ export default defineQuestions(
       q: 'SGLang’s "RadixAttention" improves LLM serving by…',
       o: [
         'Quantizing weights',
-        'Sharing KV-cache across requests with common PREFIXES via a radix tree, so repeated prompt prefixes aren’t recomputed/restored — boosting throughput for prefix-heavy workloads',
+        'KV cache shared for common prefixes',
         'Using FP64',
         'Disabling attention',
       ],
@@ -333,7 +333,7 @@ export default defineQuestions(
       q: 'The CUTLASS profiler tool is used to…',
       o: [
         'Profile any CUDA program',
-        'Enumerate and benchmark CUTLASS GEMM/conv kernel configurations for a given problem to find the best-performing one (autotuning over the kernel space)',
+        'Benchmark CUTLASS kernel configs to find the best',
         'Disassemble SASS',
         'Train models',
       ],
@@ -352,7 +352,7 @@ export default defineQuestions(
       q: 'A key difference between CUTLASS 2.x and 3.x is that 3.x…',
       o: [
         'Drops tensor cores',
-        'Is built on CuTe (layouts/tensors as first-class algebra) and targets Hopper features (TMA, wgmma, clusters, warp specialization) with composable collective builders',
+        'Built on CuTe; targets Hopper TMA/wgmma',
         'Runs on the CPU',
         'Only does FP64',
       ],
@@ -371,7 +371,7 @@ export default defineQuestions(
       q: 'Why might an LLM-systems project use NVSHMEM instead of (or alongside) NCCL?',
       o: [
         'NVSHMEM is simpler',
-        'NVSHMEM’s device-initiated, fine-grained one-sided communication lets kernels overlap communication with computation at a finer granularity than NCCL’s host-launched collectives — useful for fused comm/compute (e.g. some MoE/attention schemes)',
+        'In-kernel put/get; finer than NCCL collectives',
         'NCCL is deprecated',
         'NVSHMEM runs on the CPU',
       ],
@@ -390,7 +390,7 @@ export default defineQuestions(
       q: 'For a fused, custom transformer kernel needing a block-wide softmax reduction inside it, the right building block is…',
       o: [
         'cuBLAS',
-        'CUB BlockReduce / BlockScan (cooperative block-scope primitives used within your kernel)',
+        'CUB in-kernel reduce/scan',
         'NCCL',
         'cuFFT',
       ],
@@ -409,7 +409,7 @@ export default defineQuestions(
       q: 'cuDNN’s heuristic mode (vs exhaustive search) for picking a convolution algorithm trades…',
       o: [
         'Accuracy for speed',
-        'Some peak performance for much faster algorithm SELECTION — heuristics predict a good algorithm quickly, while exhaustive search benchmarks all options (slow setup, best runtime)',
+        'Fast selection but not always optimal',
         'Memory for compute',
         'Precision for range',
       ],
@@ -428,7 +428,7 @@ export default defineQuestions(
       q: 'Multi-tensor "apply" kernels (used by fused optimizers) work by…',
       o: [
         'One kernel per tensor',
-        'Processing MANY parameter tensors in a single kernel launch (passing lists of pointers/sizes), so thousands of small per-parameter updates become a few large kernels',
+        'Many tensors in one launch via pointer lists',
         'Running on the CPU',
         'Using FP64',
       ],
@@ -447,7 +447,7 @@ export default defineQuestions(
       q: 'cuSPARSE SpMM (sparse × dense) is commonly used in…',
       o: [
         'Dense transformers only',
-        'Graph neural networks and sparse models, where a sparse adjacency/weight matrix multiplies a dense feature matrix',
+        'GNNs: sparse adj × dense feature matrix',
         'FFT convolution',
         'Random sampling',
       ],
@@ -466,7 +466,7 @@ export default defineQuestions(
       q: 'A reason to use the CCCL (Thrust + CUB + libcu++) together is…',
       o: [
         'They conflict',
-        'They interoperate by design (Thrust uses CUB; both use libcu++ types) with consistent versioning — so you can mix high-level algorithms, in-kernel primitives, and device std facilities seamlessly',
+        'Designed together; consistent versioning',
         'They run on the CPU',
         'They replace cuBLAS',
       ],
@@ -485,7 +485,7 @@ export default defineQuestions(
       q: 'TransformerEngine integrates with frameworks by providing…',
       o: [
         'A new optimizer',
-        'Drop-in FP8-capable layer modules (Linear, LayerNorm, attention) that handle the scaling recipe internally, so existing models gain FP8 with minimal code change',
+        'Drop-in FP8 modules with auto scaling',
         'A profiler',
         'A data loader',
       ],
@@ -504,7 +504,7 @@ export default defineQuestions(
       q: 'The practical reason to prefer a library’s batched/grouped GEMM API over looping is, in library terms…',
       o: [
         'Libraries are slower',
-        'cublasGemmStridedBatched / grouped GEMM run all (possibly differently-shaped) matmuls in one launch with internal scheduling, avoiding per-call overhead and filling the GPU — far better for many small/medium GEMMs',
+        'All batches in one launch; fills GPU',
         'It uses FP64',
         'It avoids tensor cores',
       ],
@@ -523,7 +523,7 @@ export default defineQuestions(
       q: 'cuVS/RAFT vector search on GPU is attractive for RAG because…',
       o: [
         'It trains the LLM',
-        'Nearest-neighbor search over millions of embeddings is throughput/latency-critical at query time; GPU ANN indexes deliver high QPS and low latency for retrieval feeding the model',
+        'High-QPS ANN retrieval at low latency for RAG',
         'It compresses the model',
         'It uses FP64',
       ],
@@ -542,7 +542,7 @@ export default defineQuestions(
       q: 'A reason frameworks cache cuDNN/cuBLASLt algorithm choices per problem shape is…',
       o: [
         'To save memory',
-        'The (exhaustive or heuristic) selection has a one-time cost; caching the chosen algorithm for each shape avoids re-selecting on every iteration with the same shape, amortizing the setup',
+        'Amortizes per-shape selection cost',
         'For accuracy',
         'To use FP64',
       ],

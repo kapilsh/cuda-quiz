@@ -10,7 +10,7 @@ export default defineQuestions(
       q: 'A distributed job hangs at an all_reduce; one rank never returns. The most likely cause is…',
       o: [
         'Out of memory',
-        'A collective mismatch — that rank skipped/reordered the collective or used a different size/dtype (e.g. due to divergent control flow), so the others wait forever',
+        'Collective mismatch — rank skipped or reordered a call',
         'A bank conflict',
         'A divergent branch in a kernel',
       ],
@@ -29,7 +29,7 @@ export default defineQuestions(
       q: 'Multi-node training is far slower than expected. The FIRST diagnostic is…',
       o: [
         'Rewrite the model',
-        'Run nccl-tests (all_reduce_perf) on the same ranks/topology and compare busbw to the expected IB/NVLink peak — isolating whether the network/collectives or the model is the bottleneck',
+        'nccl-tests: busbw vs IB/NVLink peak',
         'Profile one kernel',
         'Lower precision',
       ],
@@ -48,7 +48,7 @@ export default defineQuestions(
       q: 'NCCL_DEBUG=INFO shows "NET/Socket" for inter-node connections instead of IB. The consequence and fix are…',
       o: [
         'No effect',
-        'Inter-node collectives are using slow TCP sockets (not RDMA/IB) — fix the IB/RoCE setup (drivers, NCCL_IB_HCA, GPUDirect RDMA) so NCCL uses the fast network',
+        'TCP fallback; fix IB/RoCE to use RDMA',
         'Higher precision',
         'Faster training',
       ],
@@ -67,7 +67,7 @@ export default defineQuestions(
       q: 'All processes in a multi-GPU job run on GPU 0 (OOM, NCCL errors). The bug is…',
       o: [
         'A race condition',
-        'Missing cudaSetDevice(LOCAL_RANK) before allocations/NCCL init — without binding, every process defaults to device 0',
+        'Missing cudaSetDevice; all land on GPU 0',
         'A bank conflict',
         'Divergence',
       ],
@@ -86,7 +86,7 @@ export default defineQuestions(
       q: 'A 1B-parameter model in FP16 has ~2 GB of gradients. A ring all-reduce moves per GPU about…',
       o: [
         '2 GB',
-        '~4 GB (≈2× the data: reduce-scatter + all-gather each move ~(N-1)/N of the 2 GB), roughly independent of GPU count',
+        '~4 GB (~2× the 2 GB gradient)',
         '0.5 GB',
         '20 GB',
       ],
@@ -101,7 +101,7 @@ export default defineQuestions(
       q: 'In a training profile, gradient all-reduce shows but does NOT overlap with backward compute. The fix is…',
       o: [
         'A larger model',
-        'Bucket gradients and launch the all-reduce on a separate communication stream as each bucket becomes ready, so it overlaps with ongoing backward compute (DDP’s design)',
+        'Per-bucket all-reduce on a comm stream',
         'cudaDeviceSynchronize per layer',
         'FP64 gradients',
       ],
@@ -120,7 +120,7 @@ export default defineQuestions(
       q: 'Two NVLink-capable GPUs show low collective bandwidth and NCCL reports a PCIe transport. The likely issue is…',
       o: [
         'NVLink is slow',
-        'A topology/affinity/driver problem preventing NVLink P2P — verify with nvidia-smi topo -m (should show NV# between them) and fix the configuration so NCCL uses NVLink',
+        'NVLink not in use; check nvidia-smi topo -m',
         'Too few channels',
         'Low precision',
       ],
@@ -139,7 +139,7 @@ export default defineQuestions(
       q: 'For multi-node launch, the processes coordinate the initial NCCL handshake via…',
       o: [
         'GPU memory',
-        'A rendezvous endpoint set by MASTER_ADDR:MASTER_PORT (rank 0’s host:port), which all ranks connect to bootstrap the process group',
+        'Rendezvous at rank 0 endpoint to bootstrap',
         'The dataset',
         'Constant memory',
       ],
@@ -158,7 +158,7 @@ export default defineQuestions(
       q: 'On an NVSwitch system, enabling NVLS (NVLink SHARP) for all-reduce helps because the switch…',
       o: [
         'Compresses data',
-        'Performs the reduction IN the fabric, so each GPU sends/receives about half the data of a ring all-reduce with lower latency — in-network reduction',
+        'In-fabric reduction; ~half data vs ring',
         'Uses the CPU',
         'Disables NVLink',
       ],
@@ -177,7 +177,7 @@ export default defineQuestions(
       q: 'MoE training is bottlenecked on the dispatch/combine all-to-all. Mitigations include…',
       o: [
         'Bigger experts only',
-        'Balancing token routing (capacity factor, load-balance loss) so no GPU is overloaded, and overlapping the all-to-alls with expert compute',
+        'Balance routing; overlap all-to-alls',
         'FP64',
         'Disabling experts',
       ],
@@ -196,7 +196,7 @@ export default defineQuestions(
       q: 'At very large scale, FSDP’s parameter all-gather of the next layer stops fully overlapping with current compute because…',
       o: [
         'Overlap always works',
-        'As per-GPU compute shrinks (more sharding) or the gather grows / network contends, the all-gather can exceed the current layer’s compute time — exposing communication',
+        'All-gather exceeds available compute; exposed',
         'Backward is free',
         'For FP64',
       ],
@@ -215,7 +215,7 @@ export default defineQuestions(
       q: 'Why is the recommended pattern one process per GPU rather than one process driving all GPUs?',
       o: [
         'It looks cleaner',
-        'One process per GPU parallelizes host-side work (launches, Python/GIL) across cores and gives correct per-GPU NIC/NVLink affinity; single-process multi-GPU bottlenecks on one host thread',
+        'Parallelizes host work; correct NIC affinity',
         'It reduces precision',
         'It compresses data',
       ],
@@ -234,7 +234,7 @@ export default defineQuestions(
       q: 'For small gradient tensors, all-reduce is latency-bound. Gradient bucketing helps by…',
       o: [
         'Reducing the model',
-        'Coalescing many small tensors into fewer LARGE all-reduces — amortizing per-collective latency/overhead and reaching bandwidth-bound efficiency (and enabling overlap as buckets fill)',
+        'Fewer large all-reduces; amortizes latency',
         'Increasing precision',
         'Removing synchronization',
       ],
@@ -253,7 +253,7 @@ export default defineQuestions(
       q: 'Why is tensor parallelism kept within a node (NVLink) while pipeline/data parallelism span nodes?',
       o: [
         'TP needs more GPUs',
-        'TP does latency-sensitive all-reduces EVERY layer (needs NVLink); PP (light P2P) and DP (one overlappable all-reduce/step) tolerate slower inter-node links',
+        'TP per-layer NVLink; PP/DP tolerate inter-node',
         'PP cannot cross nodes',
         'For FP64',
       ],
@@ -272,7 +272,7 @@ export default defineQuestions(
       q: 'For a SMALL all-reduce on NVSwitch, NCCL may pick a tree/one-shot algorithm over ring because…',
       o: [
         'Trees use more bandwidth',
-        'Small messages are latency-bound; tree/one-shot algorithms minimize the number of communication steps (lower latency), beating bandwidth-optimal ring whose extra steps dominate at small sizes',
+        'Fewer steps beats ring at small sizes',
         'Rings are illegal',
         'For FP64',
       ],
@@ -291,7 +291,7 @@ export default defineQuestions(
       q: 'Reducing gradients in BF16 instead of FP32 over the network…',
       o: [
         'Has no effect',
-        'Halves communication bytes (faster when comm-bound) but accumulates the sum in reduced precision — acceptable for many setups (BF16’s range helps); some keep FP32 reduction for stability',
+        'Halves bytes; reduced-precision accumulation',
         'Is always more accurate',
         'Requires FP64',
       ],
@@ -310,7 +310,7 @@ export default defineQuestions(
       q: 'NCCL PXN routing improves a multi-node collective by…',
       o: [
         'Disabling NVLink',
-        'Sending a GPU’s inter-node traffic over NVLink to a PEER GPU that has a better NIC path, so it egresses through the best-connected NIC (rail) instead of a slower local path',
+        'Routes via NVLink to best-connected NIC',
         'Using the CPU',
         'Compressing data',
       ],
@@ -329,7 +329,7 @@ export default defineQuestions(
       q: 'In 3D-parallel training, separate NCCL process groups per parallelism axis are created so that…',
       o: [
         'It looks cleaner',
-        'Each axis’s collectives (TP all-reduce, DP all-reduce, PP send/recv) involve ONLY the relevant ranks and map onto the matching hardware links (TP on NVLink, DP/PP across nodes)',
+        'Per-axis collectives for relevant ranks only',
         'It reduces precision',
         'It avoids NCCL',
       ],
@@ -348,7 +348,7 @@ export default defineQuestions(
       q: 'GPUDirect RDMA being unavailable for inter-node transfers means…',
       o: [
         'Faster transfers',
-        'Data stages through host memory (extra copies + CPU), reducing bandwidth and adding latency — the NIC can’t DMA directly to/from GPU memory',
+        'Host bounce; NIC cannot DMA to GPU',
         'Higher precision',
         'No effect',
       ],
@@ -367,7 +367,7 @@ export default defineQuestions(
       q: 'Increasing the per-GPU batch size when training is communication-bound improves scaling because…',
       o: [
         'It reduces accuracy',
-        'Gradient all-reduce volume depends on parameters (fixed), so more compute per step raises the compute-to-comm ratio — more compute to hide the same communication behind',
+        'Fixed grad volume; more compute improves C/(C+M)',
         'It removes communication',
         'It uses FP64',
       ],
@@ -386,7 +386,7 @@ export default defineQuestions(
       q: 'A quick check that intra-node collectives use NVLink (not PCIe) is to look in NCCL_DEBUG=INFO for…',
       o: [
         'The precision',
-        'The per-connection transport (it lists NVLink/P2P for intra-node links and IB for inter-node) — PCIe/SHM where NVLink was expected signals a problem',
+        'Transport: NVLink/IB or PCIe/SHM fallback',
         'The batch size',
         'The optimizer',
       ],
@@ -405,7 +405,7 @@ export default defineQuestions(
       q: 'A correctness pitfall with variable-length sequences across ranks is…',
       o: [
         'Nothing',
-        'Different ranks issuing different numbers of collectives (e.g. data-dependent steps), causing a mismatch/hang — ranks must stay in lockstep on collectives',
+        'Ranks diverge on collective count; hang',
         'Lower precision',
         'More memory',
       ],
@@ -424,7 +424,7 @@ export default defineQuestions(
       q: 'For P2P over PCIe (no NVLink) between two GPUs, a common requirement is…',
       o: [
         'They are on different nodes',
-        'A PCIe path that supports peer access (often under the same switch/root); some topologies disallow P2P, forcing host staging (cudaDeviceCanAccessPeer returns false)',
+        'PCIe path supporting P2P; some topologies forbid',
         'The same stream',
         'Identical memory',
       ],
@@ -443,7 +443,7 @@ export default defineQuestions(
       q: 'A finite NCCL collective timeout (watchdog) is important because…',
       o: [
         'Speed',
-        'Without it, a hung collective (failed/slow rank, mismatch) blocks forever; a timeout converts the hang into a detectable error the framework can act on (abort/restart)',
+        'Hung collective → error via timeout',
         'Precision',
         'Memory savings',
       ],
@@ -462,7 +462,7 @@ export default defineQuestions(
       q: 'Why can adding more NCCL channels eventually stop helping or hurt?',
       o: [
         'Channels are free',
-        'Channels consume SMs/copy resources and link bandwidth; once links are saturated, more channels add contention/overhead without raising throughput — there is an optimal count',
+        'Past saturation, channels add overhead only',
         'They lower precision',
         'They disable NVLink',
       ],
@@ -481,7 +481,7 @@ export default defineQuestions(
       q: 'AllReduce decomposing into ReduceScatter + AllGather matters because…',
       o: [
         'It is slower',
-        'It explains ring all-reduce’s bandwidth optimality (each phase moves (N-1)/N) AND lets FSDP/ZeRO use just ReduceScatter (gradients) + AllGather (params) for sharded training',
+        'Ring optimality AND FSDP/ZeRO sharding',
         'It needs the CPU',
         'For FP64',
       ],
@@ -500,7 +500,7 @@ export default defineQuestions(
       q: 'A reason to verify GPU-to-NIC affinity (rail optimization) on multi-NIC nodes is…',
       o: [
         'It changes the math',
-        'Routing a GPU’s traffic through a distant NIC adds latency and reduces bandwidth; pairing GPUs with their local NICs maximizes inter-node throughput',
+        'Local GPU-NIC pairing; distant NIC hurts speed',
         'It increases precision',
         'It disables NVLink',
       ],
@@ -519,7 +519,7 @@ export default defineQuestions(
       q: 'On an NVL72 (multi-node NVLink) system, cross-node tensor parallelism becomes feasible because…',
       o: [
         'It uses PCIe',
-        'The NVLink domain extends across nodes, so even cross-node TP collectives run at NVLink bandwidth/latency rather than the slower inter-node network — enabling larger TP groups',
+        'NVLink spans nodes; cross-node TP fast',
         'TP needs no comm',
         'For FP64',
       ],
@@ -538,7 +538,7 @@ export default defineQuestions(
       q: 'Why must gradients be averaged (divided by world size or ncclAvg) after all-reduce in data-parallel SGD?',
       o: [
         'For speed',
-        'Summing across N replicas gives N× the per-replica gradient; dividing by N yields the MEAN, matching single-GPU SGD semantics — otherwise the effective learning rate is scaled by N',
+        'N× gradient sum; divide by N for the mean',
         'To save memory',
         'For FP8',
       ],
