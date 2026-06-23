@@ -10,7 +10,7 @@ export default defineQuestions(
       q: 'CUDA MPS (Multi-Process Service) allows…',
       o: [
         'One process to use many GPUs',
-        'Multiple processes to share a single GPU concurrently by funneling their work through one context, improving utilization for small per-process workloads',
+        'Many processes share one GPU concurrently via one context',
         'Faster kernels',
         'More memory',
       ],
@@ -29,7 +29,7 @@ export default defineQuestions(
       q: 'How do MPS, MIG, and time-slicing differ for sharing a GPU?',
       o: [
         'They are identical',
-        'Time-slicing serializes contexts; MPS runs multiple processes concurrently (shared, no hard isolation); MIG hardware-partitions the GPU into isolated instances with dedicated resources',
+        'Time-sliced=serial; MPS=shared; MIG=hard partitions',
         'MIG is software-only',
         'MPS gives memory isolation',
       ],
@@ -48,7 +48,7 @@ export default defineQuestions(
       q: 'Programmatic Dependent Launch (PDL) on Hopper lets a kernel…',
       o: [
         'Launch from the host faster',
-        'Begin executing (prologue) before its predecessor kernel fully finishes, and signal when downstream kernels may start — overlapping the tail of one kernel with the start of the next',
+        'Overlap its prologue with the predecessor’s tail',
         'Run on two GPUs',
         'Skip synchronization',
       ],
@@ -67,7 +67,7 @@ export default defineQuestions(
       q: 'Stream memory operations cuStreamWriteValue32 / cuStreamWaitValue32 let you…',
       o: [
         'Allocate memory',
-        'Have the GPU write/wait on a memory location as a stream operation, enabling GPU-side synchronization (e.g. with NICs or other engines) without host involvement',
+        'Memory write/wait as a GPU stream op',
         'Launch kernels',
         'Profile streams',
       ],
@@ -86,7 +86,7 @@ export default defineQuestions(
       q: 'You can build a CUDA Graph manually (without capture) by…',
       o: [
         'Recompiling the kernels',
-        'Creating nodes (cudaGraphAddKernelNode/MemcpyNode/...) and specifying their dependency edges explicitly, then instantiating the graph',
+        'Add nodes and edges explicitly, then instantiate',
         'Calling cudaDeviceSynchronize',
         'Using printf',
       ],
@@ -105,7 +105,7 @@ export default defineQuestions(
       q: 'To capture work issued across MULTIPLE streams into ONE graph (fork/join), you…',
       o: [
         'Cannot — capture is single-stream',
-        'Begin capture on an origin stream, fork to other streams (made to wait on the origin via events), and the captured graph records the cross-stream dependencies',
+        'Capture on an origin stream and fork to others via events',
         'Use cudaDeviceSynchronize between streams',
         'Run them sequentially',
       ],
@@ -124,7 +124,7 @@ export default defineQuestions(
       q: 'cudaGraphUpload (uploading an instantiated graph to a stream before launch) is useful because…',
       o: [
         'It runs the graph',
-        'It pre-stages the executable graph on the device so the first cudaGraphLaunch incurs less setup latency',
+        'Pre-stages graph on device; faster first launch',
         'It compiles the kernels',
         'It frees the graph',
       ],
@@ -143,7 +143,7 @@ export default defineQuestions(
       q: 'A clean fork/join with events: stream B and C both depend on a kernel in stream A. You implement it by…',
       o: [
         'cudaDeviceSynchronize after A',
-        'Record an event in A after the kernel, then cudaStreamWaitEvent(B, ev) and cudaStreamWaitEvent(C, ev) so B and C proceed concurrently once A’s kernel completes',
+        'Event in A; B and C wait, then run in parallel',
         'Putting everything in one stream',
         'Using MPS',
       ],
@@ -162,7 +162,7 @@ export default defineQuestions(
       q: 'Hopper "green contexts" provide…',
       o: [
         'Power savings only',
-        'A way to partition an SM set to a context for spatial sharing/QoS within a process, more flexible than MIG and finer than whole-GPU contexts',
+        'SM reservation per context within a process',
         'A new precision',
         'Faster NVLink',
       ],
@@ -181,7 +181,7 @@ export default defineQuestions(
       q: 'cudaGraphClone is handy when you want to…',
       o: [
         'Run a graph twice',
-        'Make an independent copy of a graph (template) to modify or instantiate separately, e.g. per-stream or per-configuration variants',
+        'Copy a graph for independent modification',
         'Profile the graph',
         'Free the graph',
       ],
@@ -200,7 +200,7 @@ export default defineQuestions(
       q: 'cudaLaunchKernel (the API form) vs the <<<>>> syntax: cudaLaunchKernel…',
       o: [
         'Runs on the host',
-        'Takes the kernel function pointer, grid/block dims, an args array, shared-mem size, and stream — the explicit form that <<<>>> compiles down to, usable from generic/templated launchers',
+        'Explicit launch: func-ptr, dims, args, stream',
         'Is slower',
         'Cannot use streams',
       ],
@@ -219,7 +219,7 @@ export default defineQuestions(
       q: 'A child-graph node lets a CUDA Graph…',
       o: [
         'Launch on another GPU',
-        'Embed an entire sub-graph as a single node, enabling composition/reuse of graph fragments within a larger graph',
+        'Nest a sub-graph as one node for reuse',
         'Run on the host',
         'Skip dependencies',
       ],
@@ -238,7 +238,7 @@ export default defineQuestions(
       q: 'cudaGraphDebugDotPrint outputs…',
       o: [
         'A performance report',
-        'A Graphviz DOT description of the graph’s nodes and dependencies, for visualizing/debugging the DAG',
+        'Graphviz DOT file of the graph topology',
         'The SASS',
         'A memory dump',
       ],
@@ -257,7 +257,7 @@ export default defineQuestions(
       q: 'Conditional graph nodes use a cudaGraphConditionalHandle that is set…',
       o: [
         'At instantiation only',
-        'By a kernel at runtime (writing the condition value), so the graph’s if/while node executes or repeats based on data computed on the device',
+        'A device kernel at runtime, to drive the if/while node',
         'By the host before launch only',
         'Randomly',
       ],
@@ -276,7 +276,7 @@ export default defineQuestions(
       q: 'For a training loop, the recommended way to use graphs across iterations with changing input pointers is to…',
       o: [
         'Re-capture every iteration',
-        'Capture/instantiate once, then use cudaGraphExecUpdate (or fixed pre-allocated buffers) so only parameters change between cheap relaunches',
+        'Capture once; update params only, not the structure',
         'Avoid graphs',
         'Use a new stream each time',
       ],
@@ -295,7 +295,7 @@ export default defineQuestions(
       q: 'Why does MPS particularly help INFERENCE serving of many small models/requests?',
       o: [
         'It increases precision',
-        'Individual small requests underutilize the GPU; MPS runs several concurrently (spatial sharing) to raise overall utilization and throughput',
+        'MPS co-executes small requests to fill the GPU',
         'It shards the model',
         'It reduces memory',
       ],
@@ -314,7 +314,7 @@ export default defineQuestions(
       q: 'A subtle requirement when using CUDA Graphs with cudaMallocAsync inside the captured region is that…',
       o: [
         'It is forbidden',
-        'Allocation/free become graph memory nodes (stream-ordered), which is allowed — unlike plain cudaMalloc/cudaFree, which synchronize and cannot be captured',
+        'Stream-ordered; captured as graph memory nodes',
         'It runs on the host',
         'It disables the pool',
       ],
@@ -333,7 +333,7 @@ export default defineQuestions(
       q: 'Two independent small kernels on two streams don’t overlap on a busy GPU. The most likely reason is…',
       o: [
         'Streams never overlap',
-        'The GPU is already fully occupied by other work, leaving no spare SM resources for concurrent execution',
+        'SMs saturated; no spare capacity for concurrency',
         'They are too large',
         'Events block them',
       ],
@@ -352,7 +352,7 @@ export default defineQuestions(
       q: 'For latency-critical inference, combining CUDA Graphs with a high-priority stream addresses…',
       o: [
         'Memory capacity',
-        'Both the per-launch CPU overhead (graphs) and scheduling contention with background work (priority) — minimizing end-to-end latency',
+        'Launch cost (via graph) + SM priority',
         'Precision',
         'Bank conflicts',
       ],
@@ -371,7 +371,7 @@ export default defineQuestions(
       q: 'cudaEventRecord on a stream, then cudaStreamWaitEvent on another stream, with cudaEventDisableTiming events, is the idiomatic way to…',
       o: [
         'Time the kernel',
-        'Express a lightweight cross-stream dependency (ordering) without the overhead of timing-enabled events',
+        'Cross-stream ordering without timing cost',
         'Allocate memory',
         'Launch a graph',
       ],
@@ -390,7 +390,7 @@ export default defineQuestions(
       q: 'Programmatic Dependent Launch most benefits a chain of kernels where…',
       o: [
         'Each kernel is huge',
-        'Kernels are short and back-to-back, so the inter-kernel gap (drain of one, ramp of next) is a meaningful fraction of runtime that PDL can overlap',
+        'Short back-to-back kernels where launch gaps matter',
         'There is only one kernel',
         'They run on different GPUs',
       ],
@@ -409,7 +409,7 @@ export default defineQuestions(
       q: 'cudaGraphInstantiate is relatively expensive, so the performance model of graphs is…',
       o: [
         'Cheap to build, cheap to run',
-        'Pay a one-time cost to capture+instantiate, then amortize it over MANY cheap replays — beneficial only if you relaunch the same graph often',
+        'High upfront cost; amortized over many cheap replays',
         'Expensive every launch',
         'Free everywhere',
       ],
@@ -428,7 +428,7 @@ export default defineQuestions(
       q: 'When capturing a region into a graph, calling cudaStreamSynchronize or cudaDeviceSynchronize inside it will…',
       o: [
         'Be recorded as a node',
-        'Cause a capture error (those synchronizing calls are illegal during capture, depending on capture mode)',
+        'Error: sync calls are illegal during capture',
         'Speed up capture',
         'Be ignored silently',
       ],
@@ -447,7 +447,7 @@ export default defineQuestions(
       q: 'A high-priority stream does NOT preempt an already-running block; instead it…',
       o: [
         'Stops other kernels immediately',
-        'Influences which waiting blocks the scheduler dispatches next when resources free up — so its effect appears as new blocks get scheduled, not by killing running ones',
+        'Biases block dispatch; doesn’t preempt running blocks',
         'Runs on a separate GPU',
         'Doubles the clock',
       ],
@@ -466,7 +466,7 @@ export default defineQuestions(
       q: 'To pipeline disjoint chunks of work across N streams, a common host-side pattern is…',
       o: [
         'One giant kernel',
-        'A loop that, for each chunk i, issues H2D, kernel, D2H on stream[i % N] with pinned buffers — rotating streams to overlap stages across chunks',
+        'Rotate H2D/kernel/D2H across N pinned-memory streams',
         'cudaDeviceSynchronize per chunk',
         'A single default stream',
       ],
@@ -485,7 +485,7 @@ export default defineQuestions(
       q: 'Stream-ordered memory pools (cudaMemPool) help long-running services because…',
       o: [
         'They never free memory',
-        'Freed allocations return to a pool and are reused for subsequent cudaMallocAsync without going back to the driver, reducing allocation overhead and fragmentation over time',
+        'Reuses freed blocks in the pool; no driver call',
         'They run on the host',
         'They compress memory',
       ],
@@ -504,7 +504,7 @@ export default defineQuestions(
       q: 'Why can adding MORE streams eventually REDUCE performance?',
       o: [
         'Streams are free',
-        'Beyond the concurrency the GPU can exploit, extra streams add scheduling/management overhead and can cause resource contention without more overlap',
+        'Past max concurrency, extra streams add overhead',
         'Streams disable kernels',
         'It always helps',
       ],

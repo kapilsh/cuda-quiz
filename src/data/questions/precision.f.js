@@ -20,7 +20,7 @@ export default defineQuestions(
       q: 'FP16 training loss stalls and gradients are mostly zero. The fix is…',
       o: [
         'Lower the learning rate',
-        'Loss scaling — multiply the loss by a large factor so small gradients land in FP16’s representable range during backprop, then unscale before the optimizer step (or use BF16 to avoid it)',
+        'Loss scale: FP16 grads in range; unscale after',
         'Use FP64',
         'More GPUs',
       ],
@@ -39,7 +39,7 @@ export default defineQuestions(
       q: 'An FP8 (E4M3) tensor with values up to ~5000 overflows to inf without scaling because…',
       o: [
         'FP8 has no exponent',
-        'E4M3’s max representable value is ~448, so values must be SCALED down into that range before quantizing; mis-scaling overflows (inf) or underflows (zeros)',
+        'E4M3 max ~448; scale down or overflow',
         'FP8 is integer',
         'It is fine',
       ],
@@ -68,7 +68,7 @@ export default defineQuestions(
       q: 'A 70B model’s weights in W4A16 (4-bit weights) occupy about how much vs FP16 weights?',
       o: [
         'Same',
-        '~1/4: 4-bit weights ≈ 35 GB vs FP16 ≈ 140 GB — cutting the weight memory/bandwidth that dominates decode ~4×',
+        '~35 GB vs ~140 GB FP16 (~4×)',
         '~1/2',
         '~1/16',
       ],
@@ -83,7 +83,7 @@ export default defineQuestions(
       q: 'Machine epsilon (gap above 1.0) is LARGER for which: FP16 (10 mantissa bits) or BF16 (7)?',
       o: [
         'FP16',
-        'BF16 — fewer mantissa bits (7) give a coarser ε (~2^-8) than FP16’s ~2^-11, so BF16 has less precision near 1.0 (trading mantissa for FP32-like range)',
+        'BF16 7-bit mantissa: coarser ε than FP16',
         'They are equal',
         'Neither has epsilon',
       ],
@@ -98,7 +98,7 @@ export default defineQuestions(
       q: 'A softmax over FP16 logits produces NaN. The most likely cause and fix are…',
       o: [
         'Underflow; scale up',
-        'exp() of large logits overflowed; subtract the row max before exp (mathematically identical, keeps the largest exponent at exp(0)=1) and accumulate the sum in FP32',
+        'Subtract max; largest = exp(0)=1, sum in FP32',
         'Division by the count',
         'A race condition',
       ],
@@ -117,7 +117,7 @@ export default defineQuestions(
       q: 'For large-model training, BF16 is chosen over FP16 mainly because…',
       o: [
         'BF16 is more precise',
-        'BF16’s FP32-range exponent avoids the overflow/underflow and loss-scaling fragility of FP16 — robustness/simplicity at scale outweighs FP16’s extra mantissa bits',
+        'BF16 range avoids FP16 overflow/scaling issues',
         'BF16 uses less memory',
         'FP16 is unsupported',
       ],
@@ -136,7 +136,7 @@ export default defineQuestions(
       q: 'In mixed-precision Adam, master weights and the moments (m, v) are kept in FP32 because…',
       o: [
         'FP32 is faster',
-        'Tiny per-step updates and the variance estimate would be lost in 16-bit (rounding/swamping); FP32 preserves them while the compute-heavy forward/backward run in BF16/FP16',
+        'Tiny updates lost in 16-bit; FP32 preserves',
         'It saves memory',
         'The GPU requires it',
       ],
@@ -155,7 +155,7 @@ export default defineQuestions(
       q: 'Enabling TF32 (default on Ampere+) for an FP32 matmul means results are…',
       o: [
         'Bit-identical to FP32',
-        'Slightly different — TF32 truncates inputs to ~10 mantissa bits on tensor cores (FP32 accumulate), so "FP32" matmuls aren’t bit-exact; disable TF32 where exactness is required',
+        'TF32: ~10-bit mantissa; not bit-exact FP32',
         'Lower than FP16',
         'Integer',
       ],
@@ -174,7 +174,7 @@ export default defineQuestions(
       q: 'Hardware stochastic rounding lets BF16 weight updates accumulate small gradients without an FP32 master because…',
       o: [
         'It is exact',
-        'Updates round up or down with probability proportional to the residual, so over many steps the expected accumulated value is correct — avoiding the systematic loss of round-to-nearest',
+        'Probabilistic rounding; expected value correct',
         'It increases range',
         'It disables denormals',
       ],
@@ -193,7 +193,7 @@ export default defineQuestions(
       q: 'INT8 activation quantization loses accuracy due to a few large-magnitude OUTLIER channels. SmoothQuant fixes this by…',
       o: [
         'Removing outliers',
-        'Migrating the quantization difficulty from activations to weights via per-channel scaling (X·diag(s)⁻¹ and W·diag(s)), so both become easier to quantize while XW is unchanged',
+        'Per-channel scale shifts burden to weights',
         'Using FP64',
         'Skipping quantization',
       ],
@@ -212,7 +212,7 @@ export default defineQuestions(
       q: 'Per-channel weight quantization beats per-tensor when…',
       o: [
         'It uses fewer bits',
-        'Different output channels have very different magnitude ranges — a single per-tensor scale wastes precision on small-range channels; per-channel scales fit each, reducing error',
+        'Per-channel scales fit; per-tensor wastes',
         'Always identical',
         'For FP64',
       ],
@@ -231,7 +231,7 @@ export default defineQuestions(
       q: 'FP4 (E2M1) needs micro-scaling (per-block scale) but FP16 does not because…',
       o: [
         'FP4 is integer',
-        'FP4 has ~16 values and tiny range, so a single per-tensor scale can’t fit elements of varying magnitude — a per-block scale adapts locally; FP16’s 16 bits give enough range/precision to skip per-block scaling',
+        'FP4’s ~16 values need per-block scale',
         'FP16 is integer',
         'They both need it',
       ],
@@ -250,7 +250,7 @@ export default defineQuestions(
       q: 'In FP8 training, gradients use E5M2 (vs E4M3 for weights/activations) because…',
       o: [
         'Gradients need precision',
-        'Gradients span a wide dynamic range, and E5M2’s extra exponent bits cover that range better than E4M3 — even at the cost of fewer mantissa bits',
+        'E5M2 wide exponent covers gradient dynamic range',
         'Gradients are integer',
         'For graphics',
       ],
@@ -269,7 +269,7 @@ export default defineQuestions(
       q: 'A reduction via FP atomicAdd gives slightly different sums each run. To make it deterministic you…',
       o: [
         'Use more threads',
-        'Use a fixed-order (tree) reduction without atomics — FP addition is non-associative, so the scheduling-dependent atomic order changes rounding; a fixed schedule is reproducible',
+        'Fixed-order tree reduction; atomic order varies',
         'Use relaxed atomics',
         'Use FP64 atomics',
       ],
@@ -288,7 +288,7 @@ export default defineQuestions(
       q: 'Mixed-precision iterative refinement solves Ax=b to FP64 accuracy using tensor cores by…',
       o: [
         'Solving in FP16 only',
-        'Factorizing/solving in low precision (fast, on tensor cores), then computing the residual in high precision and iteratively correcting — recovering FP64 accuracy at low-precision speed',
+        'Low-prec solve; high-prec residuals correct',
         'Avoiding the solve',
         'Using integers',
       ],
@@ -307,7 +307,7 @@ export default defineQuestions(
       q: 'Training NaNs appear in FP16 after a few steps. The usual root cause to check first is…',
       o: [
         'A bug in CUDA',
-        'Gradient/activation OVERFLOW to inf (then inf−inf or 0×inf → NaN), often from a too-high loss scale or an unstable op — dynamic loss scaling backs off the scale on overflow',
+        'Overflow → inf → NaN; scale too high',
         'BF16 storage',
         'A race condition',
       ],
@@ -326,7 +326,7 @@ export default defineQuestions(
       q: 'With loss scaling, gradient clipping by global norm must…',
       o: [
         'Clip before unscaling',
-        'UNSCALE the gradients first (divide out the loss scale), THEN clip to the true norm — clipping scaled gradients would use the wrong threshold',
+        'Unscale first, then clip to the true norm',
         'Skip clipping',
         'Clip the loss',
       ],
@@ -345,7 +345,7 @@ export default defineQuestions(
       q: 'A long FP16 reduction (millions of terms) stops increasing partway through. The cause is…',
       o: [
         'Integer overflow',
-        'Swamping — once the running sum is large, adding small FP16 terms rounds to no change (the addend is below the ULP at that magnitude); accumulate in FP32 (or use Kahan/pairwise)',
+        'Swamping: small addends below ULP, vanish',
         'A race',
         'Denormal flushing',
       ],
@@ -364,7 +364,7 @@ export default defineQuestions(
       q: 'Tensor cores multiply FP8/FP16 inputs but accumulate in FP32 because…',
       o: [
         'For speed',
-        'Summing many low-precision products would overflow/lose precision; a wide FP32 accumulator preserves the dot-product result before casting/scaling back down',
+        'Products overflow in low prec; FP32 accumulates',
         'It is required by the API',
         'To use more memory',
       ],
@@ -383,7 +383,7 @@ export default defineQuestions(
       q: 'Quantizing the KV cache to FP8 halves its memory but requires a scale because…',
       o: [
         'FP8 has no exponent',
-        'FP8’s narrow range means K/V values must be scaled into the representable window (per-tensor/head/token); without a good scale they overflow/underflow, corrupting attention',
+        'FP8 narrow range; K/V need per-head scale',
         'KV is integer',
         'KV is constant',
       ],
@@ -402,7 +402,7 @@ export default defineQuestions(
       q: 'INT8 matmul accumulates in INT32 (not INT8) because…',
       o: [
         'INT8 can’t multiply',
-        'Summing many INT8 products quickly exceeds INT8/INT16 range; INT32 accumulation preserves the result before requantizing — analogous to FP32 accumulation for FP16',
+        'INT8 products overflow; INT32 accumulates',
         'For speed',
         'To use tensor cores',
       ],
@@ -421,7 +421,7 @@ export default defineQuestions(
       q: 'Computing log(1+x) for tiny x as log1p(x) (not log(1+x)) is more accurate because…',
       o: [
         'It is faster',
-        '1+x loses x’s low bits (swamped by 1.0) before the log; log1p computes the result accurately for small x (similarly expm1 for eˣ−1)',
+        'x swamped in 1+x; log1p accurate for small x',
         'It avoids the log',
         'It uses integers',
       ],
@@ -440,7 +440,7 @@ export default defineQuestions(
       q: 'A numerically stable variance computation (e.g. in LayerNorm) uses Welford’s algorithm to…',
       o: [
         'Run faster',
-        'Compute mean and variance in one stable pass, avoiding the catastrophic cancellation of E[x²]−E[x]² (subtracting two large nearly-equal numbers)',
+        'Stable one-pass mean+variance',
         'Use integers',
         'Avoid the mean',
       ],
@@ -459,7 +459,7 @@ export default defineQuestions(
       q: 'For inference, W8A8 (INT8 weights AND activations) suits PREFILL while W4A16 suits DECODE because…',
       o: [
         'They are the same',
-        'Prefill is compute-bound (INT8 tensor cores give throughput); decode is bandwidth-bound on reading weights (4-bit weight-only cuts that traffic, activations stay FP16 for accuracy)',
+        'Prefill: compute-bound; decode: bandwidth-bound',
         'Decode is compute-bound',
         'For FP64',
       ],
@@ -478,7 +478,7 @@ export default defineQuestions(
       q: 'A delayed-scaling FP8 tensor suddenly spikes in magnitude and produces inf. The cause ("scale lag") is…',
       o: [
         'A CUDA bug',
-        'The history-based scale hasn’t caught up to the new larger magnitude, so values overflow before the scale updates — bound/clip the scale or use current scaling for volatile tensors',
+        'Stale scale; magnitude spike → overflow',
         'Underflow',
         'A race',
       ],
@@ -497,7 +497,7 @@ export default defineQuestions(
       q: 'Why does attention accumulate scores/softmax in FP32 even on FP16/BF16 hardware?',
       o: [
         'API requirement',
-        'The softmax sum and score·value accumulation involve many terms; FP32 accumulation preserves accuracy/range that 16-bit accumulation would degrade — especially for long sequences',
+        'Many-term sums degrade in 16-bit; FP32',
         'FP16 has no exp',
         'For speed',
       ],
@@ -516,7 +516,7 @@ export default defineQuestions(
       q: 'Two mathematically-equal reductions (sequential vs parallel tree) give slightly different FP results because…',
       o: [
         'A bug',
-        'FP addition is non-associative — different evaluation orders round differently, so results differ at the ULP level (all valid). This is the root of FP non-reproducibility across implementations',
+        'FP non-associative: order changes rounding',
         'Overflow',
         'Integer truncation',
       ],
@@ -535,7 +535,7 @@ export default defineQuestions(
       q: 'The same model gives slightly different outputs on two GPU architectures because…',
       o: [
         'The weights change',
-        'Different kernels/reduction orders, tensor-core vs CUDA-core paths, and TF32/precision defaults change FP rounding — so results match to TOLERANCE, not bitwise, across hardware',
+        'Different kernels/TF32 paths change rounding',
         'Different ISAs corrupt data',
         'It should be bit-identical',
       ],
@@ -554,7 +554,7 @@ export default defineQuestions(
       q: 'FP6 (e.g. E3M2) is useful as a middle ground because…',
       o: [
         'It is integer',
-        'It offers more precision/range than FP4 at smaller size than FP8 — letting you trade accuracy vs footprint finely (e.g. MXFP6 where FP4 loses too much)',
+        'Between FP4 and FP8 in precision and size',
         'It has no exponent',
         'It is larger than FP8',
       ],
@@ -573,7 +573,7 @@ export default defineQuestions(
       q: 'Why is low-precision generally safer for DL TRAINING than for HPC scientific computing?',
       o: [
         'Science uses integers',
-        'DL is statistically robust/self-correcting (SGD averages noise, the objective is approximate), while many HPC algorithms are ill-conditioned and accumulate rounding error — needing FP64 for correctness',
+        'DL: noise-tolerant; HPC ill-conditioned, FP64',
         'Training is exact',
         'They are identical',
       ],

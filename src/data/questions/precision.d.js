@@ -10,7 +10,7 @@ export default defineQuestions(
       q: 'Under AMP autocast, which operations are typically kept in FP32 rather than FP16/BF16?',
       o: [
         'Matrix multiplications',
-        'Reductions/loss and numerically-sensitive ops (e.g. softmax, layernorm, cross-entropy, sum) — autocast runs matmuls/convs in low precision but keeps these in FP32',
+        'Softmax, norms, loss — autocast keeps them FP32',
         'All operations',
         'Convolutions only',
       ],
@@ -29,7 +29,7 @@ export default defineQuestions(
       q: 'torch.cuda.amp.GradScaler.step(optimizer) does what beyond a normal optimizer step?',
       o: [
         'Nothing different',
-        'It first unscales the gradients and checks for inf/NaN; if found, it SKIPS the step and reduces the scale; otherwise it steps and may raise the scale',
+        'Unscale→check inf/NaN→skip if bad, else step',
         'It clips gradients',
         'It shards the model',
       ],
@@ -48,7 +48,7 @@ export default defineQuestions(
       q: 'The nvcc flag --fmad=false changes behavior by…',
       o: [
         'Enabling fast math',
-        'Disabling the contraction of separate multiply+add into a single FMA, which slightly changes results (and usually reduces accuracy/performance) but increases IEEE separability',
+        'Disable FMA contraction; two roundings vs one',
         'Forcing FP64',
         'Removing tensor cores',
       ],
@@ -67,7 +67,7 @@ export default defineQuestions(
       q: 'Why does FMA (a*b+c in one step) often produce MORE accurate results than separate multiply then add?',
       o: [
         'It uses FP64',
-        'It rounds only ONCE (the product is kept in full precision before adding), avoiding the intermediate rounding of the separate multiply',
+        'One rounding: product exact before add',
         'It is slower',
         'It uses tensor cores',
       ],
@@ -86,7 +86,7 @@ export default defineQuestions(
       q: 'Mixed-precision iterative refinement solves Ax=b accurately while exploiting fast low precision by…',
       o: [
         'Solving entirely in FP16',
-        'Factorizing/solving in low precision (fast) then iteratively correcting using the residual computed in high precision — recovering high-precision accuracy at low-precision speed',
+        'Low-prec solve + high-prec residual corrections',
         'Using only FP64',
         'Avoiding the solve',
       ],
@@ -105,7 +105,7 @@ export default defineQuestions(
       q: 'Emulating higher precision from FP32 (e.g. "double-single" or the Ozaki scheme) works by…',
       o: [
         'Using FP64 hardware',
-        'Representing a higher-precision value as an unevaluated sum of multiple FP32 numbers and doing arithmetic with error-free transformations — trading more FP32 ops for extra precision',
+        'Unevaluated FP32 sum + error-free transforms',
         'Rounding to FP16',
         'Using integers',
       ],
@@ -124,7 +124,7 @@ export default defineQuestions(
       q: 'A matrix with a large condition number means…',
       o: [
         'It is easy to solve',
-        'Small input/rounding errors are amplified greatly in the solution — so low-precision solves of ill-conditioned systems can be very inaccurate',
+        'Rounding errors amplified greatly',
         'It is sparse',
         'It is symmetric',
       ],
@@ -143,7 +143,7 @@ export default defineQuestions(
       q: 'The E8M0 format used as the SCALE in microscaling (MX) formats is…',
       o: [
         'A 32-bit float',
-        'An 8-bit exponent-only value (a power-of-two scale) shared per block, so scaling is a cheap exponent adjustment with no mantissa',
+        '8-bit exponent only; power-of-two scale',
         'An INT8',
         'A 16-bit float',
       ],
@@ -162,7 +162,7 @@ export default defineQuestions(
       q: 'Symmetric INT8 quantization commonly maps weights to the range…',
       o: [
         '[0, 255]',
-        '[-127, 127] (symmetric around zero, leaving -128 unused for symmetry), with a scale and no zero-point',
+        '[-127,127]; scale, no zero-point',
         '[-1, 1]',
         '[1, 256]',
       ],
@@ -181,7 +181,7 @@ export default defineQuestions(
       q: 'A "saturating" cast to INT8 (vs wrapping) is important because…',
       o: [
         'It is faster',
-        'Out-of-range values clamp to the min/max instead of wrapping around (which would turn a large positive into a negative), preventing catastrophic errors from overflow',
+        'Clamps vs wrapping (wrapping flips sign)',
         'It uses FP64',
         'It avoids scaling',
       ],
@@ -200,7 +200,7 @@ export default defineQuestions(
       q: 'A compensated (Kahan / two-sum) dot product improves accuracy by…',
       o: [
         'Using FP64',
-        'Tracking the rounding error of each addition in a separate term and adding it back, so the running sum behaves as if computed in higher precision',
+        'Captures per-add rounding error; near-exact sum',
         'Sorting the inputs',
         'Using tensor cores',
       ],
@@ -219,7 +219,7 @@ export default defineQuestions(
       q: 'The smallest positive NORMAL value of FP16 is about 6.1e-5; values below that down to ~6e-8 are…',
       o: [
         'Not representable',
-        'Subnormals (denormals) — representable with reduced precision, extending the range toward zero (unless flushed to zero)',
+        'Subnormal: near-zero, reduced precision',
         'Infinity',
         'NaN',
       ],
@@ -238,7 +238,7 @@ export default defineQuestions(
       q: 'Why are reordering FP operations (e.g. parallel tree reduction vs sequential) NOT guaranteed to give identical results?',
       o: [
         'Reordering changes the math',
-        'FP addition/multiplication are not associative, so different evaluation orders round differently — the results differ at the ULP level even though they’re mathematically "equal"',
+        'FP non-associative: order changes rounding',
         'It causes overflow',
         'It is a bug',
       ],
@@ -257,7 +257,7 @@ export default defineQuestions(
       q: 'For FP8 training, the loss is still computed and the optimizer step is still done in…',
       o: [
         'FP8',
-        'Higher precision (FP32 master weights + FP32 optimizer states); only the heavy matmuls use FP8, with scaling — the sensitive accumulation/update stays high precision',
+        'FP32 masters; FP8 for matmuls only',
         'INT8',
         'FP4',
       ],
@@ -276,7 +276,7 @@ export default defineQuestions(
       q: 'IEEE-compliant division/sqrt vs fast approximate versions on the GPU: the compliant ones (--prec-div=true) are…',
       o: [
         'Faster',
-        'More accurate (correctly rounded) but slower; fast versions (--prec-div=false / __fdividef) trade accuracy for throughput',
+        'IEEE-correct but slow; fast flags trade accuracy',
         'Identical',
         'Integer-only',
       ],
@@ -295,7 +295,7 @@ export default defineQuestions(
       q: 'Why can low-precision (FP16) GEMM with FP32 accumulation still be inaccurate for very large K despite FP32 accumulation?',
       o: [
         'FP32 is exact',
-        'The INPUTS are rounded to FP16 before multiplication, so each product already carries FP16-level error; over a huge K these input-rounding errors accumulate even though the SUM is in FP32',
+        'Input-level FP16 rounding accumulates over large K',
         'FP32 accumulation overflows',
         'It is always exact',
       ],
@@ -314,7 +314,7 @@ export default defineQuestions(
       q: 'In AMP, the model weights are stored in FP32 but autocast computes matmuls in FP16/BF16. The conversion happens…',
       o: [
         'Once at startup',
-        'On the fly: autocast casts inputs to the low-precision type for eligible ops, while the FP32 master weights are updated by the optimizer — so storage stays FP32 and compute is low precision',
+        'On the fly; FP32 masters updated by optimizer',
         'Never',
         'Only in the backward pass',
       ],
@@ -333,7 +333,7 @@ export default defineQuestions(
       q: 'A practical reason BF16 training often needs no GradScaler while FP16 does is…',
       o: [
         'BF16 is more precise',
-        'BF16’s 8-bit exponent matches FP32’s range, so gradients rarely underflow/overflow; FP16’s 5-bit exponent makes small gradients underflow to zero, requiring loss scaling',
+        'BF16 FP32-range; FP16 tiny grads underflow',
         'BF16 uses INT8',
         'FP16 has no exponent',
       ],
@@ -352,7 +352,7 @@ export default defineQuestions(
       q: 'The "two-sum" error-free transform computes s = a+b AND the exact rounding error e such that…',
       o: [
         'e is discarded',
-        'a + b = s + e exactly (s is the rounded sum, e captures the lost low-order bits) — the building block of compensated summation and double-single arithmetic',
+        'a+b = s+e exactly; e captures lost bits',
         'e is random',
         's is exact',
       ],
@@ -371,7 +371,7 @@ export default defineQuestions(
       q: 'Comparing the dynamic RANGE (largest/smallest representable magnitude) of BF16 vs FP16…',
       o: [
         'FP16 has more range',
-        'BF16 has much greater range (same 8-bit exponent as FP32, ~1e38) while FP16’s 5-bit exponent caps it (~65504), making FP16 prone to overflow/underflow',
+        'BF16 ~1e38; FP16 ~65504 (overflow-prone)',
         'They have equal range',
         'BF16 has less range',
       ],
@@ -390,7 +390,7 @@ export default defineQuestions(
       q: 'Iterative solvers (e.g. CG) can require higher precision than direct methods because…',
       o: [
         'They are always exact',
-        'Rounding errors accumulate over many iterations and can stall or degrade convergence, especially for ill-conditioned systems — sometimes needing FP64 or mixed-precision refinement',
+        'Errors accumulate per iter; FP64 for ill-cond',
         'They use no arithmetic',
         'They are integer-based',
       ],
@@ -409,7 +409,7 @@ export default defineQuestions(
       q: 'When quantizing activations dynamically per token, the scale is computed from…',
       o: [
         'The weights',
-        'That token’s activation statistics at runtime (e.g. its absolute max), so each token gets a scale matched to its own magnitude range',
+        'That token’s own amax at runtime',
         'A fixed constant',
         'The gradient',
       ],
@@ -428,7 +428,7 @@ export default defineQuestions(
       q: 'Why do tensor cores accumulate in FP32 even for FP8/INT8 inputs rather than the input precision?',
       o: [
         'For speed',
-        'Summing many low-precision products would overflow/lose precision quickly; a wider accumulator (FP32 / INT32) preserves the dot-product result before the final cast/dequantize',
+        'Products overflow; wide FP32/INT32 accumulator',
         'It is required by the API',
         'To use more memory',
       ],
@@ -447,7 +447,7 @@ export default defineQuestions(
       q: 'In mixed-precision training, the final loss is typically computed in…',
       o: [
         'FP16',
-        'FP32 — the loss (and the reduction producing it) is kept in full precision for stability before (scaled) backprop',
+        'FP32 — loss stays full precision',
         'INT8',
         'FP8',
       ],
@@ -466,7 +466,7 @@ export default defineQuestions(
       q: 'A "calibration" dataset for static INT8 quantization is used to…',
       o: [
         'Train the model',
-        'Observe representative activation ranges so per-tensor/channel scales can be chosen (e.g. via min/max or KL-divergence) before deployment — no weight updates',
+        'Observe ranges; pick scales before deploy',
         'Test accuracy only',
         'Shard the model',
       ],
@@ -485,7 +485,7 @@ export default defineQuestions(
       q: 'Why might FP8 inference need PER-TENSOR (or finer) scales recomputed for activations but fixed scales for weights?',
       o: [
         'Weights change each step',
-        'Weights are static after training (one scale suffices), while activations vary with each input, so their dynamic range — and thus the optimal scale — changes per inference and may need dynamic/finer scaling',
+        'Static weights: fixed scale; activations: dynamic',
         'Activations are constant',
         'Weights are random',
       ],
@@ -504,7 +504,7 @@ export default defineQuestions(
       q: 'The accuracy benefit of accumulating a reduction in FP32 (vs FP16) is largest when…',
       o: [
         'The array is tiny',
-        'The array is LARGE (many terms) and/or values span a wide range — more additions accumulate more FP16 rounding/swamping error that FP32 accumulation avoids',
+        'Large n or wide range; FP16 swamping grows',
         'All values are equal',
         'Values are integers',
       ],
@@ -523,7 +523,7 @@ export default defineQuestions(
       q: 'Stochastic rounding implemented in hardware for FP8/BF16 accumulation can REMOVE the need for an FP32 master copy because…',
       o: [
         'It increases the exponent',
-        'Small updates round up or down probabilistically in proportion to their value, so over many steps they accumulate without the systematic loss that round-to-nearest causes — preserving the increments in expectation',
+        'Probabilistic rounding preserves increments',
         'It is exact',
         'It uses FP64',
       ],
@@ -542,7 +542,7 @@ export default defineQuestions(
       q: 'For numerically reproducible results across runs on the SAME GPU, a key setting is…',
       o: [
         'Use FP16',
-        'Disable nondeterministic paths (e.g. deterministic algorithms, disable TF32 where exactness matters, fixed reduction order/seeds) so the same operations execute in the same order each run',
+        'Fixed reduction order + deterministic algorithms',
         'Increase the batch size',
         'Use more streams',
       ],

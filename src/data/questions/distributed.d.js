@@ -143,7 +143,7 @@ export default defineQuestions(
       q: 'Speculative decoding speeds up LLM inference by…',
       o: [
         'Quantizing the model',
-        'Draft proposes tokens; target verifies in one pass',
+        'Draft proposes tokens; target verifies them',
         'Sharding the KV cache',
         'Disabling attention',
       ],
@@ -181,7 +181,7 @@ export default defineQuestions(
       q: 'Asynchronous checkpointing (save in the background) helps long training by…',
       o: [
         'Improving accuracy',
-        'Snapshot to host; write to disk in background',
+        'Snapshot to host; write in background',
         'Reducing model size',
         'Quantizing weights',
       ],
@@ -200,7 +200,7 @@ export default defineQuestions(
       q: 'A practical relationship guiding checkpoint frequency is…',
       o: [
         'Checkpoint every step',
-        'Balance checkpoint overhead against expected lost work on failure: with mean-time-between-failures (MTBF) shrinking at large scale, checkpoint often enough that re-doing the work since the last checkpoint is cheap',
+        'Balance checkpoint cost against lost work',
         'Never checkpoint',
         'Checkpoint randomly',
       ],
@@ -219,7 +219,7 @@ export default defineQuestions(
       q: 'Tensor parallelism reduces not just parameter memory but also ACTIVATION memory per GPU because…',
       o: [
         'It replicates activations',
-        'Each GPU computes only its shard of a layer’s outputs (e.g. a slice of the hidden dimension), so it stores a fraction of that layer’s activations',
+        'Each GPU stores only its shard of the activations',
         'It uses FP8',
         'It removes activations',
       ],
@@ -238,7 +238,7 @@ export default defineQuestions(
       q: 'A 5D parallelism configuration might compose…',
       o: [
         'Five optimizers',
-        'Data + tensor + pipeline + context (sequence) + expert parallelism — each addressing a different scaling axis (replicas, width, depth, sequence length, experts)',
+        'Data, tensor, pipeline, context, expert',
         'Five GPUs',
         'Five precisions',
       ],
@@ -257,7 +257,7 @@ export default defineQuestions(
       q: 'In pipeline parallelism, the warmup (fill) and cooldown (drain) phases are where…',
       o: [
         'The optimizer runs',
-        'Some stages have no work (the bubble) because the pipeline isn’t yet full / is emptying — the source of pipeline inefficiency that more micro-batches and better schedules reduce',
+        'Some stages idle (the bubble) filling/draining',
         'Gradients are clipped',
         'Data is loaded',
       ],
@@ -276,7 +276,7 @@ export default defineQuestions(
       q: 'Keeping an exponential moving average (EMA) of weights in distributed training requires…',
       o: [
         'Nothing special',
-        'Maintaining the EMA consistently — since replicas have identical weights (DDP) each can update its own EMA, but with sharded weights (FSDP) the EMA must follow the same sharding',
+        'EMA state must follow the weight sharding',
         'A broadcast every step',
         'FP64',
       ],
@@ -295,7 +295,7 @@ export default defineQuestions(
       q: 'A simple per-GPU training-memory estimate with ZeRO-3/FSDP (sharded over N data-parallel ranks) is roughly…',
       o: [
         'Same as single-GPU',
-        '(params + grads + optimizer states)/N + per-GPU activations + transient all-gather buffers — sharding the model state by N while activations depend on local batch/sequence',
+        'State/N + activations + transient buffers',
         'N × single-GPU',
         'Just the activations',
       ],
@@ -314,7 +314,7 @@ export default defineQuestions(
       q: 'For LLM inference, tensor parallelism is favored over pipeline parallelism for LATENCY because…',
       o: [
         'TP uses less memory',
-        'TP keeps each token’s computation on all GPUs simultaneously (parallel within a layer), whereas PP serializes a token through stages, adding pipeline latency per token',
+        'TP parallelizes a layer; PP serializes stages',
         'PP is more accurate',
         'TP avoids communication',
       ],
@@ -333,7 +333,7 @@ export default defineQuestions(
       q: 'A symptom of pipeline-parallel load IMBALANCE (uneven stage assignment) is…',
       o: [
         'Perfect overlap',
-        'Some stages (GPUs) consistently finish before others and idle waiting, because layers/compute weren’t split to equalize per-stage time',
+        'Some stages finish early and idle',
         'Lower precision',
         'More memory',
       ],
@@ -352,7 +352,7 @@ export default defineQuestions(
       q: 'ZeRO-Infinity extends offloading to NVMe so that…',
       o: [
         'It runs faster',
-        'Optimizer states / parameters can spill to NVMe SSDs (beyond CPU RAM), enabling training of models far larger than aggregate GPU+CPU memory, bottlenecked by NVMe/PCIe bandwidth',
+        'State spills to NVMe beyond CPU RAM',
         'It avoids checkpoints',
         'It increases precision',
       ],
@@ -371,7 +371,7 @@ export default defineQuestions(
       q: 'Why must all data-parallel replicas start from IDENTICAL weights?',
       o: [
         'For speed',
-        'Synchronous SGD assumes replicas stay in lockstep; identical initialization (e.g. broadcast from rank 0 or same seed) plus identical averaged-gradient updates keeps them bit-for-bit consistent',
+        'Replicas must stay in lockstep',
         'To save memory',
         'For FP8',
       ],
@@ -390,7 +390,7 @@ export default defineQuestions(
       q: 'Why does increasing tensor-parallel degree eventually HURT efficiency even within a node?',
       o: [
         'It never hurts',
-        'More TP ranks mean smaller per-GPU matmuls (lower GEMM efficiency) and more frequent/relatively larger per-layer all-reduces, so communication overhead grows and compute efficiency drops past a point',
+        'Smaller GEMMs, larger relative all-reduces',
         'It uses less memory',
         'It improves accuracy',
       ],
@@ -409,7 +409,7 @@ export default defineQuestions(
       q: 'The dominant inference-memory consumer for long-context LLM serving is often…',
       o: [
         'The optimizer states',
-        'The KV cache (grows with batch × sequence length × layers × heads), which can exceed the model weights and limits how many/long sequences fit',
+        'The KV cache (can exceed the weights)',
         'The gradients',
         'The dataset',
       ],
@@ -428,7 +428,7 @@ export default defineQuestions(
       q: 'Grouped-Query / Multi-Query Attention (GQA/MQA) reduce inference memory/bandwidth by…',
       o: [
         'Quantizing weights',
-        'Sharing K/V heads across multiple query heads, shrinking the KV cache (and its bandwidth) with modest quality impact',
+        'Sharing K/V heads, shrinking the KV cache',
         'Removing attention',
         'Using FP64',
       ],
@@ -447,7 +447,7 @@ export default defineQuestions(
       q: 'When data parallelism is communication-bound, switching SOME of it to tensor/pipeline parallelism can help because…',
       o: [
         'It removes communication',
-        'It reduces the data-parallel degree (fewer/cheaper gradient all-reduces) by using model parallelism to fit/scale, rebalancing where communication happens onto faster links',
+        'Lower DP degree; shift comm to faster links',
         'It increases precision',
         'It uses one GPU',
       ],
@@ -466,7 +466,7 @@ export default defineQuestions(
       q: 'A reason FSDP2 (per-parameter DTensor sharding) improves on FSDP1 (flat-buffer) is…',
       o: [
         'It is slower',
-        'Per-parameter sharding composes cleanly with other parallelisms (TP), gives finer control, and avoids flattening/padding artifacts — at some bookkeeping cost',
+        'Per-parameter sharding composes with TP',
         'It uses FP64',
         'It removes sharding',
       ],
@@ -485,7 +485,7 @@ export default defineQuestions(
       q: 'Why is the global batch size (not per-GPU batch) the quantity that affects convergence?',
       o: [
         'It is not',
-        'The optimizer updates on the averaged gradient over the GLOBAL batch, so learning dynamics (effective LR, noise) depend on the total batch across all replicas and accumulation steps',
+        'Updates use the gradient over the global batch',
         'Per-GPU batch sets convergence',
         'Only the dataset matters',
       ],
@@ -504,7 +504,7 @@ export default defineQuestions(
       q: 'Backup/redundant workers ("hedging") in synchronous training mitigate stragglers by…',
       o: [
         'Removing synchronization',
-        'Running extra replicas so the step can proceed using the first N to finish, tolerating a slow/failed worker without waiting on it',
+        'Proceed with the first N replicas to finish',
         'Quantizing gradients',
         'Using FP64',
       ],
@@ -523,7 +523,7 @@ export default defineQuestions(
       q: 'Why can communication-overlap eventually fail to hide all-reduce as models scale, even with bucketing?',
       o: [
         'Bucketing is broken',
-        'As per-GPU compute per step shrinks (more model parallelism, smaller shards) or the gradient volume/network worsens, the all-reduce time can exceed the backward compute it’s overlapped with — leaving exposed communication',
+        'All-reduce outlasts the backward it hides in',
         'Overlap always works',
         'It uses FP64',
       ],

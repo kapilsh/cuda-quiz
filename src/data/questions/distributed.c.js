@@ -48,7 +48,7 @@ export default defineQuestions(
       q: 'DDP’s find_unused_parameters=True is sometimes needed because…',
       o: [
         'It speeds up training',
-        'Detects unused params; prevents all-reduce stall',
+        'Detects unused params; avoids reduce stall',
         'It shards the model',
         'It enables FP8',
       ],
@@ -215,7 +215,7 @@ export default defineQuestions(
       q: 'Overlapping the optimizer step with gradient communication (e.g. optimizer-in-backward) helps by…',
       o: [
         'Reducing FLOPs',
-        'Overlaps param updates with ongoing gradient communication',
+        'Overlaps updates with gradient communication',
         'Increasing batch size',
         'Lowering precision',
       ],
@@ -386,7 +386,7 @@ export default defineQuestions(
       q: 'When data-parallel training "scales poorly" (throughput per GPU drops as GPUs increase), the usual first suspect is…',
       o: [
         'The optimizer',
-        'All-reduce not overlapping with backward time',
+        'All-reduce not overlapping backward',
         'The dataset',
         'The learning rate',
       ],
@@ -424,7 +424,7 @@ export default defineQuestions(
       q: 'A practical reason BF16 (not FP16) is the default for large-model training is…',
       o: [
         'BF16 is more precise',
-        'BF16 FP32-range avoids overflow; no loss scaling needed',
+        'FP32 range avoids overflow; no loss scaling',
         'BF16 uses less memory',
         'FP16 is unsupported',
       ],
@@ -519,7 +519,7 @@ export default defineQuestions(
       q: 'The simplest way to increase the effective batch size without more GPUs or memory is…',
       o: [
         'Tensor parallelism',
-        'Gradient accumulation before one optimizer step',
+        'Gradient accumulation',
         'Pipeline parallelism',
         'ZeRO-3',
       ],

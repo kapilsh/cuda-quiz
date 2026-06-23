@@ -158,7 +158,7 @@ export default defineQuestions(
       q: 'Megatron "sequence parallelism" complements tensor parallelism by parallelizing the parts of a layer that TP leaves replicated (LayerNorm, dropout). The added communication is…',
       o: [
         'A single broadcast',
-        'All-gather + reduce-scatter around TP; same cost',
+        'All-gather + reduce-scatter around TP',
         'Nothing',
         'A pipeline send',
       ],
@@ -196,7 +196,7 @@ export default defineQuestions(
       q: 'Model FLOPs Utilization (MFU) measures…',
       o: [
         'GPU temperature',
-        'Model FLOP/s as fraction of hardware peak FLOP/s',
+        'Model FLOP/s ÷ peak FLOP/s',
         'Memory usage',
         'Network bandwidth',
       ],
@@ -215,7 +215,7 @@ export default defineQuestions(
       q: 'Tensor parallelism for multi-head attention naturally splits across GPUs by…',
       o: [
         'Splitting the sequence',
-        'Each GPU gets a subset of heads; output projection combines',
+        'Each GPU gets a subset of heads',
         'Splitting the batch',
         'Replicating all heads',
       ],

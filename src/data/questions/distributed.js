@@ -22,7 +22,7 @@ export default defineQuestions('distributed', [
     q: 'What is the main limitation that data parallelism alone cannot solve?',
     o: [
       'Slow data loading',
-      'Model too big for one GPU; DP cannot shard it',
+      'Model too big for one GPU',
       'Too many GPUs',
       'Gradient averaging',
     ],
@@ -64,7 +64,7 @@ export default defineQuestions('distributed', [
     q: 'Pipeline parallelism splits the model by…',
     o: [
       'Splitting each weight matrix',
-      'Layers split into stages; micro-batches streamed through',
+      'Layers split into stages; micro-batches streamed',
       'Replicating layers',
       'Splitting the optimizer state',
     ],
@@ -78,7 +78,7 @@ export default defineQuestions('distributed', [
     q: 'The "bubble" in pipeline parallelism refers to…',
     o: [
       'A memory leak',
-      'Idle fill/drain time when not all stages have work',
+      'Idle fill/drain time in the pipeline',
       'A communication buffer',
       'A type of all-reduce',
     ],
@@ -92,7 +92,7 @@ export default defineQuestions('distributed', [
     q: 'ZeRO (Zero Redundancy Optimizer) reduces memory by…',
     o: [
       'Using lower precision only',
-      'Shards optimizer states, grads, and params across DP ranks',
+      'Shards optimizer states, grads, params',
       'Removing the optimizer',
       'Compressing activations',
     ],
@@ -129,7 +129,7 @@ export default defineQuestions('distributed', [
     q: 'Sequence/context parallelism is introduced primarily to address…',
     o: [
       'Too-small batch sizes',
-      'Long-sequence activation memory; seq dim sharded across GPUs',
+      'Long-sequence activation memory',
       'Slow optimizers',
       'Gradient noise',
     ],
@@ -166,7 +166,7 @@ export default defineQuestions('distributed', [
     q: 'Gradient accumulation lets you…',
     o: [
       'Train without gradients',
-      'Accumulate grads over micro-batches before one optimizer step',
+      'Accumulate grads over micro-batches',
       'Skip the backward pass',
       'Average across GPUs without NCCL',
     ],

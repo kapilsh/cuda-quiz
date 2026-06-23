@@ -8,7 +8,7 @@ export default defineQuestions('streams', [
     q: 'What is a CUDA stream?',
     o: [
       'A type of GPU memory',
-      'An ordered queue of operations that execute in issue order; operations in different streams may run concurrently',
+      'Ordered queue; other streams may overlap',
       'A network connection',
       'A thread on the host',
     ],
@@ -22,7 +22,7 @@ export default defineQuestions('streams', [
     q: 'To overlap a host-to-device copy with a kernel, you need…',
     o: [
       'Two GPUs',
-      'Pinned host memory and to issue the async copy and kernel on different (non-default) streams',
+      'Pinned memory + separate streams',
       'A larger block size',
       'Unified memory only',
     ],
@@ -36,7 +36,7 @@ export default defineQuestions('streams', [
     q: 'What is special about the legacy default stream (stream 0)?',
     o: [
       'It runs on the CPU',
-      'It synchronizes with all other (blocking) streams — work in it waits for and blocks other streams unless they are non-blocking',
+      'Implicitly syncs with all other blocking streams',
       'It has the highest priority',
       'It cannot run kernels',
     ],
@@ -50,7 +50,7 @@ export default defineQuestions('streams', [
     q: 'CUDA events (cudaEvent_t) are used to…',
     o: [
       'Allocate memory',
-      'Record timestamps and express inter-stream dependencies (one stream can wait on another’s event)',
+      'Record timestamps; order streams via wait',
       'Launch kernels',
       'Define communicators',
     ],
@@ -64,7 +64,7 @@ export default defineQuestions('streams', [
     q: 'CUDA Graphs improve performance primarily by…',
     o: [
       'Making kernels run faster internally',
-      'Capturing a sequence of operations once and replaying it with minimal CPU launch overhead, helpful for many small kernels',
+      'Capture once and replay — cuts per-launch CPU overhead',
       'Compressing memory',
       'Increasing occupancy',
     ],
@@ -78,7 +78,7 @@ export default defineQuestions('streams', [
     q: 'A common way to build a CUDA Graph from existing code is…',
     o: [
       'Rewriting every kernel',
-      'Stream capture: wrap the normal stream operations between cudaStreamBeginCapture and cudaStreamEndCapture to record them into a graph',
+      'cudaStreamBeginCapture / EndCapture wraps ops into a graph',
       'Using cuBLAS',
       'Calling cudaDeviceSynchronize repeatedly',
     ],
@@ -92,7 +92,7 @@ export default defineQuestions('streams', [
     q: 'When are CUDA Graphs LEAST beneficial?',
     o: [
       'Many tiny kernels launched in a tight loop',
-      'A single large, long-running kernel where launch overhead is negligible',
+      'One big, long-running kernel (launch overhead negligible)',
       'Inference with fixed shapes',
       'Repeated identical iterations',
     ],
@@ -106,7 +106,7 @@ export default defineQuestions('streams', [
     q: 'cudaStreamSynchronize(stream) vs. cudaDeviceSynchronize(): the difference is…',
     o: [
       'They are identical',
-      'StreamSynchronize blocks the host only until that one stream’s work is done; DeviceSynchronize waits for all streams/work on the device',
+      'StreamSync: one stream only; DeviceSync: all streams/work',
       'DeviceSynchronize is faster',
       'StreamSynchronize runs on the GPU',
     ],
@@ -120,7 +120,7 @@ export default defineQuestions('streams', [
     q: 'Why might using many streams NOT yield more concurrency on the GPU?',
     o: [
       'Streams always serialize',
-      'If a single kernel already saturates the SMs (full occupancy/resources), there is no spare capacity for other streams’ kernels to overlap compute-with-compute',
+      'Full SM saturation leaves no room for concurrent overlap',
       'Streams require separate GPUs',
       'The driver ignores extra streams',
     ],
