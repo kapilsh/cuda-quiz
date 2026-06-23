@@ -10,7 +10,7 @@ export default defineQuestions(
       q: 'A 70B-parameter model trained with mixed-precision Adam needs roughly how much memory for weights + grads + optimizer states (no activations)?',
       o: [
         '~140 GB',
-        '~1.1–1.3 TB (≈16–18 bytes/param: 2 half weight + 2 half grad + 4 FP32 master + 4 m + 4 v) — far beyond one GPU, requiring sharding (ZeRO/FSDP)',
+        '~1.1 TB (≈16 B/param)',
         '~70 GB',
         '~280 GB',
       ],
@@ -25,7 +25,7 @@ export default defineQuestions(
       q: 'A pipeline with p=8 stages and m=32 micro-batches has a bubble fraction of about…',
       o: [
         '50%',
-        '~18% — (p−1)/(m+p−1) = 7/39 ≈ 0.18; more micro-batches shrink it, interleaved/zero-bubble schedules shrink it further',
+        '~18% (7/39)',
         '0%',
         '90%',
       ],
@@ -40,7 +40,7 @@ export default defineQuestions(
       q: 'ZeRO-3/FSDP sharding the ~16 B/param state across 64 data-parallel GPUs reduces per-GPU model-state memory to about…',
       o: [
         '16 B/param',
-        '~0.25 B/param (16/64) for the sharded state — plus per-GPU activations and transient all-gather buffers',
+        '~0.25 B/param (16/64)',
         'Unchanged',
         '4 B/param',
       ],
@@ -55,7 +55,7 @@ export default defineQuestions(
       q: 'Estimate training FLOPs for a 7B model on 1T tokens using the 6N rule…',
       o: [
         '~4.2e19',
-        '~4.2e22 FLOPs (6 × 7e9 × 1e12) — useful for planning GPU-hours and computing MFU',
+        '~4.2e22 FLOPs (6 × 7e9 × 1e12)',
         '~6e9',
         '~7e12',
       ],
@@ -70,7 +70,7 @@ export default defineQuestions(
       q: 'A run does 5e22 FLOPs in 10 days on 1024 H100s (~990 TFLOP/s BF16 peak each). The MFU is roughly…',
       o: [
         '~10%',
-        '~57% — achieved FLOP/s = 5e22 / (10×86400 s) ≈ 5.8e16; peak = 1024 × 9.9e14 ≈ 1.0e18; MFU ≈ 5.8e16/1.0e18 ≈ 0.057... actually ~5.7%',
+        '~5.7% (achieved ÷ peak)',
         '~90%',
         '~100%',
       ],
@@ -85,7 +85,7 @@ export default defineQuestions(
       q: 'A KV cache for a model with 32 layers, 32 heads, head_dim 128, FP16, at sequence length 4096 and batch 8 is roughly…',
       o: [
         '~1 MB',
-        '~8 GB — 2 (K and V) × layers × heads × head_dim × seq × batch × 2 bytes = 2×32×32×128×4096×8×2 ≈ 8.6 GB',
+        '~8.6 GB (2×L×H×d×S×B×2)',
         '~100 MB',
         '~500 GB',
       ],
@@ -100,7 +100,7 @@ export default defineQuestions(
       q: 'Scaling the global batch from 256 to 2048 (×8), the linear scaling rule suggests setting the learning rate to…',
       o: [
         'The same',
-        '8× the base LR (with warmup), to keep the per-step update magnitude consistent with the larger batch',
+        '8× the base LR (with warmup)',
         '1/8×',
         '64×',
       ],
@@ -115,7 +115,7 @@ export default defineQuestions(
       q: 'To reach a global batch of 4096 with 64 data-parallel GPUs and micro-batch 8, gradient accumulation steps =…',
       o: [
         '64',
-        '8 — global = micro × accum × DP ⇒ 4096 = 8 × accum × 64 ⇒ accum = 8',
+        '8 (4096 = 8 × accum × 64)',
         '512',
         '1',
       ],
@@ -130,7 +130,7 @@ export default defineQuestions(
       q: 'For a 175B model on 64 GPUs, a sensible 3D-parallel starting layout (within 8-GPU NVLink nodes) is…',
       o: [
         'DP=64',
-        'TP=8 (within a node, NVLink) × PP across nodes × DP for the rest — TP fits/parallelizes the wide layers on NVLink, PP spans nodes, DP replicates',
+        'TP=8 intra-node, PP+DP across',
         'PP=64',
         'TP=64',
       ],
@@ -149,7 +149,7 @@ export default defineQuestions(
       q: 'GQA with 8 KV heads (vs 64 query heads) shrinks the KV cache by about…',
       o: [
         'No change',
-        '~8× (KV is stored per KV head; sharing one KV head per 8 query heads reduces KV heads from 64 to 8)',
+        '~8× (64 KV heads → 8)',
         '2×',
         '64×',
       ],
@@ -164,7 +164,7 @@ export default defineQuestions(
       q: 'In LLM inference, prefill is compute-bound and decode is memory-bound because…',
       o: [
         'They are identical',
-        'Prefill processes the whole prompt in parallel (large efficient matmuls); decode generates one token per step, dominated by reading weights + KV cache (small matmuls, bandwidth-bound)',
+        'Prefill: big matmuls; decode: reads weights/KV',
         'Decode is parallel',
         'Prefill is sequential',
       ],
@@ -183,7 +183,7 @@ export default defineQuestions(
       q: 'Speculative decoding with a draft model whose tokens are accepted 70% of the time and k=4 drafts per step yields a speedup that depends on…',
       o: [
         'Model size only',
-        'The acceptance rate — high acceptance means ~multiple tokens per expensive target-model forward; the gain scales with accepted-tokens-per-step (and the draft model’s relative cost)',
+        'The draft-token acceptance rate',
         'FP64',
         'The dataset',
       ],
@@ -202,7 +202,7 @@ export default defineQuestions(
       q: 'Weight streaming for a model exceeding GPU memory is bottlenecked by…',
       o: [
         'Tensor cores',
-        'Host↔GPU bandwidth (PCIe/NVLink-C2C) — each layer’s weights are fetched on demand, so the transfer rate (overlapped with compute) limits throughput',
+        'Host↔GPU bandwidth (PCIe/NVLink-C2C)',
         'The optimizer',
         'The dataset',
       ],
@@ -221,7 +221,7 @@ export default defineQuestions(
       q: '1F1B pipeline scheduling has the same bubble as GPipe but…',
       o: [
         'More memory',
-        'LOWER peak activation memory — it starts backward passes early, bounding in-flight activations to ~pipeline depth instead of storing all micro-batches’ activations (GPipe)',
+        'Lower peak activation memory',
         'No bubble',
         'Higher accuracy',
       ],
@@ -240,7 +240,7 @@ export default defineQuestions(
       q: 'A run shows low MFU with significant time in NCCL kernels and GPU idle gaps. This is…',
       o: [
         'Compute-bound',
-        'Communication-bound — exposed collectives leave SMs idle; improve overlap (bucketing, prefetch), topology/affinity, or rebalance the parallelism mix',
+        'Communication-bound (exposed collectives)',
         'Memory-bound on DRAM',
         'Register-spill bound',
       ],
@@ -259,7 +259,7 @@ export default defineQuestions(
       q: 'Activation checkpointing increases HFU but not MFU because…',
       o: [
         'It reduces FLOPs',
-        'It recomputes activations in the backward pass (extra hardware FLOPs counted in HFU) that aren’t "useful model FLOPs" — so MFU (useful/peak) is unchanged while HFU (all/peak) rises',
+        'Recompute adds hardware FLOPs, not useful',
         'It increases accuracy',
         'It shards the model',
       ],
@@ -278,7 +278,7 @@ export default defineQuestions(
       q: 'For long-context training, activation memory grows with sequence length, so the parallelism to add is…',
       o: [
         'More data parallelism',
-        'Context/sequence parallelism — split the sequence across GPUs (exchanging K/V, e.g. ring attention) to distribute the activation memory and attention compute',
+        'Context/sequence parallelism (split the sequence)',
         'More pipeline stages only',
         'FP64',
       ],
@@ -297,7 +297,7 @@ export default defineQuestions(
       q: 'Why does increasing tensor-parallel degree beyond a point reduce efficiency even within a node?',
       o: [
         'It never hurts',
-        'More TP ranks shrink each per-GPU matmul (lower GEMM efficiency) and make the per-layer all-reduce a larger fraction of time — communication overhead grows and compute efficiency drops past an optimal degree',
+        'Smaller GEMMs, bigger relative all-reduces',
         'It uses less memory',
         'It improves accuracy',
       ],
@@ -316,7 +316,7 @@ export default defineQuestions(
       q: 'Continuous (in-flight) batching beats static batching for serving because…',
       o: [
         'Higher accuracy',
-        'Sequences finish at different times; continuous batching swaps completed sequences for new ones each step instead of waiting for the whole batch — keeping the GPU busy',
+        'Swaps finished sequences for new ones each step',
         'FP64',
         'Sharding',
       ],
@@ -335,7 +335,7 @@ export default defineQuestions(
       q: 'Disaggregated prefill/decode serving runs them on separate pools because…',
       o: [
         'Simplicity',
-        'Prefill (compute-bound) and decode (memory-bound) have different optimal hardware/batching; separating them avoids interference (a long prefill stalling decodes) and lets each scale independently',
+        'Different bottlenecks per phase',
         'Lower accuracy',
         'FP64',
       ],
@@ -354,7 +354,7 @@ export default defineQuestions(
       q: 'When scaling a model 10×, the parallelism mix must change because…',
       o: [
         'It does not',
-        'A bigger model needs more model parallelism (TP/PP) to fit and keep per-GPU GEMMs efficient, and the memory/communication balance shifts — the optimal DP/TP/PP/CP mix is model- and hardware-specific',
+        'Bigger models need more TP/PP',
         'Only DP matters',
         'For FP64',
       ],
@@ -373,7 +373,7 @@ export default defineQuestions(
       q: 'The Chinchilla compute-optimal result implies, for a fixed compute budget, you should…',
       o: [
         'Maximize parameters only',
-        'Balance model size and training tokens (~20 tokens/param) — many earlier models were under-trained (too large for their token count)',
+        'Balance model size and tokens (~20 tokens/param)',
         'Minimize tokens',
         'Use FP64',
       ],
@@ -392,7 +392,7 @@ export default defineQuestions(
       q: 'DDP find_unused_parameters=True is needed when…',
       o: [
         'Always',
-        'Some parameters don’t receive gradients in a given forward (dynamic graphs), so DDP must detect them or the all-reduce waits forever for their never-produced gradients — at some overhead',
+        'Some params get no gradient (dynamic graph)',
         'Never',
         'For FP64',
       ],
@@ -411,7 +411,7 @@ export default defineQuestions(
       q: 'In a communication-bound data-parallel run, switching SOME data parallelism to tensor/pipeline parallelism can help by…',
       o: [
         'Removing communication',
-        'Reducing the DP degree (fewer/cheaper gradient all-reduces) and shifting communication onto faster links (TP on NVLink) or lighter patterns (PP P2P) — rebalancing where comm happens',
+        'Fewer DP all-reduces; comm moves to TP/PP',
         'Increasing precision',
         'Using one GPU',
       ],
@@ -430,7 +430,7 @@ export default defineQuestions(
       q: 'Asynchronous (background) checkpointing helps long training by…',
       o: [
         'Improving accuracy',
-        'Snapshotting state quickly (e.g. to pinned host memory) and writing to storage in a background thread, so the GPU resumes training while the slow disk write proceeds',
+        'Snapshots state; async write to storage',
         'Reducing model size',
         'Quantizing weights',
       ],
@@ -449,7 +449,7 @@ export default defineQuestions(
       q: 'RLHF/PPO is resource-heavy partly because it holds multiple models resident, typically…',
       o: [
         'Just the policy',
-        'Policy (actor), value/critic, reward model, and a frozen reference — all in memory, multiplying footprint and complicating the distributed setup and the generation+training loop',
+        'Four large models in memory at once (PPO)',
         'One model',
         'Only the reward model',
       ],
@@ -468,7 +468,7 @@ export default defineQuestions(
       q: 'Why does decode batching raise throughput for memory-bound decode?',
       o: [
         'It reduces accuracy',
-        'Each decode step reads the full weights regardless of batch; batching amortizes that weight read over many sequences’ tokens per step, raising arithmetic intensity and throughput (KV memory then limits batch size)',
+        'Amortizes weight reads over many sequences',
         'FP64',
         'Sharding',
       ],

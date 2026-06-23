@@ -10,7 +10,7 @@ export default defineQuestions(
       q: 'The recommended top-down profiling workflow is…',
       o: [
         'Start with SASS disassembly',
-        'Nsight Systems first (find where time goes / is the GPU busy), then Nsight Compute on the specific hot kernels',
+        'Nsight Systems first, then ncu on hot kernels',
         'Run compute-sanitizer first',
         'Guess and optimize',
       ],
@@ -29,7 +29,7 @@ export default defineQuestions(
       q: 'Global load efficiency reported as 25% most directly implies…',
       o: [
         'Low occupancy',
-        'Each memory request transfers ~4× the bytes the kernel actually uses — heavily uncoalesced/strided access wasting bandwidth',
+        '~4× the needed bytes fetched (uncoalesced)',
         'Register spilling',
         'Tensor-core starvation',
       ],
@@ -48,7 +48,7 @@ export default defineQuestions(
       q: 'When comparing two kernel versions, why prefer comparing "bytes moved" and "instructions executed" over wall-clock alone?',
       o: [
         'Wall-clock is always wrong',
-        'Those counters are clock-independent and explain WHY one is faster (less traffic/fewer instructions), giving actionable insight beyond a single time number that boost clocks can distort',
+        'Clock-independent and explain why one is faster',
         'They are easier to read',
         'Time cannot be measured',
       ],
@@ -67,7 +67,7 @@ export default defineQuestions(
       q: 'High "Stall LG Throttle" specifically points to…',
       o: [
         'Tensor cores',
-        'The local/global memory instruction pipeline being saturated (too many in-flight LD/ST), so warps wait to issue memory instructions',
+        'The load/store pipe is saturated',
         'A barrier',
         'The host',
       ],
@@ -86,7 +86,7 @@ export default defineQuestions(
       q: 'Achieved occupancy 90% with poor performance most likely means the bottleneck is…',
       o: [
         'Insufficient warps',
-        'Elsewhere — memory inefficiency (uncoalesced/bandwidth-bound) or a saturated compute pipe — since occupancy is clearly adequate',
+        'Elsewhere: memory inefficiency or compute',
         'Register spilling',
         'Too few blocks',
       ],
@@ -105,7 +105,7 @@ export default defineQuestions(
       q: 'You see large gaps between kernels on the Nsight Systems timeline with the CPU idle too. A likely cause is…',
       o: [
         'CPU-bound work',
-        'A synchronous wait (e.g. cudaDeviceSynchronize) or a blocking copy stalling the pipeline, or a dependency forcing serialization — both CPU and GPU idle during the wait',
+        'A sync or blocking copy stalls the pipeline',
         'Memory bandwidth saturation',
         'Too many registers',
       ],
@@ -124,7 +124,7 @@ export default defineQuestions(
       q: 'A kernel’s DRAM throughput is 95% but the application is still slow. The next profiling step is…',
       o: [
         'Optimize this kernel more',
-        'Step back to Nsight Systems: this kernel is bandwidth-bound (near optimal), so the app-level win is reducing how OFTEN/how much data it processes (fusion, caching, algorithm), not tuning the kernel further',
+        'It is bandwidth-bound; fix at the app level',
         'Increase occupancy',
         'Add streams',
       ],
@@ -143,7 +143,7 @@ export default defineQuestions(
       q: 'The "Source Counters" / source view in Nsight Compute (with -lineinfo) lets you…',
       o: [
         'Edit the source',
-        'See per-source-line metrics (e.g. which lines cause the most stalls, memory transactions) to pinpoint the exact hotspots',
+        'See per-source-line metrics',
         'Recompile',
         'Run on the CPU',
       ],
@@ -162,7 +162,7 @@ export default defineQuestions(
       q: 'For benchmarking, the recommended timing protocol is…',
       o: [
         'Time one run with the host clock',
-        'Warm up (discard first runs), lock clocks, then time many iterations with CUDA events and report the median/min — reducing noise from JIT, clocks, and cold caches',
+        'Warm up, lock clocks, time many runs with events',
         'Use printf timestamps',
         'Run under the profiler',
       ],
@@ -181,7 +181,7 @@ export default defineQuestions(
       q: 'A kernel shows high "Tensor" pipe utilization AND high achieved FLOP/s near the tensor roofline. This means…',
       o: [
         'It is memory-bound',
-        'It is compute(tensor)-bound and near optimal — further speedups require algorithmic change (less work, sparsity, lower precision) rather than kernel tuning',
+        'Tensor-bound and near optimal',
         'It is latency-bound',
         'Occupancy is too low',
       ],
@@ -200,7 +200,7 @@ export default defineQuestions(
       q: 'compute-sanitizer --tool initcheck detects…',
       o: [
         'Slow kernels',
-        'Reads of uninitialized device global memory — values used before being written',
+        'Reads of uninitialized global memory',
         'Bank conflicts',
         'Low occupancy',
       ],
@@ -219,7 +219,7 @@ export default defineQuestions(
       q: 'In a training profile, NCCL all-reduce kernels show on the timeline taking 40% of step time with little overlap. The fix targets…',
       o: [
         'Kernel micro-optimization',
-        'Communication/computation overlap — bucketing gradients and launching collectives on a separate stream so they hide behind backward compute (and/or a faster interconnect/topology)',
+        'Overlap comm with compute (bucketing, separate stream)',
         'Lower precision in the optimizer',
         'A bigger batch only',
       ],
@@ -238,7 +238,7 @@ export default defineQuestions(
       q: 'Why is it useful to check ptxas -v output BEFORE profiling?',
       o: [
         'It times the kernel',
-        'It reports registers/shared memory/spills at compile time, so you can anticipate occupancy limits and spills without running anything',
+        'Reports registers/shared/spills at build time',
         'It shows the roofline',
         'It measures bandwidth',
       ],
@@ -257,7 +257,7 @@ export default defineQuestions(
       q: 'A kernel’s achieved FLOP/s is far below peak, DRAM is not saturated, and there are many "Long Scoreboard" stalls. The diagnosis is…',
       o: [
         'Compute-bound',
-        'Memory-LATENCY-bound — warps wait on global loads but bandwidth isn’t saturated, so increase MLP/occupancy or improve locality (more requests in flight / fewer, closer accesses)',
+        'Memory-latency-bound (not bandwidth)',
         'Tensor-bound',
         'Host-bound',
       ],
@@ -276,7 +276,7 @@ export default defineQuestions(
       q: 'Nsight Compute’s "baseline" feature is used to…',
       o: [
         'Set the clock',
-        'Save one kernel’s metrics as a reference and view another kernel/version as a diff against it, making before/after comparisons concrete',
+        'Save a reference; diff others against it',
         'Profile the host',
         'Allocate memory',
       ],
@@ -295,7 +295,7 @@ export default defineQuestions(
       q: 'A simple sign that an application is INPUT-PIPELINE bound (data loading) is…',
       o: [
         'High SM utilization',
-        'On the timeline, the GPU is idle waiting between steps while CPU/data-loader threads are busy — the GPU is starved for data',
+        'GPU idle while the data loader is busy',
         'High DRAM bandwidth',
         'Register spills',
       ],
@@ -314,7 +314,7 @@ export default defineQuestions(
       q: 'When profiling shows high warp-execution efficiency (≈100%) but the kernel is slow, you can rule out…',
       o: [
         'Memory issues',
-        'Control-flow divergence as the cause — efficiency near 100% means lanes are rarely masked off, so look at memory/compute throughput instead',
+        'Divergence as the cause',
         'Bandwidth limits',
         'Occupancy',
       ],
@@ -333,7 +333,7 @@ export default defineQuestions(
       q: 'You profile a fused kernel and a two-kernel baseline; the fused one is SLOWER despite less DRAM traffic. The metric to inspect is…',
       o: [
         'DRAM bytes',
-        'Occupancy / register & shared-memory usage (and spills) — fusion likely raised resource pressure, dropping occupancy or spilling, which outweighed the traffic savings',
+        'Occupancy and register/shared usage',
         'Branch efficiency',
         'Clock rate',
       ],
@@ -352,7 +352,7 @@ export default defineQuestions(
       q: 'For a multi-GPU job, capturing one Nsight Systems report per rank (a few ranks) helps reveal…',
       o: [
         'Per-kernel SASS',
-        'Load imbalance and stragglers across ranks, and whether communication overlaps compute — patterns invisible from a single rank',
+        'Imbalance and stragglers across ranks',
         'Bank conflicts',
         'Register counts',
       ],
@@ -371,7 +371,7 @@ export default defineQuestions(
       q: 'The metric l1tex__t_sector_hit_rate (L1/TEX hit rate) being high while DRAM throughput is low indicates…',
       o: [
         'A memory-bound kernel on DRAM',
-        'Good L1 locality is serving most accesses on-chip — so the kernel is NOT DRAM-bound; if slow, look at the L1/LSU pipe or compute',
+        'L1 serves most accesses; not DRAM-bound',
         'Register spilling',
         'A divergent branch',
       ],
@@ -390,7 +390,7 @@ export default defineQuestions(
       q: 'NVTX domains/categories (beyond simple ranges) let you…',
       o: [
         'Speed up kernels',
-        'Organize and color timeline annotations by subsystem (e.g. "dataloader", "forward", "backward"), making large traces easier to navigate',
+        'Group/color timeline ranges by subsystem',
         'Lock clocks',
         'Count FLOPs',
       ],
@@ -409,7 +409,7 @@ export default defineQuestions(
       q: 'A kernel is "issue-bound": IPC is high but achieved throughput is below peak. The likely interpretation is…',
       o: [
         'It is memory-bound',
-        'The SM is issuing near its instruction-issue limit (instruction overhead dominates) — reduce instruction count (vectorize, unroll less or more wisely, use higher-throughput ops) to do more work per instruction',
+        'Issuing near the limit; reduce instructions',
         'It is latency-bound',
         'Occupancy is too low',
       ],
@@ -428,7 +428,7 @@ export default defineQuestions(
       q: 'Why might two runs of the SAME kernel report different durations even with locked clocks?',
       o: [
         'The code changed',
-        'Residual variance from cache/TLB state, neighboring work, and measurement overhead; averaging several iterations and reporting a robust statistic (min/median) mitigates it',
+        'Cache/TLB and measurement jitter; average it',
         'Occupancy changes randomly',
         'Registers vary per run',
       ],
@@ -447,7 +447,7 @@ export default defineQuestions(
       q: 'For a quick check of whether a GPU is being used at all (and how hard), the lightest tool is…',
       o: [
         'Nsight Compute',
-        'nvidia-smi (or nvidia-smi dmon / dcgm) for live utilization, memory, power — coarse but instant, before deeper profiling',
+        'nvidia-smi for live utilization',
         'cuobjdump',
         'compute-sanitizer',
       ],
@@ -466,7 +466,7 @@ export default defineQuestions(
       q: 'You suspect register spilling. The two complementary signals are…',
       o: [
         'Occupancy and grid size',
-        'ptxas -v "spill stores/loads" at compile time AND local memory load/store traffic in Nsight Compute at runtime',
+        'ptxas spill bytes and runtime local-memory traffic',
         'DRAM bytes and L2 hit rate',
         'Branch efficiency and IPC',
       ],
@@ -485,7 +485,7 @@ export default defineQuestions(
       q: 'A kernel’s roofline dot sits exactly ON the bandwidth roof at its arithmetic intensity. This means…',
       o: [
         'It is compute-bound',
-        'It is achieving the maximum performance possible at that intensity (bandwidth-limited) — to go faster you must INCREASE arithmetic intensity (more reuse/fusion), moving the dot right toward the ridge',
+        'Bandwidth-optimal at that intensity',
         'It is latency-bound',
         'It is broken',
       ],
@@ -504,7 +504,7 @@ export default defineQuestions(
       q: 'Why annotate code with NVTX before capturing a long training run with Nsight Systems?',
       o: [
         'It speeds training',
-        'Named ranges (forward/backward/optimizer/dataload) on the timeline let you immediately attribute GPU activity and gaps to phases, instead of decoding anonymous kernels',
+        'Named ranges attribute activity to phases',
         'It reduces memory',
         'It locks clocks',
       ],
@@ -523,7 +523,7 @@ export default defineQuestions(
       q: 'Memory throughput at 60% and compute throughput at 60% (neither near peak), with few stalls, suggests…',
       o: [
         'Memory-bound',
-        'A reasonably balanced kernel that may be limited by a mix or by issue/latency — investigate eligible-warps and specific stall reasons to find the marginal limiter',
+        'Balanced; check stalls/issue limits',
         'Compute-bound',
         'It is optimal',
       ],
@@ -542,7 +542,7 @@ export default defineQuestions(
       q: 'compute-sanitizer --tool synccheck flags…',
       o: [
         'Slow synchronization',
-        'Invalid use of synchronization primitives — e.g. __syncthreads in divergent code or incorrect warp-sync mask usage that could deadlock or give undefined results',
+        'Invalid sync primitive use',
         'Bank conflicts',
         'Out-of-bounds access',
       ],

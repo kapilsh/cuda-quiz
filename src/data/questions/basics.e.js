@@ -10,7 +10,7 @@ export default defineQuestions(
       q: 'cudaLaunchKernelEx (with a cudaLaunchConfig and attributes) is the way to launch a kernel with…',
       o: [
         'Only a different stream',
-        'Extended launch attributes such as thread-block cluster dimensions, programmatic dependent launch, or cooperative launch — things the <<<>>> syntax cannot express',
+        'Extended attributes: clusters, PDL, coop',
         'More registers',
         'A host function',
       ],
@@ -29,7 +29,7 @@ export default defineQuestions(
       q: 'The __grid_constant__ qualifier on a kernel parameter tells the compiler…',
       o: [
         'It is in constant memory',
-        'The (by-value) parameter is uniform across the grid and read-only, so it can be accessed efficiently from its constant-bank location without per-thread copies',
+        'The by-value param is grid-wide and read-only',
         'It changes per block',
         'It is a pointer',
       ],
@@ -48,7 +48,7 @@ export default defineQuestions(
       q: 'cudaFuncGetAttributes lets you query at runtime a kernel’s…',
       o: [
         'Execution time',
-        'Resource usage and metadata: numRegs, sharedSizeBytes, maxThreadsPerBlock, ptxVersion, binaryVersion — useful for occupancy decisions and compatibility checks',
+        'Resource usage: regs, shared mem',
         'Grid dimensions',
         'Output values',
       ],
@@ -67,7 +67,7 @@ export default defineQuestions(
       q: 'After a kernel triggers cudaErrorIllegalAddress (out-of-bounds), subsequent CUDA calls in the same process tend to fail because…',
       o: [
         'It is a transient error',
-        'It is a "sticky" error that corrupts the CUDA context; the context is unusable and typically the process must be restarted (or the context destroyed/recreated)',
+        'A sticky error corrupts the context',
         'cudaGetLastError clears it',
         'It only affects one stream',
       ],
@@ -86,7 +86,7 @@ export default defineQuestions(
       q: 'The difference between sticky and non-sticky CUDA errors is…',
       o: [
         'There is none',
-        'Non-sticky errors (e.g. invalid launch config) are cleared by cudaGetLastError and don’t corrupt the context; sticky errors (e.g. illegal address, ECC) corrupt the context and persist',
+        'Non-sticky clear; sticky corrupt the context',
         'Sticky errors are warnings',
         'Non-sticky errors crash the host',
       ],
@@ -105,7 +105,7 @@ export default defineQuestions(
       q: 'An "XID" error (seen in nvidia-smi / dmesg) indicates…',
       o: [
         'A compile error',
-        'A GPU/driver-level error event (e.g. hardware fault, illegal memory access, ECC error, fallen-off-bus) — a diagnostic code for serious device issues',
+        'A driver-level GPU error event code',
         'A slow kernel',
         'A Python exception',
       ],
@@ -124,7 +124,7 @@ export default defineQuestions(
       q: '__dp4a(a, b, c) is an intrinsic that…',
       o: [
         'Adds four floats',
-        'Computes a 4-element INT8 dot product and accumulates into a 32-bit integer (c += sum of 4 int8 products) in one instruction — accelerating INT8 math on CUDA cores',
+        'A 4-element INT8 dot product into int32',
         'Performs FP4 math',
         'Reverses bits',
       ],
@@ -143,7 +143,7 @@ export default defineQuestions(
       q: 'The __cluster_dims__(x,y,z) kernel attribute (Hopper) specifies…',
       o: [
         'The grid size',
-        'A compile-time thread-block cluster shape, so blocks are launched as clusters of that size (enabling DSMEM and cluster.sync) without setting it per-launch',
+        'A compile-time cluster shape',
         'The block size',
         'The warp size',
       ],
@@ -162,7 +162,7 @@ export default defineQuestions(
       q: 'A device function pointer (calling a __device__ function indirectly) is allowed but…',
       o: [
         'Always free',
-        'Can prevent inlining and add call overhead/register pressure, and historically requires relocatable device code; it’s used for runtime polymorphism/dispatch when necessary',
+        'Prevents inlining and adds call overhead',
         'Runs on the host',
         'Is not supported',
       ],
@@ -181,7 +181,7 @@ export default defineQuestions(
       q: 'cudaMemset2D exists (alongside cudaMemset) to…',
       o: [
         'Set 1D arrays',
-        'Set a 2D region of pitched memory, taking the pitch so each row’s valid bytes are filled correctly despite row padding',
+        'Set a 2D pitched region',
         'Copy memory',
         'Allocate memory',
       ],
@@ -200,7 +200,7 @@ export default defineQuestions(
       q: 'cudaMemRangeGetAttribute on managed memory can report…',
       o: [
         'The kernel time',
-        'Attributes of a managed range such as its preferred location, last-prefetch location, or accessed-by set — useful to inspect/verify Unified Memory placement',
+        'Managed-range attributes (e.g. location)',
         'The register count',
         'The block size',
       ],
@@ -219,7 +219,7 @@ export default defineQuestions(
       q: 'cudaDeviceProp.cooperativeLaunch indicates…',
       o: [
         'The number of SMs',
-        'Whether the device supports cooperative kernel launches (cudaLaunchCooperativeKernel) needed for grid-wide synchronization',
+        'Whether cooperative launch is supported',
         'The warp size',
         'The clock rate',
       ],
@@ -238,7 +238,7 @@ export default defineQuestions(
       q: 'cuDevicePrimaryCtxRetain (driver API) is used by frameworks to…',
       o: [
         'Create a new context',
-        'Obtain and reference-count the device’s shared PRIMARY context (the one the runtime uses), so multiple components interoperate on the same context instead of creating conflicting ones',
+        'Reference-count the shared primary context',
         'Destroy the context',
         'Launch a kernel',
       ],
@@ -257,7 +257,7 @@ export default defineQuestions(
       q: 'Hinting alignment to the compiler (e.g. via __builtin_assume_aligned or aligned types) helps because…',
       o: [
         'It allocates memory',
-        'It lets the compiler safely emit wide vectorized (e.g. 128-bit) loads/stores it otherwise couldn’t prove are aligned, improving memory throughput',
+        'It enables wide vectorized loads/stores',
         'It reduces registers',
         'It enables tensor cores',
       ],
@@ -276,7 +276,7 @@ export default defineQuestions(
       q: 'cudaDeviceProp.pageableMemoryAccess (with ATS / HMM support) being true means…',
       o: [
         'All memory is pinned',
-        'The GPU can directly access ordinary pageable host memory (via address translation services / heterogeneous memory management) without explicit pinning or cudaMallocManaged',
+        'GPU accesses pageable host memory directly',
         'There is no host memory',
         'ECC is enabled',
       ],
@@ -295,7 +295,7 @@ export default defineQuestions(
       q: 'cudaGetDeviceProperties is relatively expensive; a lighter way to fetch one attribute is…',
       o: [
         'Launch a kernel',
-        'cudaDeviceGetAttribute(&value, attr, device) — returns a single attribute without populating the whole struct',
+        'cudaDeviceGetAttribute(&value, attr, device)',
         'cudaMemGetInfo',
         'nvidia-smi',
       ],
@@ -314,7 +314,7 @@ export default defineQuestions(
       q: 'A launch attribute cudaLaunchAttributeProgrammaticStreamSerialization / PDL trigger is used to…',
       o: [
         'Set the grid size',
-        'Enable programmatic dependent launch so a kernel can signal that dependent kernels may begin, overlapping the producer’s tail with the consumer’s start',
+        'Enable programmatic dependent launch',
         'Pin memory',
         'Lower precision',
       ],
@@ -333,7 +333,7 @@ export default defineQuestions(
       q: '__byte_perm(a, b, s) is an intrinsic used to…',
       o: [
         'Add bytes',
-        'Select/permute bytes from two 32-bit words according to a selector, useful for fast byte shuffling/packing (e.g. in sorting, hashing, format conversion)',
+        'Permute bytes from two words',
         'Reverse all bits',
         'Count set bits',
       ],
@@ -352,7 +352,7 @@ export default defineQuestions(
       q: 'cudaDeviceProp.hostNativeAtomicSupported indicates whether…',
       o: [
         'The GPU has atomics',
-        'The system supports native atomic operations on memory shared between the host CPU and the GPU (e.g. system-scope atomics over a coherent link)',
+        'Native CPU↔GPU atomics on shared memory',
         'Shared memory has atomics',
         'Tensor cores exist',
       ],
@@ -371,7 +371,7 @@ export default defineQuestions(
       q: 'When checking errors, why call cudaGetLastError() AND cudaDeviceSynchronize() after a kernel?',
       o: [
         'They are redundant',
-        'cudaGetLastError catches launch/config errors immediately; cudaDeviceSynchronize surfaces RUNTIME errors that occur during execution (returned by the sync) — together they catch both kinds',
+        'Catches launch vs runtime errors',
         'Only one works',
         'To time the kernel',
       ],
@@ -390,7 +390,7 @@ export default defineQuestions(
       q: 'cudaOccupancyMaxActiveClusters (Hopper) is the cluster analog of the block-occupancy API, used to…',
       o: [
         'Count SMs',
-        'Determine how many thread-block clusters of a given size can be co-resident, so you size a cluster-cooperative grid correctly',
+        'How many clusters can be co-resident',
         'Set the block size',
         'Profile the kernel',
       ],
@@ -409,7 +409,7 @@ export default defineQuestions(
       q: 'Querying ptxVersion vs binaryVersion from cudaFuncGetAttributes tells you…',
       o: [
         'The runtime version',
-        'The virtual (PTX) and actual (SASS) architecture the kernel was compiled for — useful to confirm the binary matches the running GPU or relies on JIT',
+        'The PTX and SASS arch it was built for',
         'The driver version',
         'The grid size',
       ],
@@ -428,7 +428,7 @@ export default defineQuestions(
       q: 'A kernel argument that is a large read-only lookup struct is best passed as __grid_constant__ by value (vs a device pointer) when…',
       o: [
         'It is mutable',
-        'It fits within the parameter limit and is read uniformly — __grid_constant__ avoids an extra global allocation/indirection while the compiler reads it from the constant bank',
+        'It fits the param limit and is read uniformly',
         'It is huge',
         'It changes per thread',
       ],
@@ -447,7 +447,7 @@ export default defineQuestions(
       q: 'Why does an out-of-bounds write sometimes corrupt UNRELATED data and produce confusing bugs?',
       o: [
         'It is always caught',
-        'Without bounds checking, the write lands in whatever device memory that address maps to — possibly another buffer — silently corrupting it until detected (use compute-sanitizer memcheck)',
+        'It silently corrupts whatever buffer it hits',
         'It only affects shared memory',
         'It crashes immediately always',
       ],
@@ -466,7 +466,7 @@ export default defineQuestions(
       q: 'cudaHostUnregister is needed when you previously…',
       o: [
         'Called cudaMalloc',
-        'Page-locked existing host memory with cudaHostRegister — you must unregister it before freeing/reusing it normally',
+        'Pinned host memory with cudaHostRegister',
         'Created a stream',
         'Launched a kernel',
       ],
@@ -485,7 +485,7 @@ export default defineQuestions(
       q: 'On a Grace Hopper system with ATS, calling a kernel on a pointer from plain malloc() (no cudaMalloc) can work because…',
       o: [
         'It copies to the GPU first',
-        'Address Translation Services let the GPU translate and access the host virtual address directly (page-faulting over the coherent link), so unpinned host memory is GPU-accessible',
+        'ATS lets the GPU access host addresses directly',
         'malloc returns device memory',
         'It is undefined behavior',
       ],
@@ -504,7 +504,7 @@ export default defineQuestions(
       q: 'A reason to prefer cudaLaunchKernelEx over manual driver-API cluster launch in CUDA C++ is…',
       o: [
         'It is slower',
-        'It integrates with the runtime API (kernels by symbol, runtime context) while still exposing cluster/PDL/cooperative attributes — avoiding dropping to the lower-level driver API',
+        'Runtime-API ease plus cluster/PDL attributes',
         'It runs on the host',
         'It needs no attributes',
       ],
@@ -523,7 +523,7 @@ export default defineQuestions(
       q: 'cudaDeviceProp.unifiedAddressing being true means…',
       o: [
         'The GPU has one memory',
-        'Host and device share a single virtual address space (UVA), so the runtime can infer pointer locations (cudaMemcpyDefault) and enable P2P/mapped memory',
+        'Host and device share one address space (UVA)',
         'There is no host memory',
         'ECC is enabled',
       ],
@@ -542,7 +542,7 @@ export default defineQuestions(
       q: 'Why might INT8 inference use __dp4a on older GPUs but tensor cores on newer ones for the same matmul?',
       o: [
         'They are unrelated',
-        '__dp4a accelerates INT8 dot products on the CUDA-core ALU path (available widely), while newer GPUs have INT8 TENSOR cores with much higher throughput — the library picks the best available path',
+        'dp4a uses ALUs; tensor cores are faster where present',
         'dp4a is faster than tensor cores',
         'Tensor cores do not support INT8',
       ],

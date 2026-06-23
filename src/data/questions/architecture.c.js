@@ -10,7 +10,7 @@ export default defineQuestions(
       q: 'The hardware unit that distributes thread blocks to SMs as they become available is often called the…',
       o: [
         'Warp scheduler',
-        'GigaThread engine / work distributor (a global block scheduler)',
+        'GigaThread engine / work distributor',
         'Memory controller',
         'Copy engine',
       ],
@@ -29,7 +29,7 @@ export default defineQuestions(
       q: 'Copy (DMA) engines on the GPU are significant because they…',
       o: [
         'Execute kernels',
-        'Move data (host↔device, device↔device) independently of the SMs, enabling transfer/compute overlap',
+        'Move data independently of the SMs',
         'Store registers',
         'Schedule warps',
       ],
@@ -58,7 +58,7 @@ export default defineQuestions(
       q: 'On Hopper, wgmma (warpgroup MMA) can take its A/B operands directly from…',
       o: [
         'Global memory',
-        'Shared memory (and/or registers), letting the warpgroup feed tensor cores without first staging everything through registers',
+        'Shared memory (and/or registers)',
         'Constant memory only',
         'The host',
       ],
@@ -77,7 +77,7 @@ export default defineQuestions(
       q: 'Blackwell introduces "Tensor Memory" (TMEM) accessed by 5th-gen tensor core instructions. Its purpose is…',
       o: [
         'To replace global memory',
-        'A dedicated on-chip memory holding tensor-core accumulators/operands, decoupling them from the register file to scale MMA throughput',
+        'On-chip memory for tensor-core accumulators',
         'To cache textures',
         'To store the program',
       ],
@@ -96,7 +96,7 @@ export default defineQuestions(
       q: 'The register file is itself banked. "Register bank conflicts" can occur when…',
       o: [
         'Two threads share a register',
-        'An instruction’s operands map to the same register bank in a way the operand collector cannot fully parallelize, adding a small stall',
+        'Operands map to the same register bank',
         'Registers spill',
         'Occupancy is high',
       ],
@@ -115,7 +115,7 @@ export default defineQuestions(
       q: 'Roughly how many SMs does an H100 (GH100, SXM) have, and why does it matter for grid sizing?',
       o: [
         '~16 SMs',
-        '~132 SMs — you want grids large enough (and tiles sized) to fill all of them with multiple resident blocks to avoid idle SMs',
+        '~132 SMs',
         '~1024 SMs',
         '~8 SMs',
       ],
@@ -140,7 +140,7 @@ export default defineQuestions(
       q: 'L2 compression (introduced on Ampere) can improve effective bandwidth by…',
       o: [
         'Compressing the program',
-        'Storing compressible data (e.g. zeros/sparse patterns) compactly in L2/DRAM, so fewer bytes move for the same logical data',
+        'Store compressible data compactly (fewer bytes)',
         'Compressing registers',
         'Shrinking the kernel',
       ],
@@ -159,7 +159,7 @@ export default defineQuestions(
       q: 'The Hopper SM supports up to ~228 KB of shared memory per SM (opt-in). Practically this enables…',
       o: [
         'Smaller tiles',
-        'Larger on-chip tiles and deeper pipelines for GEMM/attention, increasing reuse and latency hiding',
+        'Larger tiles and deeper pipelines',
         'More registers',
         'Lower precision',
       ],
@@ -178,7 +178,7 @@ export default defineQuestions(
       q: 'NVLink Switch System / GB200 NVL72 connects 72 GPUs such that…',
       o: [
         'They share one die',
-        'All 72 GPUs communicate over a unified NVLink fabric (NVSwitch) at high bandwidth, behaving like one large GPU domain for collectives',
+        'One unified NVLink fabric across all 72 GPUs',
         'They use PCIe only',
         'They are separate nodes with Ethernet',
       ],
@@ -197,7 +197,7 @@ export default defineQuestions(
       q: 'RT (Ray Tracing) cores on GeForce/RTX GPUs are…',
       o: [
         'Used for matrix multiply',
-        'Fixed-function units that accelerate BVH traversal and ray-triangle intersection (graphics/ray tracing), generally not used for typical DL/HPC compute',
+        'Fixed-function ray-tracing (BVH/intersection)',
         'A type of tensor core',
         'Memory controllers',
       ],
@@ -216,7 +216,7 @@ export default defineQuestions(
       q: 'H200 improves on H100 primarily by…',
       o: [
         'Adding more SMs',
-        'Using HBM3e for substantially higher memory capacity (~141 GB) and bandwidth (~4.8 TB/s), helping memory-bound LLM inference',
+        'HBM3e: ~141 GB, ~4.8 TB/s',
         'Doubling the clock',
         'Removing tensor cores',
       ],
@@ -245,7 +245,7 @@ export default defineQuestions(
       q: 'Blackwell’s dedicated decompression engine is aimed at…',
       o: [
         'Compressing gradients',
-        'Accelerating decompression of compressed data (e.g. for database/analytics and data loading), offloading it from the SMs',
+        'Hardware decompression, offloading the SMs',
         'Tensor-core math',
         'Network packets',
       ],
@@ -264,7 +264,7 @@ export default defineQuestions(
       q: 'Confidential Computing on Hopper provides…',
       o: [
         'Faster kernels',
-        'Hardware-based protection (a trusted execution environment) so data/code on the GPU is encrypted/isolated from the host and other tenants',
+        'A TEE encrypting/isolating GPU data',
         'More memory',
         'Better tensor cores',
       ],
@@ -283,7 +283,7 @@ export default defineQuestions(
       q: 'Why does the accumulator of a tensor-core MMA typically live in registers (distributed across the warp)?',
       o: [
         'Registers are slow',
-        'The partial sums must be read/written every MMA at high rate; registers provide the bandwidth/latency to accumulate across the K loop before writing out',
+        'Partial sums update every MMA; registers are fastest',
         'Accumulators must be in global memory',
         'It saves shared memory',
       ],
@@ -302,7 +302,7 @@ export default defineQuestions(
       q: 'A100 (Ampere) FP64 throughput is notably high for HPC because it has…',
       o: [
         'No FP64 units',
-        'Dedicated FP64 units plus FP64 tensor cores, giving an FP64:FP32 ratio around 1:2 — far better than consumer GPUs',
+        'FP64 units + FP64 tensor cores (~1:2)',
         'Software-emulated FP64',
         'FP64 only via tensor cores',
       ],
@@ -321,7 +321,7 @@ export default defineQuestions(
       q: 'The "operand collector" in an SM is responsible for…',
       o: [
         'Collecting kernels',
-        'Gathering an instruction’s source operands from the (banked) register file before the execution units consume them, hiding register-bank latency',
+        'Gathers operands from the banked register file',
         'Collecting memory transactions',
         'Scheduling blocks',
       ],
@@ -340,7 +340,7 @@ export default defineQuestions(
       q: 'Why can two dies presented as one GPU (Blackwell B200) still behave like a single logical device to CUDA programs?',
       o: [
         'They share one set of SMs',
-        'The high-bandwidth die-to-die link (NV-HBI) provides coherent, low-latency access so the two dies expose a unified memory/compute domain to software',
+        'NV-HBI gives coherent access; one unified domain',
         'CUDA runs on the CPU',
         'They use NVLink between them',
       ],
@@ -359,7 +359,7 @@ export default defineQuestions(
       q: 'INT8 tensor-core throughput is typically what relative to FP16 tensor-core throughput?',
       o: [
         'Half',
-        'About double (lower precision packs more operations per cycle)',
+        'About double',
         'The same',
         'A quarter',
       ],
@@ -374,7 +374,7 @@ export default defineQuestions(
       q: 'Why is the SM-to-SM network introduced on Hopper necessary for distributed shared memory?',
       o: [
         'To connect GPUs',
-        'It provides a direct low-latency path between SMs in a GPC so a block can access another block’s shared memory without going through global memory',
+        'A direct path between SMs for peer SMEM',
         'To replace NVLink',
         'To cache textures',
       ],
@@ -393,7 +393,7 @@ export default defineQuestions(
       q: 'A data-center GPU’s high TDP (e.g. ~700 W for H100 SXM) is relevant to performance because…',
       o: [
         'It is irrelevant',
-        'Power/thermal limits cap sustained clocks; inadequate cooling/power causes throttling and lower achieved throughput',
+        'Power/thermal limits cap sustained clocks',
         'It increases memory',
         'It changes the ISA',
       ],
@@ -412,7 +412,7 @@ export default defineQuestions(
       q: 'Why does the hardware schedule blocks to SMs in an unspecified, dynamic order rather than a fixed mapping?',
       o: [
         'To confuse programmers',
-        'Dynamic assignment load-balances across SMs (blocks vary in runtime) and lets the same grid scale across GPUs with different SM counts',
+        'Load-balances and scales across SM counts',
         'To save power',
         'Because blocks must be ordered',
       ],
@@ -431,7 +431,7 @@ export default defineQuestions(
       q: 'Hopper’s 2nd-gen sparsity / tensor cores combined with FP8 yield a headline ~4 PFLOP/s number that assumes…',
       o: [
         'Dense FP32',
-        'FP8 tensor-core math WITH 2:4 structured sparsity (each roughly doubling throughput over dense FP16)',
+        'FP8 tensor cores with 2:4 sparsity',
         'FP64',
         'CUDA-core math',
       ],
@@ -450,7 +450,7 @@ export default defineQuestions(
       q: 'The crossbar/interconnect between SMs and L2 partitions matters because…',
       o: [
         'It stores registers',
-        'It routes every SM’s memory requests to the appropriate L2 slice/memory partition; its bandwidth and balanced access patterns affect achievable memory throughput',
+        'It routes SM requests to L2 partitions',
         'It schedules warps',
         'It runs kernels',
       ],
@@ -469,7 +469,7 @@ export default defineQuestions(
       q: 'Across one GPU generation, the main reason a kernel runs faster on the data-center part than the consumer part (same architecture) is often…',
       o: [
         'A different ISA',
-        'More SMs, more memory bandwidth (HBM vs GDDR), and higher FP64/tensor throughput on the data-center SKU',
+        'More SMs, bandwidth, and FP64/TC support',
         'A faster CPU',
         'Lower precision',
       ],
@@ -488,7 +488,7 @@ export default defineQuestions(
       q: 'Why might a kernel that ran well on Ampere need re-tuning for Hopper to reach peak?',
       o: [
         'Hopper is slower',
-        'Hopper adds features (TMA, wgmma, clusters, larger shared memory) and changed ratios; the old cp.async/mma scheme may not exploit the new data paths',
+        'New features (TMA, wgmma, clusters) need new code',
         'The ISA is incompatible',
         'Occupancy rules are identical',
       ],
@@ -507,7 +507,7 @@ export default defineQuestions(
       q: 'The practical implication of Tensor Memory (TMEM) on Blackwell for kernel authors is that…',
       o: [
         'Nothing changes',
-        'Accumulators/operands move out of the register file into TMEM, relieving register pressure and enabling larger MMA tiles per warpgroup — but requires new tcgen05-aware kernels',
+        'Accumulators move to TMEM; needs new kernels',
         'Shared memory is removed',
         'Global memory is faster',
       ],

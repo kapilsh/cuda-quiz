@@ -8,7 +8,7 @@ export default defineQuestions('precision', [
     q: 'FP16 (half) and BF16 (bfloat16) are both 16-bit. The key difference is…',
     o: [
       'BF16 has more mantissa bits',
-      'BF16 keeps FP32’s 8-bit exponent (wide range, less precision); FP16 has a 5-bit exponent (narrow range, more precision)',
+      'BF16: FP32-range exponent; FP16: narrower range',
       'They are identical',
       'FP16 has a wider range',
     ],
@@ -22,7 +22,7 @@ export default defineQuestions('precision', [
     q: 'Why is loss scaling commonly needed when training in FP16 (but rarely in BF16)?',
     o: [
       'To speed up the optimizer',
-      'FP16’s small exponent range underflows tiny gradients to zero; scaling the loss up shifts gradients into the representable range, then unscales before the update',
+      'Tiny grads underflow; scale loss, unscale after',
       'To increase the learning rate',
       'To reduce memory',
     ],
@@ -50,7 +50,7 @@ export default defineQuestions('precision', [
     q: 'What is "mixed-precision training"?',
     o: [
       'Training with random precision per layer',
-      'Using lower precision (FP16/BF16) for most compute/storage while keeping critical parts (e.g. a master copy of weights, accumulations) in FP32 for stability',
+      'FP16/BF16 for compute; FP32 master weights + accumulation',
       'Training only in FP64',
       'Switching GPUs mid-training',
     ],
@@ -64,7 +64,7 @@ export default defineQuestions('precision', [
     q: 'FP8 commonly comes in two variants, E4M3 and E5M2. Why two?',
     o: [
       'One is for integers',
-      'E4M3 (more mantissa) gives more precision for forward activations/weights; E5M2 (more exponent/range) suits gradients which need larger dynamic range',
+      'E4M3: precision for fwd; E5M2: range for gradients',
       'They are for different GPUs',
       'E5M2 is always better',
     ],
@@ -78,7 +78,7 @@ export default defineQuestions('precision', [
     q: 'Per-tensor (or per-block) scaling factors are essential for FP8 because…',
     o: [
       'FP8 has no exponent',
-      'FP8’s very limited range means values must be scaled into the representable window per tensor to avoid overflow/underflow while using the few available bits',
+      'Narrow range: values need per-tensor scaling to fit FP8',
       'They speed up the matmul',
       'They reduce the number of GPUs needed',
     ],
@@ -101,7 +101,7 @@ export default defineQuestions('precision', [
     q: 'A numerically stable softmax subtracts the max before exponentiating because…',
     o: [
       'It is faster',
-      'exp of large inputs overflows; subtracting the row max keeps the largest exponent at exp(0)=1, preventing overflow without changing the result',
+      'Subtract max; largest = exp(0)=1',
       'It avoids divergence',
       'It reduces memory',
     ],
@@ -115,7 +115,7 @@ export default defineQuestions('precision', [
     q: 'Why does lower-precision storage (FP16/BF16) often speed up memory-bound kernels even aside from tensor cores?',
     o: [
       'It changes the algorithm',
-      'It halves the bytes moved, so a bandwidth-bound kernel transfers data ~2× faster',
+      'Halves bytes; bandwidth-bound kernel ~2× faster',
       'It increases occupancy',
       'It avoids atomics',
     ],
@@ -129,7 +129,7 @@ export default defineQuestions('precision', [
     q: 'Keeping an FP32 "master copy" of weights in mixed-precision training is important because…',
     o: [
       'FP32 is faster',
-      'Tiny weight updates (lr × grad) can be smaller than FP16’s precision near the weight’s magnitude and would be lost; the FP32 master accumulates them faithfully',
+      'FP16 loses tiny updates; FP32 master doesn’t',
       'It saves memory',
       'The GPU requires it',
     ],
@@ -143,7 +143,7 @@ export default defineQuestions('precision', [
     q: 'TF32 is used by tensor cores for "FP32" matmuls. The catch is…',
     o: [
       'It is slower than FP32',
-      'It silently reduces mantissa precision (~10 bits), so results differ slightly from true FP32 — acceptable for DL but not for high-precision numerics',
+      '~10-bit mantissa: fast but not bit-exact FP32',
       'It overflows easily',
       'It uses 64 bits',
     ],
@@ -157,7 +157,7 @@ export default defineQuestions('precision', [
     q: 'Catastrophic cancellation in a parallel sum (e.g. summing many similar-magnitude floats) can be mitigated by…',
     o: [
       'Using more threads',
-      'Higher-precision or compensated (Kahan) accumulation, or a tree/pairwise reduction that keeps partial sums of similar magnitude',
+      'Kahan/FP32 accumulation or tree reduction',
       'Using atomics',
       'Lowering precision',
     ],
@@ -171,7 +171,7 @@ export default defineQuestions('precision', [
     q: 'INT8 quantization for inference primarily provides…',
     o: [
       'Higher accuracy than FP32',
-      'Higher throughput and lower memory/bandwidth by representing weights/activations as 8-bit integers with a scale (and possibly zero-point)',
+      'Higher TFLOPS/lower bandwidth via 8-bit + scale',
       'Larger model capacity',
       'Exact arithmetic',
     ],
@@ -185,7 +185,7 @@ export default defineQuestions('precision', [
     q: 'The difference between symmetric and asymmetric quantization is…',
     o: [
       'Symmetric uses more bits',
-      'Asymmetric adds a zero-point offset so the quantized range need not be centered at zero (better for non-negative activations like post-ReLU)',
+      'Zero-point shifts range off zero — fits non-negative activations',
       'Symmetric is only for weights on the GPU',
       'They produce identical results',
     ],
@@ -199,7 +199,7 @@ export default defineQuestions('precision', [
     q: 'Blackwell’s microscaling (MX) formats (e.g. MXFP8/MXFP6/MXFP4) differ from plain FP8 by…',
     o: [
       'Using 16 bits',
-      'Sharing a small block-wise scale factor across a group of elements (e.g. 32), giving fine-grained scaling without per-element overhead',
+      'Shared scale per block of ~32 elements',
       'Removing the exponent',
       'Being integer-only',
     ],
@@ -213,7 +213,7 @@ export default defineQuestions('precision', [
     q: 'A NaN appears in your FP16 training loss. Which is the LEAST likely cause to check first?',
     o: [
       'Gradient overflow to inf (then inf - inf or 0×inf → NaN)',
-      'A correct, well-scaled loss producing NaN purely due to using BF16 storage for activations',
+      'Well-scaled loss that produces NaN due to BF16 activation storage',
       'Division by zero / log of zero in a custom op',
       'Loss scale set too high causing overflow',
     ],

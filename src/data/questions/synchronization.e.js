@@ -10,7 +10,7 @@ export default defineQuestions(
       q: 'cluster.sync() (Hopper) differs from __syncthreads() in that it synchronizes…',
       o: [
         'One warp',
-        'All threads across all blocks of the CLUSTER (co-scheduled on a GPC), a barrier wider than a block but narrower than the grid',
+        'All blocks of the cluster',
         'The whole grid',
         'Two GPUs',
       ],
@@ -29,7 +29,7 @@ export default defineQuestions(
       q: 'When a TMA copy targets a peer block’s shared memory (DSMEM) in a cluster, completion is signaled via…',
       o: [
         '__syncthreads',
-        'An mbarrier in the TARGET block’s shared memory whose transaction count the TMA updates, so the consumer block waits on its own barrier',
+        'An mbarrier in the target block shared memory',
         'A global flag',
         'cudaDeviceSynchronize',
       ],
@@ -48,7 +48,7 @@ export default defineQuestions(
       q: 'A deterministic block reduction (reproducible bitwise FP result) requires…',
       o: [
         'atomicAdd',
-        'A FIXED-order combination (e.g. a tree reduction with a deterministic schedule, no atomics) so the floating-point rounding sequence is identical every run',
+        'A fixed-order combination (e.g. a tree)',
         'Relaxed atomics',
         'More warps',
       ],
@@ -67,7 +67,7 @@ export default defineQuestions(
       q: 'In a double-buffered pipeline with mbarriers, why are TWO barriers per buffer (full and empty) typically used?',
       o: [
         'For speed only',
-        'One signals the buffer is FULL (data arrived, consumer may read); the other signals it is EMPTY (consumer done, producer may refill) — so producer and consumer hand off the buffer without overwriting in-use data',
+        'One marks FULL, the other EMPTY for handoff',
         'To synchronize the grid',
         'To reduce registers',
       ],
@@ -86,7 +86,7 @@ export default defineQuestions(
       q: 'Why is atomicAdd on a per-block SHARED histogram, then one global atomic per bin, both correct AND fast?',
       o: [
         'Shared atomics are inexact',
-        'Correct because atomicity holds at each level; fast because shared atomics are low-latency and the global atomics are reduced to ~gridDim per bin instead of one per element',
+        'Atomic at each level; few low-latency atomics',
         'Global atomics are faster',
         'It avoids barriers',
       ],
@@ -105,7 +105,7 @@ export default defineQuestions(
       q: 'cuda::atomic with thread_scope_cluster (Hopper) provides atomicity/ordering scoped to…',
       o: [
         'One block',
-        'All blocks of the cluster — useful for atomics on distributed shared memory accessed by cluster peers, cheaper than device scope',
+        'All blocks of the cluster',
         'The whole device',
         'The host',
       ],
@@ -124,7 +124,7 @@ export default defineQuestions(
       q: 'A grid-wide barrier via cooperative groups vs the two-kernel approach: the cooperative barrier is preferable when…',
       o: [
         'Always',
-        'The per-iteration state is large/expensive to reload and you want to keep it on-chip across the barrier (avoiding the global round-trip a kernel relaunch implies), AND all blocks fit co-resident',
+        'State is expensive to reload; keep it on-chip',
         'The grid is huge',
         'You need maximum parallelism',
       ],
@@ -143,7 +143,7 @@ export default defineQuestions(
       q: 'A "split barrier" (arrive then later wait) on Hopper enables a thread to…',
       o: [
         'Skip synchronization',
-        'Signal arrival (e.g. its async copies are issued), do INDEPENDENT work, then wait — overlapping useful computation with the barrier/copy-completion latency',
+        'Arrive, do independent work, then wait',
         'Synchronize the grid',
         'Run on the host',
       ],
@@ -162,7 +162,7 @@ export default defineQuestions(
       q: 'Why does a warp-aggregated atomic need a leader election (e.g. via __ballot/elect) rather than every lane doing the atomic?',
       o: [
         'For correctness',
-        'After computing the per-warp total, exactly ONE lane should issue the single combined atomicAdd; without electing a unique leader, multiple lanes would add the total repeatedly',
+        'Only one lane issues the combined atomic',
         'For divergence',
         'For coalescing',
       ],
@@ -181,7 +181,7 @@ export default defineQuestions(
       q: 'In a lock-free work queue using atomicAdd to claim indices, a subtle bug is claiming an index then…',
       o: [
         'Adding too much',
-        'Reading/writing the queue slot without ensuring the producer’s write to that slot is visible (missing acquire ordering) — you may consume stale/uninitialized data',
+        'Reading the slot without acquire ordering',
         'Using too many registers',
         'Diverging',
       ],
@@ -200,7 +200,7 @@ export default defineQuestions(
       q: 'Why must every thread of a block reach the SAME __syncthreads(), even in a tiled GEMM with a remainder (edge) tile?',
       o: [
         'For speed',
-        'The barrier requires uniform arrival; edge handling must be done so all threads still execute the shared barriers (e.g. load zeros for out-of-range elements rather than returning) to avoid deadlock',
+        'Barriers need uniform arrival from all',
         'For coalescing',
         'For atomics',
       ],
@@ -219,7 +219,7 @@ export default defineQuestions(
       q: 'A reduction that combines warp-shuffle (within warp), shared memory (across warps), and ONE atomic (across blocks) is a good design because each level…',
       o: [
         'Uses the same mechanism',
-        'Uses the cheapest correct synchronization for its scope: shuffles (no shared/barrier) within a warp, shared+barrier within a block, and a single atomic per block across blocks — minimizing contention/overhead at each tier',
+        'Cheapest correct sync for each scope',
         'Avoids all sync',
         'Uses global memory only',
       ],
@@ -238,7 +238,7 @@ export default defineQuestions(
       q: 'cuda::atomic_ref(x).fetch_max(v) on a float — if not natively supported — is internally implemented via…',
       o: [
         'A barrier',
-        'An atomicCAS retry loop on the float’s bit pattern (read old, compute max, CAS) — the universal way to build atomics lacking hardware support',
+        'A CAS retry loop on the float bits',
         'A spinlock',
         'Shared memory',
       ],
@@ -257,7 +257,7 @@ export default defineQuestions(
       q: 'Why is a memory FENCE alone insufficient to make two BLOCKS rendezvous (wait for each other)?',
       o: [
         'Fences are slow',
-        'A fence only orders one thread’s memory visibility; it does not make threads WAIT. Inter-block waiting needs a flag + spin (with ordering) and the blocks must be co-resident — true rendezvous needs cooperative launch',
+        'A fence orders but does not make threads wait',
         'Fences synchronize blocks',
         'Fences are for warps',
       ],
@@ -276,7 +276,7 @@ export default defineQuestions(
       q: 'A spin-wait loop on a flag should include __nanosleep (or a backoff) to…',
       o: [
         'Speed up the wait',
-        'Reduce contention and power by backing off between polls, instead of hammering the memory system with continuous reads while waiting',
+        'Back off between polls (less contention/power)',
         'Make it atomic',
         'Synchronize the block',
       ],
@@ -295,7 +295,7 @@ export default defineQuestions(
       q: 'In a single-kernel grid reduction without cooperative launch, why is the order "write partial → __threadfence → atomic-increment counter" significant?',
       o: [
         'Order does not matter',
-        'The fence must make the partial GLOBALLY VISIBLE before the counter increment announces completion; otherwise the last block could read a partial that isn’t yet visible',
+        'Fence publishes the partial before the count',
         'The counter must be first',
         'The fence is optional',
       ],
@@ -314,7 +314,7 @@ export default defineQuestions(
       q: 'Why might replacing block-level __syncthreads reductions with cooperative-groups tile reductions simplify AND speed up code?',
       o: [
         'It uses global memory',
-        'cg tile reduce encapsulates the optimal warp/redux-based reduction (no manual shared-memory tree or barriers for the warp portion), reducing both code complexity and synchronization overhead',
+        'It wraps the optimal warp reduction',
         'It avoids correctness',
         'It needs the host',
       ],
@@ -333,7 +333,7 @@ export default defineQuestions(
       q: 'A correctness requirement for cuda::barrier shared among threads is that…',
       o: [
         'It is in global memory',
-        'It lives in shared memory and is initialized (init(&bar, count)) by one thread with a __syncthreads before use, so all participants see the initialized barrier',
+        'In shared memory, init once before use',
         'Each thread has its own',
         'It needs no init',
       ],
@@ -352,7 +352,7 @@ export default defineQuestions(
       q: 'Why is a global counter incremented with atomicAdd and read by the SAME kernel (without a grid barrier) generally unsafe to interpret as a "final total"?',
       o: [
         'Atomics lose updates',
-        'Other blocks may not have run/finished their increments yet (no grid-wide ordering), so a read mid-kernel sees a partial total — you need a grid barrier or a second kernel to read the final value',
+        'Other blocks may not have incremented yet',
         'It overflows',
         'It deadlocks',
       ],
@@ -371,7 +371,7 @@ export default defineQuestions(
       q: 'A reader that polls a producer’s flag with a RELAXED atomic load (no acquire) may…',
       o: [
         'Always be correct',
-        'See the flag set but read STALE data, because relaxed ordering doesn’t guarantee the producer’s data writes are visible — use acquire (or a fence) on the flag load',
+        'See the flag set but read stale data',
         'Deadlock',
         'Lose the flag',
       ],
@@ -390,7 +390,7 @@ export default defineQuestions(
       q: 'For a kernel where one thread per block must safely initialize a shared array all threads then use, the idiom is…',
       o: [
         'Every thread initializes',
-        'Leader initializes (if threadIdx.x==0) → __syncthreads() → all threads read; the barrier publishes the initialization and makes others wait for it',
+        'Leader inits → __syncthreads() → all read',
         'Use atomics',
         'Use global memory',
       ],
@@ -409,7 +409,7 @@ export default defineQuestions(
       q: 'Why can a correct CPU lock-free algorithm need EXTRA fences when ported to CUDA, beyond translating atomics?',
       o: [
         'CUDA atomics are weaker',
-        'CUDA’s memory model and the per-SM non-coherent L1s plus scoped atomics mean visibility you got "for free" on a coherent CPU must be made explicit with the right-scope fences/atomics on the GPU',
+        'Non-coherent L1s/scopes need explicit fences',
         'CUDA has no atomics',
         'It always just works',
       ],
@@ -428,7 +428,7 @@ export default defineQuestions(
       q: 'cuda::pipeline with N stages requires the consumer to call consumer_release() after using a stage so that…',
       o: [
         'It frees the kernel',
-        'The buffer becomes available for the producer to refill — without release, the producer eventually stalls waiting for a free stage (the pipeline back-pressures)',
+        'The buffer frees up for the producer to refill',
         'It synchronizes the grid',
         'It lowers precision',
       ],
@@ -447,7 +447,7 @@ export default defineQuestions(
       q: 'Atomics with thread_scope_device are required (over block scope) when…',
       o: [
         'Threads are in one block',
-        'Threads from DIFFERENT blocks update the same global location and must see consistent, ordered results across the whole GPU',
+        'Different blocks update the same global location',
         'Using shared memory',
         'Within a warp',
       ],
@@ -466,7 +466,7 @@ export default defineQuestions(
       q: 'A reduction kernel that uses atomicAdd into ONE global accumulator gives correct sums but is slow AND nondeterministic in FP because…',
       o: [
         'Atomics drop updates',
-        'All updates serialize on one address (slow), and the scheduling-dependent order combined with FP non-associativity changes the rounded result run-to-run (nondeterministic)',
+        'Serialized on one address; FP order varies',
         'It overflows',
         'It deadlocks',
       ],
@@ -485,7 +485,7 @@ export default defineQuestions(
       q: 'In a cluster, an atomic on a peer block’s DSMEM uses which scope to be both correct and efficient?',
       o: [
         'thread_scope_system',
-        'thread_scope_cluster — atomicity/ordering across the cluster’s blocks, cheaper than device/system scope while covering the DSMEM sharers',
+        'thread_scope_cluster',
         'thread_scope_block',
         'No scope needed',
       ],
@@ -504,7 +504,7 @@ export default defineQuestions(
       q: 'Why do warp vote functions (__all/__any/__ballot) require a mask under ITS even though they "feel" warp-wide?',
       o: [
         'For speed',
-        'The mask names exactly which lanes participate; under independent thread scheduling not all 32 lanes are guaranteed converged, so the result is defined only over the named, participating lanes',
+        'The mask names the participating lanes',
         'For coalescing',
         'For divergence',
       ],
@@ -523,7 +523,7 @@ export default defineQuestions(
       q: 'A correctness pattern for double-buffered shared-memory tiling is two __syncthreads per iteration because…',
       o: [
         'One barrier suffices',
-        'One barrier ensures the just-loaded tile is fully written before compute reads it; a second ensures compute finishes reading before the buffer is overwritten by the next load',
+        'One guards load→read, one read→overwrite',
         'It is faster',
         'For atomics',
       ],
@@ -542,7 +542,7 @@ export default defineQuestions(
       q: 'An async (split) barrier hides latency that __syncthreads cannot because __syncthreads…',
       o: [
         'Is faster',
-        'Is a single blocking rendezvous — a thread cannot do useful work "during" it, whereas arrive/wait lets a thread compute between signaling arrival and waiting for others/async-copy completion',
+        'Is a single blocking rendezvous, no overlap',
         'Synchronizes the grid',
         'Orders nothing',
       ],

@@ -10,7 +10,7 @@ export default defineQuestions(
       q: 'A "device mesh" abstraction (e.g. torch DeviceMesh) is used to…',
       o: [
         'Pick a GPU',
-        'Organize ranks into an N-dimensional grid (e.g. [data, tensor, pipeline]) so each parallelism axis maps to a mesh dimension and gets its own communicator',
+        'N-dim rank grid; axes map to mesh dims',
         'Allocate memory',
         'Profile kernels',
       ],
@@ -29,7 +29,7 @@ export default defineQuestions(
       q: 'DistributedSampler in data-parallel training ensures…',
       o: [
         'Gradients are averaged',
-        'Each rank sees a disjoint shard of the dataset per epoch (no overlap), so the global batch covers distinct samples',
+        'Each rank sees a disjoint dataset shard per epoch',
         'The model is sharded',
         'The optimizer is offloaded',
       ],
@@ -48,7 +48,7 @@ export default defineQuestions(
       q: 'DDP’s find_unused_parameters=True is sometimes needed because…',
       o: [
         'It speeds up training',
-        'If some parameters don’t receive gradients in a given forward (dynamic graphs), DDP must detect them so the all-reduce doesn’t wait forever for their (never-produced) gradients',
+        'Detects unused params; avoids reduce stall',
         'It shards the model',
         'It enables FP8',
       ],
@@ -67,7 +67,7 @@ export default defineQuestions(
       q: 'FSDP HYBRID_SHARD shards parameters…',
       o: [
         'Across all GPUs globally',
-        'WITHIN a node (or group) while REPLICATING across nodes — combining ZeRO-3-style sharding intra-node with data parallelism inter-node to cut cross-node all-gather traffic',
+        'Shards within node; replicates across nodes',
         'Only the optimizer',
         'Across pipeline stages',
       ],
@@ -86,7 +86,7 @@ export default defineQuestions(
       q: 'Vocabulary (output) parallelism with a "parallel cross entropy" avoids…',
       o: [
         'Computing the loss',
-        'Gathering the full (huge) logits tensor across tensor-parallel ranks — each rank computes its shard’s contribution to the softmax/loss with small all-reduces of scalars instead',
+        'Gathering the full logits across TP ranks',
         'The backward pass',
         'Using tensor cores',
       ],
@@ -105,7 +105,7 @@ export default defineQuestions(
       q: 'A rule-of-thumb for transformer training compute is ~6N FLOPs per token (N = parameters). This is used to…',
       o: [
         'Estimate memory',
-        'Estimate total training FLOPs (6 × N × tokens) for planning hardware/time and computing MFU',
+        'Compute FLOPs for hardware planning and MFU',
         'Set the learning rate',
         'Choose the batch size',
       ],
@@ -124,7 +124,7 @@ export default defineQuestions(
       q: 'For mixed-precision Adam, total optimizer+master memory per parameter is roughly…',
       o: [
         '2 bytes',
-        '~16–18 bytes (FP16/BF16 weight 2 + grad 2 + FP32 master 4 + Adam m 4 + v 4)',
+        '~16–18 B/param (2+2+4+4+4)',
         '32 bytes',
         '4 bytes',
       ],
@@ -139,7 +139,7 @@ export default defineQuestions(
       q: 'MoE training adds a load-balancing (auxiliary) loss because…',
       o: [
         'It improves accuracy directly',
-        'Without it the router may send most tokens to a few experts (collapse), causing imbalance and wasted capacity; the aux loss encourages uniform expert utilization',
+        'Prevents router collapse; encourages expert balance',
         'It reduces memory',
         'It speeds up all-to-all',
       ],
@@ -158,7 +158,7 @@ export default defineQuestions(
       q: 'MoE "capacity factor" controls…',
       o: [
         'The model size',
-        'How many tokens each expert can accept per batch (capacity); tokens beyond capacity are dropped or rerouted, trading compute/memory for handling imbalance',
+        'Per-expert token budget per batch',
         'The learning rate',
         'The number of GPUs',
       ],
@@ -177,7 +177,7 @@ export default defineQuestions(
       q: 'Elastic / fault-tolerant training (e.g. torchrun --max-restarts, torch.distributed.elastic) aims to…',
       o: [
         'Increase batch size',
-        'Let a job survive worker failures or scale the number of workers, by re-rendezvousing the process group and resuming from a checkpoint',
+        'Survive failures; re-rendezvous and resume',
         'Improve accuracy',
         'Reduce memory',
       ],
@@ -196,7 +196,7 @@ export default defineQuestions(
       q: 'For reproducible data-parallel training, you typically seed so that…',
       o: [
         'All ranks use the same seed for everything',
-        'Model init/dropout are consistent where needed (often same seed for weights via broadcast) but the data sampler differs per rank — careful seeding avoids all ranks seeing identical augmentations/data',
+        'Consistent init; rank-specific sampler/augmentation seeds',
         'Seeds are irrelevant',
         'Only rank 0 is seeded',
       ],
@@ -215,7 +215,7 @@ export default defineQuestions(
       q: 'Overlapping the optimizer step with gradient communication (e.g. optimizer-in-backward) helps by…',
       o: [
         'Reducing FLOPs',
-        'Applying updates to parameters whose gradients have already been all-reduced while later gradients are still communicating, hiding optimizer/comm latency',
+        'Overlaps updates with gradient communication',
         'Increasing batch size',
         'Lowering precision',
       ],
@@ -234,7 +234,7 @@ export default defineQuestions(
       q: 'In tensor-parallel transformers, the token embedding and output projection are often "vocab-parallel," meaning…',
       o: [
         'The whole embedding is replicated',
-        'The vocabulary dimension is split across TP ranks, so each holds a slice of the embedding/output weights, combined via all-reduce/all-gather',
+        'Vocab dim split across TP ranks; each holds a weight slice',
         'Embeddings are on the CPU',
         'Each rank has the full vocab',
       ],
@@ -253,7 +253,7 @@ export default defineQuestions(
       q: 'ZeRO++ reduces ZeRO-3 communication via techniques like…',
       o: [
         'Removing sharding',
-        'Quantized weight communication (qwZ), hierarchical (intra-node) weight partitioning to keep all-gathers local, and quantized gradients — cutting the extra ZeRO-3 traffic',
+        'qwZ + intra-node partition + quantized grads',
         'Using the CPU only',
         'Disabling all-gather',
       ],
@@ -272,7 +272,7 @@ export default defineQuestions(
       q: 'DDP "static_graph" mode can be enabled when…',
       o: [
         'The graph changes every step',
-        'The model’s autograd graph is the same every iteration, letting DDP optimize bucketing/overlap (and handle some unused-parameter cases) more efficiently',
+        'Static graph lets DDP optimize bucketing/overlap',
         'You use a single GPU',
         'You disable NCCL',
       ],
@@ -291,7 +291,7 @@ export default defineQuestions(
       q: 'Activation offloading (moving stored activations to CPU memory during forward, fetching them in backward) trades…',
       o: [
         'Accuracy for speed',
-        'PCIe transfer time (and CPU memory) for reduced GPU activation memory — useful when recomputation is too costly but GPU memory is the bottleneck',
+        'PCIe transfer time for less GPU activation memory',
         'Compute for communication',
         'Precision for range',
       ],
@@ -310,7 +310,7 @@ export default defineQuestions(
       q: 'In 3D parallelism, the typical hardware mapping is…',
       o: [
         'DP within node, TP across nodes',
-        'TP within a node (NVLink), PP across a few nodes, DP across replica groups — matching each method’s communication intensity to link speed',
+        'TP intra-node NVLink; PP inter-node; DP across replicas',
         'Everything across nodes equally',
         'PP within a warp',
       ],
@@ -329,7 +329,7 @@ export default defineQuestions(
       q: 'Megatron-LM and DeepSpeed are often combined because…',
       o: [
         'They do the same thing',
-        'Megatron provides efficient tensor/pipeline parallelism and DeepSpeed provides ZeRO data-parallel memory optimization — together enabling 3D parallelism for very large models',
+        'Megatron (TP/PP) + DeepSpeed (ZeRO)',
         'One is for inference only',
         'They both replace NCCL',
       ],
@@ -348,7 +348,7 @@ export default defineQuestions(
       q: 'Smaller micro-batches in pipeline parallelism reduce the bubble but…',
       o: [
         'Have no downside',
-        'Increase the relative overhead per micro-batch (more pipeline flushes, smaller GEMMs with lower efficiency) — so there is an optimal micro-batch size',
+        'Overhead grows; smaller GEMMs less efficient',
         'Eliminate communication',
         'Increase memory linearly',
       ],
@@ -367,7 +367,7 @@ export default defineQuestions(
       q: 'Why is the attention term often excluded from the simple 6N FLOP estimate, and when does it matter?',
       o: [
         'It is always negligible',
-        'Attention’s cost scales with sequence length² (not just parameters), so for long sequences it can rival or exceed the 6N term and must be added separately',
+        'Scales with seq²; rivals 6N at long context',
         'It is part of 6N',
         'It only matters in inference',
       ],
@@ -386,7 +386,7 @@ export default defineQuestions(
       q: 'When data-parallel training "scales poorly" (throughput per GPU drops as GPUs increase), the usual first suspect is…',
       o: [
         'The optimizer',
-        'Gradient communication (all-reduce) not overlapping/fitting within backward time — comm becomes the bottleneck as the cluster/network grows',
+        'All-reduce not overlapping backward',
         'The dataset',
         'The learning rate',
       ],
@@ -405,7 +405,7 @@ export default defineQuestions(
       q: 'Pipeline parallelism’s point-to-point activation transfers are relatively cheap, but its main cost is…',
       o: [
         'Network bandwidth',
-        'The pipeline bubble (idle stages during fill/drain) and the need to store in-flight activations — addressed by more micro-batches and 1F1B/interleaved/zero-bubble schedules',
+        'Bubble + in-flight activation storage',
         'All-reduce',
         'Optimizer states',
       ],
@@ -424,7 +424,7 @@ export default defineQuestions(
       q: 'A practical reason BF16 (not FP16) is the default for large-model training is…',
       o: [
         'BF16 is more precise',
-        'BF16’s FP32-range exponent avoids the overflow/underflow that forces FP16 loss scaling, making large-scale training simpler and more stable',
+        'FP32 range avoids overflow; no loss scaling',
         'BF16 uses less memory',
         'FP16 is unsupported',
       ],
@@ -443,7 +443,7 @@ export default defineQuestions(
       q: 'Context parallelism (e.g. ring/striped attention) is combined with tensor parallelism to…',
       o: [
         'Replace data parallelism',
-        'Scale BOTH the model width (TP) and the sequence length (CP) so very long contexts fit and compute is distributed across the sequence dimension',
+        'Scale model width (TP) AND sequence length (CP)',
         'Reduce the batch',
         'Shard the optimizer',
       ],
@@ -462,7 +462,7 @@ export default defineQuestions(
       q: 'Checkpointing (saving) during long training is done frequently because…',
       o: [
         'It speeds up training',
-        'Hardware failures and preemption are common over days/weeks of large-scale training; recent checkpoints bound the lost work on restart',
+        'Failures common; checkpoint caps wasted work',
         'It improves accuracy',
         'It reduces memory',
       ],
@@ -481,7 +481,7 @@ export default defineQuestions(
       q: 'In FSDP, "reshard_after_forward" controls whether a unit’s gathered parameters are freed after the forward pass. Keeping them (no reshard) trades…',
       o: [
         'Accuracy for speed',
-        'Higher memory (params stay unsharded) for avoiding a second all-gather in the backward — a speed/memory knob per FSDP unit',
+        'Keeps params unsharded; avoids second all-gather',
         'Compute for precision',
         'Communication for nothing',
       ],
@@ -500,7 +500,7 @@ export default defineQuestions(
       q: 'A common signature that a large-model run is COMMUNICATION-bound rather than compute-bound is…',
       o: [
         'High SM utilization',
-        'Low MFU with significant time in NCCL kernels on the timeline (gaps in compute waiting on collectives) — pointing to overlap/topology/bandwidth issues',
+        'Low MFU; idle SMs during NCCL collectives',
         'High DRAM bandwidth',
         'Many register spills',
       ],
@@ -519,7 +519,7 @@ export default defineQuestions(
       q: 'The simplest way to increase the effective batch size without more GPUs or memory is…',
       o: [
         'Tensor parallelism',
-        'Gradient accumulation (sum gradients over several micro-steps before one optimizer step)',
+        'Gradient accumulation',
         'Pipeline parallelism',
         'ZeRO-3',
       ],

@@ -10,7 +10,7 @@ export default defineQuestions(
       q: 'The __CUDA_ARCH__ macro is used in device code to…',
       o: [
         'Detect the runtime GPU',
-        'Conditionally compile different code paths per target compute capability at COMPILE time (e.g. use wgmma only when __CUDA_ARCH__ >= 900)',
+        'Compile-time paths per compute capability',
         'Set the grid size',
         'Allocate memory',
       ],
@@ -29,7 +29,7 @@ export default defineQuestions(
       q: 'The environment variable CUDA_DEVICE_ORDER=PCI_BUS_ID changes…',
       o: [
         'The precision',
-        'How devices are numbered: PCI_BUS_ID orders by physical bus (stable mapping) instead of the default FASTEST_FIRST — important for consistent device-to-rank assignment',
+        'Numbers devices by PCI bus, not speed',
         'The clock speed',
         'The batch size',
       ],
@@ -48,7 +48,7 @@ export default defineQuestions(
       q: 'When PTX is JIT-compiled at runtime, the result is cached on disk so that…',
       o: [
         'It recompiles every run',
-        'Subsequent runs reuse the compiled SASS (in ~/.nv/ComputeCache) instead of re-JITting — CUDA_CACHE_DISABLE=1 turns this off, CUDA_FORCE_PTX_JIT=1 forces JIT',
+        'Later runs reuse the cached SASS',
         'It runs on the CPU',
         'It pins memory',
       ],
@@ -67,7 +67,7 @@ export default defineQuestions(
       q: 'The CUDA Runtime API is thread-safe, meaning…',
       o: [
         'Only one thread may call it',
-        'Multiple host threads can call runtime functions concurrently (sharing the device’s primary context); you still manage per-thread current device and streams for correct concurrency',
+        'Many host threads may call it concurrently',
         'It runs on the GPU',
         'It needs a mutex you provide',
       ],
@@ -86,7 +86,7 @@ export default defineQuestions(
       q: 'A robust CUDA error-checking macro typically captures __FILE__ and __LINE__ so that…',
       o: [
         'It runs faster',
-        'When a call fails, the message pinpoints WHERE in the source the error occurred — invaluable since CUDA errors are otherwise reported generically',
+        'Pinpoints the failing source line',
         'It pins memory',
         'It disables errors',
       ],
@@ -105,7 +105,7 @@ export default defineQuestions(
       q: '__trap() in device code…',
       o: [
         'Returns from the kernel',
-        'Causes the kernel to abort execution (raising a trap/error), which surfaces as an error on the host — useful to halt on an unrecoverable device-side condition',
+        'Aborts the kernel, surfacing an error to the host',
         'Pauses for the debugger only',
         'Skips a thread',
       ],
@@ -124,7 +124,7 @@ export default defineQuestions(
       q: 'cuda-gdb lets you…',
       o: [
         'Profile kernels',
-        'Debug device code interactively: set breakpoints in kernels, inspect per-thread/lane state, step through warps, and examine memory — like gdb but GPU-aware',
+        'Interactively debug device code like gdb',
         'Compile PTX',
         'Allocate memory',
       ],
@@ -143,7 +143,7 @@ export default defineQuestions(
       q: 'cudaOccupancyAvailableDynamicSMemPerBlock returns…',
       o: [
         'The total shared memory',
-        'How much dynamic shared memory you could request per block while still achieving a desired number of resident blocks — helping size shared memory without dropping occupancy',
+        'Dynamic shared mem that keeps target occupancy',
         'The register count',
         'The grid size',
       ],
@@ -162,7 +162,7 @@ export default defineQuestions(
       q: 'The maximum y and z grid dimensions (gridDim.y, gridDim.z) are…',
       o: [
         '2^31 − 1 like x',
-        '65,535 each (unlike the x-dimension, which is 2^31 − 1 since CC 3.0)',
+        '65,535 each',
         '1024',
         'Unlimited',
       ],
@@ -181,7 +181,7 @@ export default defineQuestions(
       q: 'In separate compilation with dynamic parallelism, cudaLimitDevRuntimePendingLaunchCount controls…',
       o: [
         'The stack size',
-        'How many device-side child kernel launches can be pending (buffered) at once; exceeding it drops/launches fail, so deeply nested device launches may need it raised',
+        'Pending device-side launch count',
         'The grid size',
         'The shared memory',
       ],
@@ -200,7 +200,7 @@ export default defineQuestions(
       q: 'nvcc -gencode arch=compute_80,code=sm_80 vs code=compute_80: the difference is…',
       o: [
         'They are identical',
-        'code=sm_80 embeds SASS (native machine code) for sm_80; code=compute_80 embeds PTX (for JIT to future GPUs) — you often include both so the binary has native code AND forward compatibility',
+        'sm_80 embeds SASS; compute_80 embeds PTX',
         'arch sets the runtime',
         'code sets the grid',
       ],
@@ -219,7 +219,7 @@ export default defineQuestions(
       q: 'A kernel returns cudaErrorInvalidValue immediately at launch. A likely cause is…',
       o: [
         'Out of memory',
-        'An invalid launch argument (e.g. a bad dim3, a null/invalid stream, or an out-of-range value) — distinct from resource errors; check the launch configuration and arguments',
+        'An invalid launch argument',
         'A race condition',
         'A divergent branch',
       ],
@@ -238,7 +238,7 @@ export default defineQuestions(
       q: 'To dispatch to architecture-specific kernels at RUNTIME (not compile time), you…',
       o: [
         'Use __CUDA_ARCH__',
-        'Query the device’s compute capability (cudaDeviceGetAttribute / cudaDeviceProp.major/minor) and select among separately-compiled kernels accordingly',
+        'Query the capability and pick a prebuilt kernel',
         'Recompile each run',
         'Use a single kernel only',
       ],
@@ -257,7 +257,7 @@ export default defineQuestions(
       q: 'nvcc --threads N (or -t N) speeds up compilation by…',
       o: [
         'Running kernels in parallel',
-        'Compiling multiple architecture targets / translation units in parallel threads — useful when -gencode lists many SASS targets (long build times)',
+        'Compiling multiple targets in parallel threads',
         'Using more SMs',
         'Disabling optimization',
       ],
@@ -276,7 +276,7 @@ export default defineQuestions(
       q: 'cudaDeviceGetByPCIBusId is used to…',
       o: [
         'Reset a device',
-        'Get the CUDA device index for a given PCI bus id string — letting you map a physical GPU (from topology tools) to a CUDA device number deterministically',
+        'Map a PCI bus id to a CUDA device index',
         'Launch a kernel',
         'Allocate memory',
       ],
@@ -295,7 +295,7 @@ export default defineQuestions(
       q: 'Compiling with -G (full device debug) vs -lineinfo: -G…',
       o: [
         'Is for profiling',
-        'Disables most device optimizations and adds full debug info for cuda-gdb (slow but fully debuggable); -lineinfo keeps optimizations and adds only line mappings (for profilers)',
+        'Full debug info, optimizations off',
         'Is faster',
         'Removes debug info',
       ],
@@ -314,7 +314,7 @@ export default defineQuestions(
       q: 'extern __shared__ float s[]; (dynamic shared memory) — if you need it aligned for float4 access, you should…',
       o: [
         'It is always aligned',
-        'Ensure the dynamic shared-memory base/offsets meet the alignment (the base is suitably aligned, but sub-arrays you carve out must be aligned manually for vector types)',
+        'Align the sub-arrays you carve out manually',
         'Use constant memory',
         'Use global memory',
       ],
@@ -333,7 +333,7 @@ export default defineQuestions(
       q: 'A common reason cudaMalloc returns cudaErrorMemoryAllocation even though "free" memory seems sufficient is…',
       o: [
         'A bug in CUDA',
-        'Fragmentation or other processes/context overhead consuming memory — the request needs contiguous space that isn’t available, or reserved memory (context, library handles) reduces the usable amount',
+        'Fragmentation or context/library overhead',
         'A divergent branch',
         'A bank conflict',
       ],
@@ -352,7 +352,7 @@ export default defineQuestions(
       q: 'cudaLimitDevRuntimeSyncDepth (legacy dynamic parallelism) bounded…',
       o: [
         'The grid size',
-        'How deeply nested device-side cudaDeviceSynchronize calls could go (parent waiting on children at each level) — needed memory grew with depth; CDP2 removed device-side sync, eliminating this',
+        'Nesting depth of device-side sync (legacy)',
         'The register count',
         'The block size',
       ],
@@ -371,7 +371,7 @@ export default defineQuestions(
       q: 'When does using __launch_bounds__ HURT performance?',
       o: [
         'Never',
-        'If you cap maxThreadsPerBlock/minBlocksPerSM too aggressively, the compiler over-restricts registers, causing SPILLS to local memory that cost more than the occupancy gained',
+        'Too-tight caps force register spills',
         'Always',
         'Only with FP64',
       ],
@@ -390,7 +390,7 @@ export default defineQuestions(
       q: 'For debugging an illegal memory access, the recommended FIRST tool is…',
       o: [
         'Nsight Compute',
-        'compute-sanitizer (memcheck) — it pinpoints the exact out-of-bounds/misaligned access and offending thread, often with a source line, far faster than guessing',
+        'compute-sanitizer (memcheck)',
         'nvidia-smi',
         'ptxas -v',
       ],
@@ -409,7 +409,7 @@ export default defineQuestions(
       q: 'cudaStreamSynchronize on a stream after a kernel, vs reading results immediately on the host — the former is needed because…',
       o: [
         'The kernel is synchronous',
-        'Async kernels/copies on that stream complete out-of-band; you must synchronize the stream (or use a blocking copy/event) before the host can safely read the results the kernel produced',
+        'Async stream work must finish before reading',
         'It frees memory',
         'It resets the GPU',
       ],
@@ -428,7 +428,7 @@ export default defineQuestions(
       q: 'A subtle multi-GPU bug: all processes allocate/launch on GPU 0 despite intending one GPU each. The cause is usually…',
       o: [
         'Out of memory',
-        'Missing/incorrect cudaSetDevice(local_rank) before allocations/NCCL init — without binding, every process defaults to device 0, causing OOM and NCCL errors',
+        'Missing cudaSetDevice before allocations',
         'A race condition',
         'ECC',
       ],
@@ -447,7 +447,7 @@ export default defineQuestions(
       q: 'cudaDeviceReset() at program exit is sometimes recommended specifically to…',
       o: [
         'Speed up the next run',
-        'Ensure profiling tools flush their data and all device resources are cleanly released for the process — without it, buffered profiler data may be lost',
+        'Let profilers flush and resources release',
         'Reset the clocks',
         'Free host memory',
       ],
@@ -466,7 +466,7 @@ export default defineQuestions(
       q: 'A "fat binary" that includes PTX for the newest virtual arch ensures…',
       o: [
         'Faster kernels',
-        'Forward compatibility: on a GPU newer than any embedded SASS, the driver JIT-compiles the embedded PTX to that GPU’s SASS — so the program runs on future hardware',
+        'Forward compatibility via PTX JIT',
         'Lower precision',
         'Smaller size',
       ],
@@ -485,7 +485,7 @@ export default defineQuestions(
       q: 'cudaGetDeviceProperties reports cooperativeLaunch=0 on a device. The consequence is…',
       o: [
         'No kernels run',
-        'You cannot use cudaLaunchCooperativeKernel / grid.sync() on it — grid-wide cooperative synchronization isn’t supported, so you must use multi-kernel or other patterns',
+        'No grid.sync() available',
         'Lower precision',
         'No streams',
       ],
@@ -504,7 +504,7 @@ export default defineQuestions(
       q: 'Why does CUDA_VISIBLE_DEVICES="2,3" make a 2-GPU job see those GPUs as devices 0 and 1?',
       o: [
         'It renames them',
-        'The variable masks and REMAPS visible GPUs: the listed physical GPUs become logical devices 0..N-1 in listed order, hiding the others from the process',
+        'Remaps listed GPUs to 0..N-1',
         'It disables them',
         'It reorders by speed',
       ],
@@ -523,7 +523,7 @@ export default defineQuestions(
       q: 'A kernel that worked at small scale crashes (illegal address) only for very large inputs. The most likely root cause is…',
       o: [
         'A race condition',
-        '32-bit integer overflow in the index computation — the global index exceeds INT_MAX, wrapping negative and accessing out of bounds; use 64-bit (size_t) indexing',
+        '32-bit index overflow',
         'A bank conflict',
         'Register spilling',
       ],
@@ -542,7 +542,7 @@ export default defineQuestions(
       q: 'cuobjdump --dump-sass on a fatbin lets you…',
       o: [
         'Run the kernel',
-        'Inspect the actual SASS (machine code) the GPU executes — to verify instruction selection (FMA, tensor-core ops), register usage, and whether optimizations happened',
+        'Inspect the actual SASS the GPU runs',
         'Allocate memory',
         'Profile bandwidth',
       ],
@@ -561,7 +561,7 @@ export default defineQuestions(
       q: 'Why is it good practice to check the return value of EVERY CUDA API call (via a macro), not just kernels?',
       o: [
         'For speed',
-        'API calls (cudaMalloc, cudaMemcpy, stream/event ops) can fail (OOM, invalid args, prior sticky errors); unchecked failures lead to confusing downstream errors far from the real cause',
+        'API calls can fail, causing later errors',
         'It pins memory',
         'It increases occupancy',
       ],

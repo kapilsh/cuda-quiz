@@ -10,7 +10,7 @@ export default defineQuestions(
       q: 'You want to know WHY a kernel is slow (which hardware unit limits it). Which tool/section?',
       o: [
         'Nsight Systems timeline',
-        'Nsight Compute "Speed of Light" (SOL) section, which reports compute vs. memory utilization vs. peak',
+        'Nsight Compute Speed of Light (SOL)',
         'nvidia-smi',
         'gdb',
       ],
@@ -29,7 +29,7 @@ export default defineQuestions(
       q: 'In Nsight Compute, "global load efficiency" (sectors requested vs. ideal) below 100% indicates…',
       o: [
         'Too many registers',
-        'Uncoalesced / partially-used cache-line accesses — the warp fetches more sectors than its data needs',
+        'Uncoalesced, partially-used cache lines',
         'High occupancy',
         'Tensor-core underuse',
       ],
@@ -48,7 +48,7 @@ export default defineQuestions(
       q: 'A high "MIO Throttle" or "LG Throttle" stall reason in Nsight Compute means warps are stalled on…',
       o: [
         'Tensor cores',
-        'The memory input/output (load-store/shared) pipeline being saturated — too many in-flight memory instructions',
+        'The load-store/shared pipe is saturated',
         'Branch mispredictions',
         'The host',
       ],
@@ -67,7 +67,7 @@ export default defineQuestions(
       q: '"Branch efficiency" (or warp execution efficiency) measures…',
       o: [
         'How often branches are predicted correctly',
-        'The average fraction of threads in a warp that are active (not masked off by divergence)',
+        'Average fraction of active lanes per warp',
         'The number of branches per kernel',
         'Cache hit rate',
       ],
@@ -86,7 +86,7 @@ export default defineQuestions(
       q: 'On the Nsight Compute roofline chart, a kernel’s dot is plotted using which two axes?',
       o: [
         'Occupancy vs. time',
-        'Arithmetic intensity (FLOP/byte) on x, achieved performance (FLOP/s) on y, against the compute and bandwidth ceilings',
+        'Intensity (FLOP/byte) on x, FLOP/s on y',
         'Registers vs. shared memory',
         'Block size vs. grid size',
       ],
@@ -105,7 +105,7 @@ export default defineQuestions(
       q: 'When should you reach for Nsight Systems rather than Nsight Compute?',
       o: [
         'To inspect a single kernel’s memory metrics',
-        'To see the whole-application timeline — CPU/GPU overlap, stream concurrency, gaps, and where time goes across kernels and copies',
+        'To see the whole-application timeline',
         'To count bank conflicts',
         'To view SASS',
       ],
@@ -124,7 +124,7 @@ export default defineQuestions(
       q: 'Nsight Compute offers application replay vs. kernel replay. Kernel replay…',
       o: [
         'Re-runs the whole application',
-        'Re-executes the same kernel multiple times (restoring its memory state) to collect all counters in one process run',
+        'Reruns the kernel to collect all counters',
         'Skips profiling',
         'Runs on the CPU',
       ],
@@ -143,7 +143,7 @@ export default defineQuestions(
       q: 'You profile with ncu and it is extremely slow on a kernel launched thousands of times. A good mitigation is…',
       o: [
         'Disable the GPU',
-        'Use --launch-skip and --launch-count (or -k regex / -s -c) to profile only a few representative launches',
+        'Profile only a few representative launches',
         'Lower the clock',
         'Profile on the CPU',
       ],
@@ -162,7 +162,7 @@ export default defineQuestions(
       q: 'cudaProfilerStart() / cudaProfilerStop() around a region let you…',
       o: [
         'Speed up that region',
-        'Limit profiler data collection to a chosen region (e.g. steady-state iterations), skipping warm-up',
+        'Limit capture to a chosen region',
         'Disable error checking',
         'Synchronize streams',
       ],
@@ -181,7 +181,7 @@ export default defineQuestions(
       q: 'A low "achieved occupancy" but high "theoretical occupancy" together with short kernel duration often points to…',
       o: [
         'Register spilling',
-        'The tail effect / too few blocks to fill the GPU for the kernel’s short lifetime (ramp-up + drain dominate)',
+        'Tail effect: too few blocks, short kernel',
         'Bank conflicts',
         'Tensor-core misuse',
       ],
@@ -200,7 +200,7 @@ export default defineQuestions(
       q: 'In the Nsight Compute memory chart, a low L2 hit rate on a kernel that revisits the same data suggests…',
       o: [
         'Perfect caching',
-        'The working set exceeds L2 (or poor temporal locality), so reused data is evicted before reuse — consider tiling or L2 residency control',
+        'The working set exceeds L2',
         'Too many registers',
         'A divergent branch',
       ],
@@ -219,7 +219,7 @@ export default defineQuestions(
       q: 'Pipe utilization metrics (FMA, ALU, LSU, Tensor) tell you…',
       o: [
         'The clock frequency',
-        'Which functional units are busiest, helping identify whether you are bound on math, memory (LSU), or tensor cores',
+        'Which functional units are busiest',
         'The number of blocks',
         'Register count',
       ],
@@ -238,7 +238,7 @@ export default defineQuestions(
       q: 'nvidia-smi reports a training job at 30% "GPU-Util." What does that number actually mean?',
       o: [
         'The fraction of CUDA cores doing math',
-        'The fraction of recent time at least one kernel was running on the GPU — NOT how efficiently the SMs are used',
+        'Fraction of time a kernel was running',
         'The memory bandwidth used',
         'The achieved occupancy',
       ],
@@ -257,7 +257,7 @@ export default defineQuestions(
       q: 'High "Stall Barrier" warp state in Nsight Compute indicates warps waiting at…',
       o: [
         'Memory loads',
-        '__syncthreads()/barriers — threads idling for the rest of the block to arrive (load imbalance or too-frequent syncs)',
+        '__syncthreads barriers',
         'Tensor cores',
         'The host',
       ],
@@ -276,7 +276,7 @@ export default defineQuestions(
       q: 'To correlate a hot SASS instruction back to your CUDA C++ source line in Nsight Compute, you should compile with…',
       o: [
         '-O0',
-        '-lineinfo (and ideally -G only for debugging), which embeds source-line mapping without disabling optimizations',
+        '-lineinfo (source-line mapping)',
         '--use_fast_math',
         '-arch=native',
       ],
@@ -295,7 +295,7 @@ export default defineQuestions(
       q: 'In a Nsight Systems timeline, long gaps between GPU kernels with the CPU busy usually mean…',
       o: [
         'The GPU is the bottleneck',
-        'The application is CPU-bound or launch-bound — the host can’t feed the GPU fast enough',
+        'CPU-bound: the host cannot feed the GPU',
         'Memory bandwidth is saturated',
         'Occupancy is too high',
       ],
@@ -314,7 +314,7 @@ export default defineQuestions(
       q: 'Local memory load/store traffic showing up in Nsight Compute for a kernel that has no large local arrays usually means…',
       o: [
         'A profiler bug',
-        'Register spilling — the compiler spilled registers to local memory',
+        'Register spilling to local memory',
         'Shared-memory bank conflicts',
         'Constant-memory misses',
       ],
@@ -333,7 +333,7 @@ export default defineQuestions(
       q: 'Compiling with ptxas-options=-v (or --resource-usage) prints, per kernel…',
       o: [
         'The runtime in milliseconds',
-        'Register count, shared memory, and spill (local memory) usage — useful for occupancy/spill analysis at build time',
+        'Register, shared-memory, and spill usage',
         'The achieved occupancy',
         'The number of SMs',
       ],
@@ -352,7 +352,7 @@ export default defineQuestions(
       q: 'A GEMM shows 80% Tensor pipe utilization but only 50% of peak FLOP/s. A likely explanation is…',
       o: [
         'The kernel is memory-bound',
-        'Tensor cores are issuing often but stalling between MMAs (e.g. waiting on operands / barriers), so effective throughput trails the issue rate',
+        'Bubbles between MMAs lower achieved FLOP/s',
         'The GPU is broken',
         'Occupancy is too high',
       ],
@@ -371,7 +371,7 @@ export default defineQuestions(
       q: 'IPC (instructions per cycle) reported low while occupancy is high typically means…',
       o: [
         'The kernel is optimal',
-        'Warps are frequently stalled (memory/dependency/barrier) so few issue each cycle, despite many being resident',
+        'Warps stall often, so few issue per cycle',
         'Too few warps',
         'Tensor cores are saturated',
       ],
@@ -390,7 +390,7 @@ export default defineQuestions(
       q: 'Shared-memory bank-conflict reporting in Nsight Compute appears as…',
       o: [
         'Global load efficiency',
-        'Increased shared (l1tex) wavefronts / "bank conflicts" per request — more transactions than the ideal one per warp access',
+        'Extra shared wavefronts per request',
         'Low occupancy',
         'High register count',
       ],
@@ -409,7 +409,7 @@ export default defineQuestions(
       q: 'Why might profiling change a kernel’s timing (the "observer effect"), and how does Nsight mitigate it for metrics?',
       o: [
         'It does not change timing',
-        'Counter collection and replay perturb timing; Nsight reports metrics from controlled replays and flags durations separately rather than trusting wall-time during collection',
+        'Counters/replay perturb timing; metrics use replays',
         'It overclocks the GPU',
         'It runs the kernel on the CPU',
       ],
@@ -428,7 +428,7 @@ export default defineQuestions(
       q: 'nsys profile by default captures CUDA API calls and GPU activity. To also see your application’s phases on the timeline you add…',
       o: [
         'cudaDeviceSynchronize everywhere',
-        'NVTX ranges (nvtxRangePush/Pop) around code regions',
+        'NVTX ranges around code regions',
         'printf statements',
         'More streams',
       ],
@@ -447,7 +447,7 @@ export default defineQuestions(
       q: 'A kernel’s SM throughput and memory throughput are BOTH low (e.g. 20%). This most likely means it is…',
       o: [
         'Perfectly balanced',
-        'Latency-bound — not enough parallelism/ILP in flight to keep either resource busy',
+        'Latency-bound: too little in flight',
         'Compute-bound',
         'Memory-bound',
       ],
@@ -466,7 +466,7 @@ export default defineQuestions(
       q: 'CUPTI is…',
       o: [
         'A CUDA math library',
-        'The CUDA Profiling Tools Interface — the low-level API that Nsight and other tools use to collect activity and counters',
+        'The CUDA Profiling Tools Interface',
         'A debugger',
         'A memory allocator',
       ],
@@ -485,7 +485,7 @@ export default defineQuestions(
       q: 'To measure clean end-to-end GPU time for one kernel without profiler overhead, the lightest method is…',
       o: [
         'Run Nsight Compute with all sections',
-        'Bracket the kernel with cudaEventRecord(start) / cudaEventRecord(stop), synchronize, and read cudaEventElapsedTime — after a warm-up and averaged over runs',
+        'CUDA events around the kernel, synchronized',
         'Use the host wall clock around the launch only',
         'Read nvidia-smi',
       ],
@@ -504,7 +504,7 @@ export default defineQuestions(
       q: 'When comparing two kernels, Nsight Compute can show a "baseline" diff. The most rigorous comparison normalizes by…',
       o: [
         'Lines of code',
-        'The same problem size and clocks (and ideally locked clocks), comparing metrics like duration, SOL, and bytes moved rather than just wall time',
+        'Same problem size and locked clocks',
         'The number of registers',
         'The file size',
       ],

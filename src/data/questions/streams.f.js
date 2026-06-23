@@ -10,7 +10,7 @@ export default defineQuestions(
       q: 'A fixed-shape inference model is launch-overhead-bound at high QPS. The highest-impact fix is…',
       o: [
         'Lower precision only',
-        'Capture the forward pass as a CUDA Graph and replay it — collapsing many small launches into one, removing CPU launch overhead and inter-kernel gaps',
+        'Capture as a graph; remove per-launch overhead',
         'More streams',
         'A bigger batch',
       ],
@@ -29,7 +29,7 @@ export default defineQuestions(
       q: 'You capture a training step as a graph, but each iteration uses different input/grad buffers. The correct approach is…',
       o: [
         'Re-capture every step',
-        'Use STATIC buffers (copy new data into the same addresses each step) or cudaGraphExecUpdate to change node params — re-capturing/instantiating each step erases the benefit',
+        'Refill static buffers, or use GraphExecUpdate',
         'Avoid graphs',
         'Use the default stream',
       ],
@@ -48,7 +48,7 @@ export default defineQuestions(
       q: 'Your captured training-step graph reproduces the SAME dropout mask every replay. The cause/fix is…',
       o: [
         'Graphs randomize automatically',
-        'RNG state was baked in at capture; feed RNG state from an UPDATABLE buffer (advanced each step), so the captured kernels read fresh per-iteration random state',
+        'Feed fresh RNG state from an updatable buffer each step',
         'Disable dropout',
         'Use FP64',
       ],
@@ -67,7 +67,7 @@ export default defineQuestions(
       q: 'Graph capture aborts with an error when your code calls cudaMalloc inside the captured region. The fix is…',
       o: [
         'Remove all allocations',
-        'Pre-allocate before capture, or use cudaMallocAsync (a stream-ordered, capturable memory node) — plain cudaMalloc synchronizes the device, which is illegal during capture',
+        'Pre-allocate or use cudaMallocAsync',
         'Use FP64',
         'Use the default stream',
       ],
@@ -86,7 +86,7 @@ export default defineQuestions(
       q: 'Two kernels on different streams don’t overlap despite spare SMs and no default-stream use. Check for…',
       o: [
         'Streams never overlap',
-        'A hidden dependency (an event/wait or overlapping memory with ordering between them) or hardware-queue multiplexing serializing them — inspect the timeline and dependencies',
+        'Hidden dependency or hardware-queue funneling',
         'Too few registers',
         'For FP64',
       ],
@@ -105,7 +105,7 @@ export default defineQuestions(
       q: 'To co-locate a latency-critical kernel with background throughput work on one GPU, you…',
       o: [
         'Use one stream',
-        'Put the latency-critical work on a HIGH-PRIORITY stream so the scheduler favors dispatching its blocks when streams compete for SMs',
+        'High-priority stream for preferential block dispatch',
         'cudaDeviceSynchronize',
         'Use constant memory',
       ],
@@ -124,7 +124,7 @@ export default defineQuestions(
       q: 'A serving system runs many small inference requests that each underuse the GPU. To raise utilization across processes, use…',
       o: [
         'MIG',
-        'MPS (Multi-Process Service) — it lets multiple processes’ kernels co-execute on one GPU (spatial sharing), filling idle capacity that default time-slicing would serialize',
+        'MPS: concurrent multi-process kernels on one GPU',
         'More streams in one process',
         'FP64',
       ],
@@ -143,7 +143,7 @@ export default defineQuestions(
       q: 'You need STRICT isolation/QoS between multiple tenants on one H100. The right mechanism is…',
       o: [
         'MPS',
-        'MIG — hardware partitions the GPU into isolated instances with dedicated SMs/L2/memory, giving each tenant guaranteed, isolated resources (vs MPS’s softer sharing)',
+        'MIG: hard-partitioned isolated instances',
         'Streams',
         'Time-slicing',
       ],
@@ -162,7 +162,7 @@ export default defineQuestions(
       q: 'A chain of short back-to-back kernels has visible inter-kernel gaps. Beyond CUDA Graphs, Hopper offers…',
       o: [
         'Nothing',
-        'Programmatic Dependent Launch (PDL) — a dependent kernel can begin its prologue before the predecessor fully finishes, overlapping the tail of one with the start of the next',
+        'PDL: overlap tail-of-one with start-of-next',
         'More streams',
         'FP64',
       ],
@@ -181,7 +181,7 @@ export default defineQuestions(
       q: 'To pipeline disjoint chunks of a large workload, you rotate H2D-copy, kernel, D2H-copy across a small set of streams so that…',
       o: [
         'One giant kernel runs',
-        'Each chunk’s transfers overlap another chunk’s computation (copy engines + SMs run concurrently), hiding transfer time — needs pinned memory and async copies',
+        'Transfer of one chunk overlaps compute of another',
         'cudaDeviceSynchronize per chunk',
         'A single default stream',
       ],
@@ -200,7 +200,7 @@ export default defineQuestions(
       q: 'A producer process and consumer process on the same node need to share GPU data with correct ordering. Use…',
       o: [
         'A file',
-        'CUDA IPC memory handles (share the buffer) PLUS IPC event handles (order it), so the consumer reads only after the producer’s writes complete',
+        'IPC mem for data + IPC events for ordering',
         'Host sockets only',
         'Constant memory',
       ],
@@ -219,7 +219,7 @@ export default defineQuestions(
       q: 'A CUDA post-processing kernel must read a Vulkan-rendered frame without a host copy. The mechanism is…',
       o: [
         'cudaMemcpy from the host',
-        'External memory + external semaphore interop: import the Vulkan buffer into CUDA’s address space and synchronize via imported semaphores, so the kernel accesses it in place',
+        'Import the buffer into CUDA + sync via semaphores',
         'Recompile the kernel',
         'Constant memory',
       ],
@@ -238,7 +238,7 @@ export default defineQuestions(
       q: 'An iterative solver should loop on the GPU until convergence without host round-trips. The graph feature is…',
       o: [
         'Static graphs only',
-        'Conditional (while) nodes whose condition a kernel writes during execution (e.g. residual < tol → stop) — so the data-dependent loop runs on the GPU at replay time',
+        'While-nodes set by a kernel at runtime',
         'More streams',
         'cudaDeviceSynchronize',
       ],
@@ -257,7 +257,7 @@ export default defineQuestions(
       q: 'For a recurring set of CONCURRENT small kernels each iteration, capturing them in one graph can beat many stream launches because…',
       o: [
         'Graphs serialize',
-        'The graph encodes the independent nodes (concurrency) AND removes per-launch CPU overhead, so the runtime schedules the parallelism with less host cost than issuing many launches',
+        'Independent nodes + no per-launch overhead',
         'Graphs run on the host',
         'FP64',
       ],
@@ -276,7 +276,7 @@ export default defineQuestions(
       q: 'Why might a high-priority stream NOT improve a latency-critical kernel’s tail under heavy load?',
       o: [
         'Priorities are ignored',
-        'Priority biases DISPATCH of waiting blocks; if SMs are full of long-running lower-priority blocks (not preempted at block granularity), the high-priority kernel still waits for them to finish',
+        'Priority biases dispatch, not preemption',
         'It runs on the host',
         'FP64',
       ],
@@ -295,7 +295,7 @@ export default defineQuestions(
       q: 'In Nsight Systems, a workload using CUDA Graphs appears on the timeline as…',
       o: [
         'Each kernel a separate host launch',
-        'One graph launch (the per-kernel host-launch gaps are gone), with the graph’s kernels packed back-to-back — confirming the launch-overhead reduction',
+        'One graph launch with kernels tightly packed (gaps gone)',
         'Nothing',
         'Only the CPU',
       ],
@@ -314,7 +314,7 @@ export default defineQuestions(
       q: 'A kernel launched on a non-default stream still serializes with default-stream work. The reason is…',
       o: [
         'Streams always serialize',
-        'The legacy default stream is implicitly synchronizing — it waits for and blocks other (blocking) streams; use per-thread default stream or cudaStreamNonBlocking streams to avoid it',
+        'Legacy null stream syncs with blocking streams',
         'Too many registers',
         'The GPU is busy',
       ],
@@ -333,7 +333,7 @@ export default defineQuestions(
       q: 'cudaGraphExecUpdate fails between iterations. The most common reason is…',
       o: [
         'Out of memory',
-        'A topology mismatch — the new graph’s node/edge structure differs (update only allows parameter changes), so you must re-instantiate a new executable graph',
+        'Topology changed; must re-instantiate',
         'Wrong precision',
         'A divergent branch',
       ],
@@ -352,7 +352,7 @@ export default defineQuestions(
       q: 'To express "B and C both depend on A’s kernel, and run concurrently after it," use…',
       o: [
         'cudaDeviceSynchronize after A',
-        'Record an event in A’s stream after the kernel, then cudaStreamWaitEvent on B and C — so B and C proceed in parallel once A’s kernel completes, without a device-wide sync',
+        'Event in A; B and C wait then run in parallel',
         'One stream for all',
         'MPS',
       ],
@@ -371,7 +371,7 @@ export default defineQuestions(
       q: 'CUDA Graphs reduce step-time JITTER across distributed ranks because…',
       o: [
         'Faster math',
-        'They remove per-kernel host-launch scheduling variability (CPU contention) — a deterministic single replay tightens each rank’s step-time distribution, helping ranks stay in sync',
+        'One replay removes per-launch CPU jitter',
         'Lower precision',
         'More memory',
       ],
@@ -390,7 +390,7 @@ export default defineQuestions(
       q: 'Device-side graph launch (a kernel launching a graph) is enabled by instantiating the graph with…',
       o: [
         'Any flag',
-        'cudaGraphInstantiateFlagDeviceLaunch — the executable graph must opt in to be device-launchable, restricting its contents but allowing the GPU to trigger its execution',
+        'Device-launch opt-in flag for the graph',
         'No flag',
         'A host callback',
       ],
@@ -409,7 +409,7 @@ export default defineQuestions(
       q: 'A GPU has 2 copy engines (asyncEngineCount=2). This lets you…',
       o: [
         'Run two kernels',
-        'Overlap an H2D copy, a D2H copy, AND compute simultaneously (separate engines for each direction + SMs) — triple-buffered streaming',
+        'H2D + D2H + compute all at once (separate engines)',
         'Double the SMs',
         'Disable the default stream',
       ],
@@ -428,7 +428,7 @@ export default defineQuestions(
       q: 'Why is a small fixed pool of streams usually better than creating/destroying streams each iteration?',
       o: [
         'Streams are global',
-        'Creation/destruction has overhead and can synchronize; a reused pool sized to the achievable concurrency keeps hot loops efficient — extra streams beyond that add overhead without more overlap',
+        'Reuse a pool sized to achievable concurrency',
         'Streams run on the host',
         'FP64',
       ],
@@ -447,7 +447,7 @@ export default defineQuestions(
       q: 'cudaGraphNodeSetEnabled lets you implement optional steps in a graph by…',
       o: [
         'Adding nodes',
-        'Enabling/DISABLING a node between launches (a disabled node is a no-op) — conditional execution WITHOUT re-instantiating, valid since the topology is unchanged',
+        'Toggle a node on/off between launches',
         'Re-capturing',
         'A host callback',
       ],
@@ -466,7 +466,7 @@ export default defineQuestions(
       q: 'For multi-GPU work in one process, each GPU needs its own stream(s) because…',
       o: [
         'Streams are global',
-        'A stream is bound to the device current when it was created; you cudaSetDevice and create streams per GPU, and launching on a stream targets its device',
+        'Streams are device-bound at creation; one per GPU',
         'One stream covers all GPUs',
         'Streams run on the host',
       ],
@@ -485,7 +485,7 @@ export default defineQuestions(
       q: 'Green contexts (Hopper) reserve a subset of SMs for a context, useful to…',
       o: [
         'Increase clocks',
-        'Guarantee a slice of the GPU to a latency-critical workload while other work uses the rest — spatial QoS within a process, finer than MIG and without hard isolation',
+        'Intra-process SM reservation for QoS',
         'Compress data',
         'Pin memory',
       ],
@@ -504,7 +504,7 @@ export default defineQuestions(
       q: 'For pure ordering (not timing) between streams, create events with…',
       o: [
         'Default flags',
-        'cudaEventDisableTiming — timing-disabled events are cheaper for record/wait; record on the producer stream and cudaStreamWaitEvent on the consumer',
+        'cudaEventDisableTiming — cheaper for pure ordering',
         'cudaEventBlockingSync only',
         'No events',
       ],
@@ -523,7 +523,7 @@ export default defineQuestions(
       q: 'Adding MORE streams eventually REDUCES performance because…',
       o: [
         'Streams are free',
-        'Concurrency is bounded by hardware queues and SM capacity; beyond that, extra streams add scheduling/management overhead and contention without more overlap',
+        'Past max concurrency, extra streams add overhead',
         'Streams disable kernels',
         'It always helps',
       ],
@@ -542,7 +542,7 @@ export default defineQuestions(
       q: 'cudaMallocAsync pairs especially well with CUDA Graphs because…',
       o: [
         'It disables the pool',
-        'Its allocations are stream-ordered and captured as graph memory nodes — avoiding the device-wide synchronization (illegal during capture) that plain cudaMalloc would inject',
+        'Capturable; no device-wide sync',
         'It runs on the host',
         'It compresses memory',
       ],
@@ -561,7 +561,7 @@ export default defineQuestions(
       q: 'A reason to reuse a small pool of (timing-disabled) events rather than creating them each iteration is…',
       o: [
         'Events are global',
-        'Event creation/destruction has overhead; reusing a pool for recurring dependencies keeps hot loops efficient',
+        'Reuse events; avoids create/destroy overhead',
         'Events run on the host',
         'It increases precision',
       ],

@@ -10,7 +10,7 @@ export default defineQuestions(
       q: 'ULP (unit in the last place) refers to…',
       o: [
         'The largest representable value',
-        'The spacing between two consecutive representable floating-point numbers at a given magnitude — error is often measured in ULPs',
+        'Spacing between adjacent floats at a given magnitude',
         'The exponent bias',
         'The number of mantissa bits',
       ],
@@ -39,7 +39,7 @@ export default defineQuestions(
       q: 'Welford’s online algorithm is preferred for computing variance (e.g. in LayerNorm/BatchNorm) because it…',
       o: [
         'Is faster',
-        'Computes mean and variance in one numerically stable pass, avoiding the catastrophic cancellation of the naive E[x²]−E[x]² formula',
+        'One-pass stable mean+variance',
         'Uses integer math',
         'Requires FP64',
       ],
@@ -58,7 +58,7 @@ export default defineQuestions(
       q: 'The "outlier" problem in LLM activation quantization is that…',
       o: [
         'Weights are too small',
-        'A few activation channels have very large magnitudes; a single per-tensor scale then wastes precision on the many normal values, hurting INT8 accuracy',
+        'Outlier channels force coarse scale; hurts INT8',
         'Activations are integers',
         'There are no outliers',
       ],
@@ -77,7 +77,7 @@ export default defineQuestions(
       q: 'SmoothQuant improves activation quantization by…',
       o: [
         'Removing outliers',
-        'Migrating quantization difficulty from activations to weights via a per-channel scaling (X·diag(s)⁻¹ and W·diag(s)), so both become easier to quantize',
+        'Per-channel scale shifts range burden to weights',
         'Using FP64',
         'Skipping quantization',
       ],
@@ -96,7 +96,7 @@ export default defineQuestions(
       q: 'AWQ (Activation-aware Weight Quantization) decides which weights to protect by…',
       o: [
         'Random selection',
-        'Using activation magnitudes to identify salient weight channels (those multiplying large activations) and scaling them to preserve their precision during low-bit weight quantization',
+        'Scale salient channels for 4-bit accuracy',
         'Quantizing activations',
         'Pruning experts',
       ],
@@ -115,7 +115,7 @@ export default defineQuestions(
       q: 'GPTQ quantizes weights to low bits (e.g. INT4) by…',
       o: [
         'Simple rounding',
-        'Layer-wise, using second-order (Hessian) information to quantize columns one at a time while compensating remaining weights to minimize output error',
+        'Layer-wise Hessian-guided; compensate remaining',
         'Retraining from scratch',
         'Pruning 50% of weights',
       ],
@@ -134,7 +134,7 @@ export default defineQuestions(
       q: 'For computing log(1+x) when x is tiny, log1p(x) is preferred over log(1+x) because…',
       o: [
         'It is faster',
-        '1+x loses precision (x is swamped) before the log; log1p computes it accurately for small x',
+        'x swamped in 1+x; log1p is accurate for small x',
         'It avoids the log',
         'It uses integers',
       ],
@@ -153,7 +153,7 @@ export default defineQuestions(
       q: 'A numerically stable softplus, log(1+eˣ), is computed for large x as…',
       o: [
         'log(1+exp(x)) directly',
-        'max(x,0) + log1p(exp(-|x|)), which avoids overflow of exp(x) for large positive x',
+        'max(x,0) + log1p(exp(-|x|)) — no exp overflow',
         'exp(x)',
         'x²',
       ],
@@ -172,7 +172,7 @@ export default defineQuestions(
       q: 'A numerically stable sigmoid for large negative x uses…',
       o: [
         '1/(1+exp(-x)) always',
-        'exp(x)/(1+exp(x)) for x<0 (and 1/(1+exp(-x)) for x≥0) so the exponent argument stays ≤ 0, avoiding overflow',
+        'Branch on sign so exp arg ≤ 0; no overflow',
         'tanh(x)',
         'x/(1+|x|)',
       ],
@@ -191,7 +191,7 @@ export default defineQuestions(
       q: 'Group-wise (block) weight quantization (e.g. GPTQ/AWQ group_size=128) means…',
       o: [
         'One scale for the whole tensor',
-        'A separate scale (and zero-point) per contiguous group of 128 weights, capturing local range better than per-tensor at a small metadata cost',
+        'Scale per 128-weight group; local range',
         'No scaling',
         'Per-element scales',
       ],
@@ -210,7 +210,7 @@ export default defineQuestions(
       q: 'QLoRA’s "double quantization" further compresses by…',
       o: [
         'Quantizing the activations twice',
-        'Quantizing the quantization constants (the per-block scales) themselves, saving additional memory on top of NF4 weights',
+        'Quantizing the per-block scale constants themselves',
         'Using FP64 scales',
         'Pruning the weights',
       ],
@@ -229,7 +229,7 @@ export default defineQuestions(
       q: 'Per-token (dynamic) activation quantization computes the scale…',
       o: [
         'Once for the whole model',
-        'Per token at runtime from that token’s activation statistics, adapting to each token’s range (vs a fixed per-tensor scale)',
+        'From that token’s activations at runtime',
         'From the weights',
         'Never',
       ],
@@ -248,7 +248,7 @@ export default defineQuestions(
       q: 'Error in a sum of n floating-point numbers grows, in the worst case, proportionally to…',
       o: [
         'log(n)',
-        'n (roughly n·ε for sequential summation), while pairwise/tree summation reduces it to ~log(n)·ε',
+        'n·ε sequential; log(n)·ε for pairwise/tree',
         '1/n',
         'It does not grow',
       ],
@@ -267,7 +267,7 @@ export default defineQuestions(
       q: 'Comparing two floats for equality with == is fragile; a better approach is…',
       o: [
         'Always use ==',
-        'Compare within a tolerance (|a−b| ≤ ε scaled to magnitude, i.e. relative/ULP comparison), since rounding makes exact equality unreliable',
+        'Use a tolerance (|a−b| ≤ ε scaled to magnitude), not ==',
         'Cast to int',
         'Use only FP64',
       ],
@@ -286,7 +286,7 @@ export default defineQuestions(
       q: '"Double rounding" can cause subtle errors when…',
       o: [
         'Rounding once',
-        'A value is rounded to an intermediate precision and then to a final precision, occasionally giving a different result than rounding directly to the final precision',
+        'Round twice: intermediate+final ≠ direct',
         'Using integers',
         'Using FP64 only',
       ],
@@ -305,7 +305,7 @@ export default defineQuestions(
       q: 'Why can the SAME model give slightly different outputs on two different GPU architectures?',
       o: [
         'The weights change',
-        'Different kernels/reduction orders, tensor-core vs CUDA-core paths, and TF32/precision defaults change FP rounding, so results differ at the ULP level despite identical math',
+        'Different kernels/TF32 change rounding; ULP diffs',
         'Different ISAs corrupt data',
         'It should be bit-identical always',
       ],
@@ -324,7 +324,7 @@ export default defineQuestions(
       q: 'Relative error vs absolute error: relative error is the right measure when…',
       o: [
         'Values are near zero',
-        'Values span many magnitudes — relative error (|approx−exact|/|exact|) is scale-invariant, unlike absolute error which is dominated by large values',
+        'Values span magnitudes; relative error is scale-invariant',
         'Using integers',
         'Always; absolute is never useful',
       ],
@@ -343,7 +343,7 @@ export default defineQuestions(
       q: 'TF32’s internal representation uses how many total bits for the multiply inputs (sign+exponent+mantissa)?',
       o: [
         '32 bits',
-        '19 bits (1 sign + 8 exponent + 10 mantissa)',
+        '19 bits (1+8+10)',
         '16 bits',
         '8 bits',
       ],
@@ -358,7 +358,7 @@ export default defineQuestions(
       q: 'Hardware stochastic rounding support (e.g. in some BF16/FP8 paths) is valuable for…',
       o: [
         'Faster matmul',
-        'Accumulating many small updates in low precision without bias, since rounding direction is randomized proportional to the residual — preserving small increments in expectation',
+        'Randomized rounding: updates accumulate without bias',
         'Avoiding tensor cores',
         'Reducing memory',
       ],
@@ -377,7 +377,7 @@ export default defineQuestions(
       q: 'FP8 E5M2 is typically used for GRADIENTS rather than weights/activations because…',
       o: [
         'It has more mantissa bits',
-        'Its wider exponent range (5 bits) better covers the large dynamic range of gradients, at the cost of precision (2 mantissa bits)',
+        'E5M2: 5-bit exponent covers gradient range',
         'Gradients are integers',
         'It is faster',
       ],
@@ -396,7 +396,7 @@ export default defineQuestions(
       q: 'Why does INT8 quantization usually keep a higher-precision (FP32/FP16) accumulator for the matmul?',
       o: [
         'INT8 cannot be multiplied',
-        'Summing many INT8 products would overflow INT8/INT16 and lose information; accumulating in INT32/FP32 preserves the result before requantizing',
+        'Sum of INT8 products overflows INT8; INT32 needed',
         'For speed',
         'To use tensor cores',
       ],
@@ -415,7 +415,7 @@ export default defineQuestions(
       q: 'Uniform quantization with scale s introduces a worst-case rounding error of about…',
       o: [
         's',
-        's/2 (half a quantization step) per element, the fundamental quantization error',
+        's/2 (half a step)',
         '2s',
         '0',
       ],
@@ -430,7 +430,7 @@ export default defineQuestions(
       q: 'When training in BF16, the OPTIMIZER states (Adam m, v) and master weights are usually kept in…',
       o: [
         'BF16',
-        'FP32, to accurately accumulate small updates and second moments that BF16’s 8-bit mantissa would lose',
+        'FP32 preserves tiny updates; BF16 mantissa would lose them',
         'FP8',
         'INT8',
       ],
@@ -449,7 +449,7 @@ export default defineQuestions(
       q: 'Why does accumulating attention scores/softmax in FP32 matter even on FP16/BF16 tensor-core hardware?',
       o: [
         'It is required by the API',
-        'The softmax sum and the score·value accumulation involve many terms; FP32 accumulation preserves accuracy and dynamic range that 16-bit accumulation would degrade (especially for long sequences)',
+        'Many-term sums degrade in 16-bit; FP32 needed',
         'FP16 has no exp',
         'It is faster',
       ],
@@ -468,7 +468,7 @@ export default defineQuestions(
       q: 'The bias (offset) in the exponent field of IEEE floats exists so that…',
       o: [
         'It speeds up math',
-        'Exponents can represent both negative and positive powers using an unsigned stored value (e.g. bias 127 for FP32), simplifying comparisons',
+        'Bias 127: unsigned field covers neg and pos powers',
         'It stores the sign',
         'It enables denormals only',
       ],
@@ -487,7 +487,7 @@ export default defineQuestions(
       q: 'Why is mixed-precision INFERENCE generally easier than mixed-precision TRAINING?',
       o: [
         'Inference uses FP64',
-        'Inference has no gradients/optimizer updates to preserve (no small-update accumulation, no loss scaling), so lower precision rarely breaks the forward pass that training’s backward would',
+        'Forward-only; no grads/scaling to worry about',
         'Training has no matmuls',
         'They are equally hard',
       ],
@@ -506,7 +506,7 @@ export default defineQuestions(
       q: 'NVFP4 / MXFP4 on Blackwell make 4-bit usable by combining…',
       o: [
         'FP4 with no scaling',
-        'An FP4 (E2M1) element format WITH a shared micro-scale per small block (e.g. 16–32 elements), so local dynamic range is preserved despite only ~16 representable values per element',
+        'FP4 (E2M1) + per-block micro-scale; local range',
         'INT4 with per-tensor scale',
         'FP8 with FP4 fallback',
       ],

@@ -8,7 +8,7 @@ export default defineQuestions('architecture', [
     q: 'What are Tensor Cores designed to accelerate?',
     o: [
       'Atomic operations',
-      'Small matrix multiply-accumulate operations (D = A·B + C) at high throughput',
+      'Matrix multiply-accumulate (D = A·B + C)',
       'Memory copies',
       'Branch prediction',
     ],
@@ -31,7 +31,7 @@ export default defineQuestions('architecture', [
     q: 'What kind of memory is HBM (used on data-center GPUs like A100/H100)?',
     o: [
       'On-chip SRAM',
-      'High-Bandwidth Memory — stacked DRAM offering very high bandwidth via a wide interface',
+      'High-Bandwidth Memory (stacked DRAM)',
       'Host system memory',
       'A type of cache',
     ],
@@ -45,7 +45,7 @@ export default defineQuestions('architecture', [
     q: 'What is the role of the L2 cache on an NVIDIA GPU?',
     o: [
       'Per-thread private storage',
-      'A device-wide cache shared by all SMs that backs global-memory accesses and L1 misses',
+      'A device-wide cache shared by all SMs',
       'Part of the register file',
       'Only used for constant memory',
     ],
@@ -59,7 +59,7 @@ export default defineQuestions('architecture', [
     q: 'TF32 (TensorFloat-32), introduced on Ampere, has which format characteristic?',
     o: [
       'Same as FP32 (8-bit exponent, 23-bit mantissa)',
-      '8-bit exponent (like FP32 range) but ~10-bit mantissa (like FP16 precision), used by tensor cores for FP32 math',
+      'FP32 exponent, ~10-bit mantissa',
       '5-bit exponent, 10-bit mantissa',
       'It is an 8-bit integer format',
     ],
@@ -73,7 +73,7 @@ export default defineQuestions('architecture', [
     q: 'A "warpgroup" on Hopper refers to…',
     o: [
       'A single warp of 32 threads',
-      'Four contiguous warps (128 threads) that cooperate to issue wgmma tensor-core instructions',
+      'Four warps (128 threads) for wgmma',
       'All warps in a block',
       'A group of GPUs',
     ],
@@ -87,7 +87,7 @@ export default defineQuestions('architecture', [
     q: 'The "async copy" path (cp.async / memcpy_async) was introduced on which architecture and why is it significant?',
     o: [
       'Pascal — to enable unified memory',
-      'Ampere — it copies global→shared without occupying registers, enabling deeper compute/transfer overlap',
+      'Ampere — global→shared, bypassing registers',
       'Volta — to add tensor cores',
       'Turing — for ray tracing',
     ],
@@ -101,7 +101,7 @@ export default defineQuestions('architecture', [
     q: 'What does the SFU (Special Function Unit) in an SM handle?',
     o: [
       'Integer addition',
-      'Transcendental/approximate functions like sin, cos, exp, rsqrt, reciprocal',
+      'Transcendentals (sin, cos, exp, rsqrt)',
       'Memory loads',
       'Atomic operations',
     ],
@@ -113,7 +113,7 @@ export default defineQuestions('architecture', [
   {
     d: 5,
     q: 'Blackwell (sm_100) and the GB200 notably add support for which low-precision format for tensor cores?',
-    o: ['FP64', 'FP4 (and microscaling MXFP formats)', 'INT16', 'TF32'],
+    o: ['FP64', 'FP4 (and MX formats)', 'INT16', 'TF32'],
     a: 1,
     e: 'Blackwell’s second-generation Transformer Engine adds FP4/FP6 and microscaling (MX) formats, roughly doubling effective throughput over Hopper’s FP8 for inference, with per-block scaling to preserve accuracy at very low bit-widths.',
     ref: 'NVIDIA Blackwell Architecture Whitepaper',
@@ -124,7 +124,7 @@ export default defineQuestions('architecture', [
     q: 'The Hopper "Transformer Engine" primarily provides…',
     o: [
       'A dedicated attention ASIC',
-      'Hardware + software that dynamically uses FP8 (with per-tensor scaling) for transformer layers while maintaining accuracy',
+      'Dynamic FP8 with per-tensor scaling',
       'A new interconnect',
       'A larger register file',
     ],
@@ -138,7 +138,7 @@ export default defineQuestions('architecture', [
     q: 'NVLink, compared to PCIe, provides…',
     o: [
       'Lower bandwidth but lower cost',
-      'Much higher GPU-to-GPU bandwidth and a coherent interconnect for fast multi-GPU communication',
+      'Much higher GPU-to-GPU bandwidth',
       'A replacement for HBM',
       'Connection only to the CPU',
     ],
@@ -152,7 +152,7 @@ export default defineQuestions('architecture', [
     q: 'On modern GPUs, how do FP64 (double) throughput rates typically compare to FP32 on consumer vs. data-center GPUs?',
     o: [
       'Always equal',
-      'Data-center GPUs (e.g. A100/H100) have a much higher FP64 ratio (e.g. 1:2) while consumer GPUs cripple FP64 (e.g. 1:32 or worse)',
+      'Data-center ~1:2, consumer ~1:32 or worse',
       'FP64 is always faster',
       'FP64 is unsupported on all GPUs',
     ],
@@ -166,7 +166,7 @@ export default defineQuestions('architecture', [
     q: 'The L2 "persisting access" / access policy window (Ampere+) lets you…',
     o: [
       'Disable the L2 cache',
-      'Mark a region of global memory to preferentially persist in L2, improving hit rate for frequently reused data',
+      'Keep a hot region resident in L2',
       'Increase shared memory size',
       'Pin host memory',
     ],
@@ -180,7 +180,7 @@ export default defineQuestions('architecture', [
     q: 'Why does TMA (Tensor Memory Accelerator) reduce register pressure compared to thread-driven cp.async?',
     o: [
       'It compresses data into registers',
-      'A single thread issues a descriptor-based bulk copy of a whole tile, so threads no longer compute per-element addresses or hold them in registers',
+      'One thread issues a descriptor-based tile copy',
       'It uses constant memory for addresses',
       'It eliminates shared memory',
     ],
@@ -194,7 +194,7 @@ export default defineQuestions('architecture', [
     q: 'What is a GPC (Graphics/GPU Processing Cluster)?',
     o: [
       'A single CUDA core',
-      'A cluster grouping several SMs (and shared resources) within the GPU; relevant to Hopper thread-block clusters',
+      'A cluster of several SMs in the GPU',
       'The global memory controller',
       'A group of GPUs in a node',
     ],
@@ -208,7 +208,7 @@ export default defineQuestions('architecture', [
     q: 'CUDA cores vs. Tensor cores: which statement is correct?',
     o: [
       'They are the same units',
-      'CUDA cores do general scalar/vector FP and integer ops; Tensor cores do dense matrix-multiply-accumulate at much higher throughput for supported types',
+      'CUDA cores: general ops; Tensor cores: matmul',
       'Tensor cores handle all integer math',
       'CUDA cores are only on consumer GPUs',
     ],
@@ -222,7 +222,7 @@ export default defineQuestions('architecture', [
     q: 'Why are warp-level matrix instructions (WMMA/mma) needed to use Tensor Cores from CUDA C++?',
     o: [
       'Tensor cores are accessed per-thread like normal ALUs',
-      'A tensor-core MMA is a collective warp operation: the warp cooperatively holds fragments of the matrices, so the API works on per-warp "fragments," not scalars',
+      'An MMA is warp-collective, using per-warp fragments',
       'They are only usable from cuBLAS',
       'They require atomics',
     ],

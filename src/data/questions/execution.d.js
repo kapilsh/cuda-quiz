@@ -10,7 +10,7 @@ export default defineQuestions(
       q: 'A "Not Selected" warp stall in Nsight Compute means…',
       o: [
         'The warp is waiting on memory',
-        'The warp WAS eligible to issue but the scheduler chose another eligible warp that cycle — a sign of plenty of available parallelism (often benign)',
+        'Eligible, but another warp was issued instead',
         'The warp diverged',
         'The warp hit a barrier',
       ],
@@ -29,7 +29,7 @@ export default defineQuestions(
       q: 'A "Short Scoreboard" stall (vs "Long Scoreboard") indicates the warp is waiting on…',
       o: [
         'A global memory load',
-        'A shorter-latency dependency such as a shared-memory access or a fixed-latency result — versus the long scoreboard tracking global/local (DRAM-latency) loads',
+        'A short-latency dep (e.g. shared memory)',
         'A barrier',
         'The host',
       ],
@@ -48,7 +48,7 @@ export default defineQuestions(
       q: 'A "Math Pipe Throttle" stall means…',
       o: [
         'Memory is the bottleneck',
-        'The arithmetic pipeline is saturated — warps wait because the math units (e.g. FMA/SFU/tensor) can’t accept new ops fast enough',
+        'The math pipe is saturated',
         'A barrier is blocking',
         'Registers spilled',
       ],
@@ -77,7 +77,7 @@ export default defineQuestions(
       q: 'Instruction throughput differs by type: relative to a full-rate FMA, a transcendental (e.g. __sinf via SFU) is…',
       o: [
         'Faster',
-        'Lower throughput (SFUs process fewer per cycle than the FMA units), so transcendental-heavy kernels can become SFU-bound',
+        'Lower throughput (SFU-bound)',
         'The same',
         'Free',
       ],
@@ -96,7 +96,7 @@ export default defineQuestions(
       q: 'elect.sync (or cg::invoke_one) is used to…',
       o: [
         'Synchronize the grid',
-        'Elect a single leader lane among the active threads of a warp (e.g. to perform one atomic/store on behalf of the warp) efficiently',
+        'Elect one leader lane among active threads',
         'Reduce across the block',
         'Launch a child kernel',
       ],
@@ -115,7 +115,7 @@ export default defineQuestions(
       q: 'The maximum resident blocks per SM (a hardware cap, e.g. 16/24/32 depending on architecture) becomes the binding occupancy limit when…',
       o: [
         'Blocks are very large',
-        'Blocks are small (few warps each), so you hit the block-count cap before filling the thread/warp budget — wasting potential occupancy',
+        'Blocks are small, hitting the block-count cap',
         'Registers are high',
         'Shared memory is large',
       ],
@@ -134,7 +134,7 @@ export default defineQuestions(
       q: 'Thread-block "swizzling" (rasterization order) primarily improves…',
       o: [
         'Register usage',
-        'L2 cache locality — by mapping consecutive blocks to spatially-clustered output tiles so concurrently-running blocks share operands resident in L2',
+        'L2 cache locality across concurrent blocks',
         'Divergence',
         'Shared-memory banks',
       ],
@@ -163,7 +163,7 @@ export default defineQuestions(
       q: 'Why does the SM keep issuing from many warps round-robin (roughly) rather than finishing one warp at a time?',
       o: [
         'To save power',
-        'To hide latency — interleaving warps means when one stalls on a dependency, others issue, keeping the pipelines busy',
+        'To hide latency by interleaving warps',
         'Because warps must finish together',
         'To reduce registers',
       ],
@@ -182,7 +182,7 @@ export default defineQuestions(
       q: 'Packed FP16 (half2) elementwise math reaches up to ~2× the FP32 FMA rate on CUDA cores because…',
       o: [
         'It uses tensor cores',
-        'Each instruction operates on two FP16 values packed in a 32-bit register (SIMD-within-register), doubling element throughput',
+        'Two FP16 packed per 32-bit register',
         'FP16 is more accurate',
         'It avoids registers',
       ],
@@ -201,7 +201,7 @@ export default defineQuestions(
       q: 'A tensor-core GEMM shows low Tensor pipe utilization despite using mma. A common cause is…',
       o: [
         'Too many registers',
-        'The MMAs are starved — not enough operand supply (shared-memory loads/ldmatrix or async copies) to keep issuing mma every few cycles, leaving the tensor pipe idle between ops',
+        'MMAs starved of operand supply',
         'High occupancy',
         'A divergent branch',
       ],
@@ -220,7 +220,7 @@ export default defineQuestions(
       q: 'An "IMC Miss" / constant-cache miss stall indicates warps waiting on…',
       o: [
         'Global memory',
-        'A constant-memory (or instruction/immediate constant) cache miss — the constant cache had to fetch from a lower level',
+        'A constant-cache miss',
         'A barrier',
         'A tensor-core op',
       ],
@@ -239,7 +239,7 @@ export default defineQuestions(
       q: 'Why can a kernel with abundant warps still show low IPC due to "Long Scoreboard" stalls?',
       o: [
         'Too few registers',
-        'If most warps are simultaneously waiting on global-memory loads (insufficient memory-level parallelism or bandwidth saturation), there are few eligible warps to issue despite high occupancy',
+        'Most warps wait on global-memory loads',
         'A barrier deadlock',
         'Tensor-core saturation',
       ],
@@ -258,7 +258,7 @@ export default defineQuestions(
       q: 'Concurrent execution of TWO different kernels on the SAME SM is possible when…',
       o: [
         'Never — one kernel per SM',
-        'They are on different streams and one kernel does not consume all the SM’s resources, leaving room for the other’s blocks to co-reside',
+        'Different streams and spare SM resources',
         'They share a block',
         'They use the default stream',
       ],
@@ -277,7 +277,7 @@ export default defineQuestions(
       q: 'GPU boost clocks affect cycle-based measurements (clock64) because…',
       o: [
         'The cycle counter stops',
-        'The clock frequency varies with power/thermal state, so a fixed number of cycles corresponds to different wall-time — lock clocks for stable cycle↔time conversion',
+        'Clock frequency varies with power/thermal',
         'Cycles are random',
         'It runs on the host',
       ],
@@ -296,7 +296,7 @@ export default defineQuestions(
       q: 'In a warp-specialized Hopper kernel, the producer warpgroup uses TMA + mbarrier while the consumer warpgroup runs wgmma. The benefit over a non-specialized kernel is…',
       o: [
         'Lower register usage only',
-        'Decoupling data movement from compute so loads (TMA) and math (wgmma) overlap continuously across stages, keeping tensor cores fed without each warp doing both',
+        'TMA loads and wgmma math overlap continuously',
         'Avoiding shared memory',
         'Higher occupancy',
       ],
@@ -325,7 +325,7 @@ export default defineQuestions(
       q: 'Why does excessive instruction count (e.g. from heavy unrolling) sometimes reduce performance via the instruction cache?',
       o: [
         'I-cache is infinite',
-        'A very large code footprint can overflow the SM’s instruction cache, causing instruction-fetch stalls that offset the ILP gains from unrolling',
+        'Large code overflows the instruction cache',
         'It increases occupancy',
         'It improves coalescing',
       ],
@@ -344,7 +344,7 @@ export default defineQuestions(
       q: 'cooperative_groups::invoke_one(group, fn) (or elect-based patterns) is a clean way to…',
       o: [
         'Run fn on all lanes',
-        'Have exactly one thread of the group execute fn (e.g. a single atomic/initialization) while the others skip it, without manual lane-id checks',
+        'Have one thread run fn, others skip',
         'Synchronize the grid',
         'Reduce values',
       ],
@@ -363,7 +363,7 @@ export default defineQuestions(
       q: 'For latency-bound kernels (low occupancy, neither bandwidth nor compute saturated), increasing ILP helps because…',
       o: [
         'It reduces memory',
-        'More independent instructions per thread keep the pipelines busy during dependency latencies, hiding stalls even without more warps',
+        'More independent work per thread hides stalls',
         'It increases divergence',
         'It uses tensor cores',
       ],
@@ -382,7 +382,7 @@ export default defineQuestions(
       q: 'A cooperative-launch grid is sized to occupancyMaxActiveBlocksPerSM × numSMs so that…',
       o: [
         'It maximizes the grid',
-        'Every block is simultaneously resident (required for grid.sync()); launching more blocks than fit would prevent all blocks from reaching the grid barrier',
+        'Every block stays resident for grid.sync()',
         'It minimizes registers',
         'It enables tensor cores',
       ],
@@ -401,7 +401,7 @@ export default defineQuestions(
       q: 'Two warps in the same block accessing different shared-memory banks in the same cycle…',
       o: [
         'Always conflict',
-        'Do not conflict with each other — bank conflicts are evaluated per warp (among a single warp’s 32 lanes), not across warps',
+        'Do not conflict; banks are per-warp',
         'Deadlock',
         'Serialize',
       ],
@@ -420,7 +420,7 @@ export default defineQuestions(
       q: 'The "achieved occupancy" being much lower than "theoretical" for a short kernel with few blocks is explained by…',
       o: [
         'Register spilling',
-        'The ramp-up/drain (tail effect): the kernel runs too briefly and with too few blocks for the SMs to ever fill, so average active warps stays low',
+        'Tail effect: too short to fill the SMs',
         'Bank conflicts',
         'Divergence',
       ],
@@ -439,7 +439,7 @@ export default defineQuestions(
       q: 'redux.sync (hardware warp reduction, Ampere+) accelerates…',
       o: [
         'Floating-point reductions only',
-        'Warp-wide INTEGER reductions (add/min/max/and/or/xor) in a single instruction, faster than a shuffle tree for supported integer ops',
+        'Warp-wide integer reductions in one instruction',
         'Global reductions',
         'Matrix multiply',
       ],
@@ -458,7 +458,7 @@ export default defineQuestions(
       q: 'Why does a kernel sometimes get FASTER when you REDUCE its occupancy by using more shared memory per block (bigger tiles)?',
       o: [
         'Lower occupancy is always faster',
-        'Bigger tiles increase data reuse (higher arithmetic intensity / fewer global loads); the reuse gain can outweigh the latency-hiding lost from lower occupancy',
+        'Bigger tiles boost reuse, outweighing lost occupancy',
         'It reduces registers',
         'It enables tensor cores',
       ],
@@ -477,7 +477,7 @@ export default defineQuestions(
       q: 'Across one kernel, if Nsight shows ~6 eligible warps per scheduler on average, you can infer…',
       o: [
         'The kernel is starved',
-        'There is ample parallelism for the scheduler to hide latency (plenty of eligible warps) — occupancy is likely sufficient, so look elsewhere (memory/compute) for the limiter',
+        'Ample parallelism; occupancy is sufficient',
         'Occupancy is too low',
         'It is latency-bound',
       ],
@@ -496,7 +496,7 @@ export default defineQuestions(
       q: 'Dynamic parallelism adds overhead per child launch, so it is worthwhile mainly when…',
       o: [
         'Always',
-        'The recursion/adaptivity it enables avoids far more host round-trips or wasted work than the launch cost — e.g. irregular, data-dependent refinement that’s awkward to flatten',
+        'Irregular recursion saves more than it costs',
         'The child kernel is tiny',
         'There is one block',
       ],
@@ -515,7 +515,7 @@ export default defineQuestions(
       q: 'On Hopper, a thread block cluster lets blocks cooperate via DSMEM and cluster.sync(). The scheduling guarantee that makes this safe is…',
       o: [
         'Blocks run in order',
-        'All blocks of a cluster are co-scheduled (simultaneously resident) on SMs of one GPC, so cluster-wide barriers and cross-block shared-memory access can’t deadlock',
+        'Cluster blocks are co-scheduled on one GPC',
         'Blocks share registers',
         'Blocks run on the host',
       ],

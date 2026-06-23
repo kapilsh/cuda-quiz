@@ -10,7 +10,7 @@ export default defineQuestions(
       q: 'cuFFT provides…',
       o: [
         'Sparse linear algebra',
-        'GPU-accelerated Fast Fourier Transforms (1D/2D/3D, real and complex)',
+        'GPU FFTs (1D/2D/3D, real and complex)',
         'Random number generation',
         'Dense matrix multiply',
       ],
@@ -25,7 +25,7 @@ export default defineQuestions(
       q: 'cuRAND is used for…',
       o: [
         'Sorting',
-        'Generating pseudo- and quasi-random numbers on the GPU (host API and device-side generators)',
+        'Pseudo/quasi-random numbers on the GPU',
         'Matrix factorization',
         'Reductions',
       ],
@@ -40,7 +40,7 @@ export default defineQuestions(
       q: 'cuSPARSE targets which problem domain?',
       o: [
         'Dense BLAS',
-        'Sparse linear algebra — sparse matrix formats (CSR, COO, etc.) and operations like SpMV and SpMM',
+        'Sparse BLAS: SpMV, SpMM over CSR/COO formats',
         'FFTs',
         'Neural network layers',
       ],
@@ -55,7 +55,7 @@ export default defineQuestions(
       q: 'cuSOLVER provides…',
       o: [
         'Collective communication',
-        'Dense and sparse direct solvers and decompositions (LU, QR, Cholesky, SVD, eigensolvers)',
+        'Dense/sparse solvers: LU, QR, Cholesky, SVD',
         'FFTs',
         'Random numbers',
       ],
@@ -70,7 +70,7 @@ export default defineQuestions(
       q: 'A cuBLAS handle (cublasHandle_t) is associated with a stream via cublasSetStream so that…',
       o: [
         'It runs on the host',
-        'cuBLAS calls execute on that stream, allowing overlap and correct ordering with your other GPU work',
+        'Runs on that stream; enables ordering/overlap',
         'It uses more memory',
         'It becomes thread-safe automatically',
       ],
@@ -89,7 +89,7 @@ export default defineQuestions(
       q: 'cublasSetMathMode(handle, CUBLAS_TF32_TENSOR_OP_MATH) (or the default on Ampere+) causes FP32 GEMMs to…',
       o: [
         'Run in full FP32 on CUDA cores',
-        'Use TF32 tensor cores (reduced mantissa) for speed, accumulating in FP32',
+        'TF32 tensor cores; FP32 accumulation',
         'Run in FP64',
         'Fail',
       ],
@@ -108,7 +108,7 @@ export default defineQuestions(
       q: 'cuDNN exposes multiple convolution algorithms (GEMM-based, Winograd, FFT, implicit). Why provide several?',
       o: [
         'For redundancy',
-        'The fastest algorithm depends on the layer’s shapes, data type, and hardware — so you pick (or auto-tune) per configuration',
+        'Speed varies by shape, dtype, and GPU; auto-tune',
         'Older GPUs need different APIs',
         'To use more memory',
       ],
@@ -127,7 +127,7 @@ export default defineQuestions(
       q: 'Thrust algorithms select host vs. device execution based on…',
       o: [
         'The function name',
-        'The iterator types (e.g. device_vector iterators) or an explicit execution policy like thrust::device',
+        'Iterator type or explicit policy',
         'The CUDA version',
         'The GPU model',
       ],
@@ -146,7 +146,7 @@ export default defineQuestions(
       q: 'Thrust "fancy" iterators (counting, constant, transform, zip) are useful because they…',
       o: [
         'Allocate extra memory',
-        'Generate or transform values on the fly, avoiding materializing temporary arrays (kernel fusion at the iterator level)',
+        'Generate/transform on the fly; no temp arrays',
         'Run on the host only',
         'Are required for sorting',
       ],
@@ -165,7 +165,7 @@ export default defineQuestions(
       q: 'CUB device-wide primitives require the caller to provide temporary storage in a two-call pattern. Why?',
       o: [
         'For thread safety',
-        'The first call returns the required temp-storage size; you allocate it and call again — giving you control over allocation (and stream reuse)',
+        'First call queries size; you allocate then run',
         'To validate inputs',
         'Because CUB cannot allocate',
       ],
@@ -184,7 +184,7 @@ export default defineQuestions(
       q: 'CUB BlockLoad/BlockStore offer "blocked" vs "striped" thread arrangements. The striped arrangement is preferred for global access because…',
       o: [
         'It uses less shared memory',
-        'Striped (thread i reads elements i, i+blockDim, …) yields coalesced global accesses, while blocked is better for per-thread sequential processing',
+        'Striped gives coalesced global access',
         'It avoids registers',
         'It is always faster',
       ],
@@ -203,7 +203,7 @@ export default defineQuestions(
       q: 'In CuTe, an "MMA atom" abstracts…',
       o: [
         'A single scalar multiply',
-        'One hardware matrix-multiply instruction (e.g. a specific mma/wgmma) plus the thread/value layouts of its operand and accumulator fragments',
+        'One HW MMA instruction with fragment layouts',
         'A memory allocation',
         'A whole GEMM kernel',
       ],
@@ -222,7 +222,7 @@ export default defineQuestions(
       q: 'CuTe’s local_tile and local_partition are used to…',
       o: [
         'Allocate global memory',
-        'Slice a tensor into the tile owned by a block and then the per-thread sub-partition, using layout algebra instead of manual index math',
+        'Carve block tile then per-thread slice',
         'Launch kernels',
         'Synchronize warps',
       ],
@@ -241,7 +241,7 @@ export default defineQuestions(
       q: 'cuTENSOR is a library for…',
       o: [
         'Tensor-core scheduling only',
-        'High-performance tensor contractions, reductions, and elementwise operations (generalized einsum) on multidimensional arrays',
+        'Tensor contractions and elementwise ops (einsum)',
         'Distributed training',
         'Sparse solves',
       ],
@@ -256,7 +256,7 @@ export default defineQuestions(
       q: 'cuBLASDx and cuFFTDx ("device extensions") let you…',
       o: [
         'Call cuBLAS/cuFFT from the host faster',
-        'Embed BLAS/FFT computations INSIDE your own kernels (device-side), enabling fusion with surrounding work',
+        'Embed BLAS/FFT inside your kernels for fusion',
         'Run on the CPU',
         'Replace the runtime',
       ],
@@ -275,7 +275,7 @@ export default defineQuestions(
       q: 'CCCL refers to…',
       o: [
         'A CUDA compiler flag',
-        'The CUDA C++ Core Libraries — the unified home of Thrust, CUB, and libcu++',
+        'Unified home of Thrust, CUB, and libcu++',
         'A profiling tool',
         'A communication library',
       ],
@@ -294,7 +294,7 @@ export default defineQuestions(
       q: 'libcu++ (cuda::std) lets you use, on the device…',
       o: [
         'Only C code',
-        'Heterogeneous standard-library facilities like cuda::std::atomic, tuple, array, and complex that work in host and device code',
+        'cuda::std atomic, tuple, array for host and device',
         'Python objects',
         'The full host STL including iostream',
       ],
@@ -313,7 +313,7 @@ export default defineQuestions(
       q: 'CUTLASS 3.x "CollectiveBuilder" / kernel schedules (e.g. KernelTmaWarpSpecializedPingpong) exist to…',
       o: [
         'Build the host driver',
-        'Assemble a tuned mainloop/epilogue for the target architecture (TMA, warp specialization, pipeline depth) without hand-writing the schedule',
+        'Declarative arch-tuned schedule selection',
         'Compile PTX',
         'Allocate memory',
       ],
@@ -332,7 +332,7 @@ export default defineQuestions(
       q: 'A CUTLASS "epilogue visitor tree" (EVT) enables…',
       o: [
         'Visiting every GPU',
-        'Composing arbitrary fused elementwise/reduction operations on the GEMM output (bias, activation, scaling, residual add) as a tree, fused into the epilogue',
+        'Arbitrary fused post-GEMM ops as a tree',
         'Sorting the output',
         'Compressing weights',
       ],
@@ -351,7 +351,7 @@ export default defineQuestions(
       q: 'Why might you set a cuBLAS workspace (cublasSetWorkspace) for large GEMMs?',
       o: [
         'To store the result',
-        'Some tuned kernels (e.g. split-K, certain tensor-core paths) need scratch memory; providing a workspace lets cuBLAS choose them',
+        'Scratch space enables split-K kernels',
         'To enable column-major',
         'To select the GPU',
       ],
@@ -380,7 +380,7 @@ export default defineQuestions(
       q: 'For reproducible results, cuBLAS/cuDNN can be put in a deterministic mode, which typically…',
       o: [
         'Has no performance cost',
-        'May select slower algorithms that avoid atomic accumulation / nondeterministic reduction order',
+        'Slower fixed-order algorithms; avoids nondeterminism',
         'Increases precision to FP64',
         'Disables tensor cores entirely',
       ],
@@ -398,7 +398,7 @@ export default defineQuestions(
       d: 3,
       q: 'CUB DeviceSegmentedReduce differs from DeviceReduce in that it…',
       o: [
-        'Runs on segments of the input defined by offset arrays, reducing each segment independently in one launch',
+        'Reduces each segment by offsets in one launch',
         'Is slower for all inputs',
         'Only works on the host',
         'Reduces across GPUs',
@@ -418,7 +418,7 @@ export default defineQuestions(
       q: 'In CuTe, why is a layout’s ability to "compose" (layout ∘ layout) powerful for GEMM authors?',
       o: [
         'It compresses data',
-        'Composition expresses tiling, partitioning, and swizzling as algebra, so transforming a global tensor into per-thread register/shared views is correct-by-construction',
+        'Tile/partition/swizzle via algebra',
         'It picks the GPU',
         'It schedules streams',
       ],
@@ -437,7 +437,7 @@ export default defineQuestions(
       q: 'Which library would you use to generate per-thread random numbers INSIDE a kernel (e.g. for dropout)?',
       o: [
         'cuBLAS',
-        'cuRAND device API (e.g. curand_init + curand_uniform with a Philox generator)',
+        'cuRAND device Philox generator',
         'cuFFT',
         'Thrust sort',
       ],
@@ -452,7 +452,7 @@ export default defineQuestions(
       q: 'cuBLASLt differs from the classic cuBLAS API mainly by…',
       o: [
         'Running on the CPU',
-        'Exposing a flexible matmul descriptor with explicit layouts, epilogues, and an algorithm/heuristic search for mixed precision (incl. FP8)',
+        'Descriptor-based matmul with epilogues and FP8',
         'Only supporting FP64',
         'Removing tensor cores',
       ],
@@ -471,7 +471,7 @@ export default defineQuestions(
       q: 'The cuDNN "graph API" (frontend) represents an operation as a graph of nodes so that the library can…',
       o: [
         'Only validate inputs',
-        'Fuse multiple operations (e.g. conv + bias + activation) into a single optimized engine, chosen via heuristics',
+        'Fuse ops into a single optimized engine',
         'Run on multiple GPUs',
         'Avoid using tensor cores',
       ],

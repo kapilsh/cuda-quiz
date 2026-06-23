@@ -10,7 +10,7 @@ export default defineQuestions(
       q: 'In LLM inference, the "prefill" phase is compute-bound while "decode" is memory-bound because…',
       o: [
         'They are identical',
-        'Prefill processes the whole prompt in parallel (big matmuls → compute-bound); decode generates one token at a time, dominated by reading weights + KV cache per step (memory-bandwidth-bound)',
+        'Prefill: big matmuls; decode: reads weights/KV',
         'Decode is parallel',
         'Prefill is sequential',
       ],
@@ -29,7 +29,7 @@ export default defineQuestions(
       q: 'Disaggregated serving (separate prefill and decode pools) is motivated by…',
       o: [
         'Simplicity',
-        'Prefill (compute-bound) and decode (memory-bound) have different optimal hardware/batching; running them on separate, independently-scaled pools improves utilization and avoids one interfering with the other',
+        'Different bottlenecks per phase',
         'Lower accuracy',
         'Using FP64',
       ],
@@ -48,7 +48,7 @@ export default defineQuestions(
       q: 'Chunked prefill (splitting a long prompt’s prefill into chunks interleaved with decodes) helps serving by…',
       o: [
         'Improving accuracy',
-        'Preventing a long prefill from blocking ongoing decode requests — interleaving chunks keeps decode latency low while still making prefill progress',
+        'A long prefill no longer blocks decodes',
         'Using FP64',
         'Sharding the model',
       ],
@@ -67,7 +67,7 @@ export default defineQuestions(
       q: 'HFU (Hardware FLOPs Utilization) differs from MFU (Model FLOPs Utilization) in that HFU…',
       o: [
         'Ignores hardware',
-        'Counts ALL FLOPs the hardware actually performed (including recomputation from activation checkpointing) vs peak, while MFU counts only the model’s "useful" FLOPs — so HFU ≥ MFU when recomputation is used',
+        'Counts all FLOPs done, incl. recompute',
         'Is always lower',
         'Measures memory',
       ],
@@ -86,7 +86,7 @@ export default defineQuestions(
       q: 'The Chinchilla scaling result says, for a compute budget, you should roughly…',
       o: [
         'Maximize parameters only',
-        'Balance model size and training tokens (compute-optimal ≈ ~20 tokens per parameter) — many earlier models were under-trained (too big for their token count)',
+        'Balance model size and tokens (~20 tokens/param)',
         'Minimize tokens',
         'Use FP64',
       ],
@@ -105,7 +105,7 @@ export default defineQuestions(
       q: 'A cosine learning-rate schedule with warmup is common in large-model training because warmup…',
       o: [
         'Slows training',
-        'Avoids instability from a large LR at the start (when weights/optimizer stats are immature), ramping up gradually; the cosine decay then anneals the LR for convergence',
+        'Avoids early instability from a large LR',
         'Increases the batch',
         'Shards the model',
       ],
@@ -124,7 +124,7 @@ export default defineQuestions(
       q: 'RLHF/PPO training is resource-heavy partly because it holds MULTIPLE models in memory, typically…',
       o: [
         'Just the policy',
-        'The policy (actor), a value/critic model, a reward model, and a frozen reference model — all resident, multiplying memory and complicating the distributed setup',
+        'Actor, critic, reward, and reference models',
         'Only the reward model',
         'One model',
       ],
@@ -143,7 +143,7 @@ export default defineQuestions(
       q: 'Weight streaming / offloading for inference of a very large model means…',
       o: [
         'Quantizing weights',
-        'Keeping weights in CPU/host (or NVMe) memory and streaming each layer’s weights to the GPU as needed during the forward pass — enabling models larger than GPU memory at the cost of PCIe/bandwidth-bound speed',
+        'Stream each layer to the GPU on demand',
         'Sharding gradients',
         'Using FP64',
       ],
@@ -162,7 +162,7 @@ export default defineQuestions(
       q: '1-bit Adam / PowerSGD reduce communication by…',
       o: [
         'Removing gradients',
-        'Compressing gradients (1-bit quantization or low-rank approximation) for the all-reduce, with ERROR FEEDBACK to accumulate the compression error so convergence is preserved',
+        'Compress gradients with error feedback',
         'Using FP64',
         'Sharding the model',
       ],
@@ -181,7 +181,7 @@ export default defineQuestions(
       q: 'For LLM decode, throughput is increased by BATCHING many requests because…',
       o: [
         'It reduces accuracy',
-        'Decode is memory-bound on reading the (shared) weights; batching amortizes that weight read across many sequences’ tokens per step, raising arithmetic intensity and throughput',
+        'Amortizes the weight read across sequences',
         'It uses FP64',
         'It shards the model',
       ],
@@ -200,7 +200,7 @@ export default defineQuestions(
       q: 'Tensor parallelism for inference reduces single-request LATENCY, while pipeline parallelism mainly improves…',
       o: [
         'Accuracy',
-        'THROUGHPUT (many requests in flight across stages), since PP adds per-token pipeline latency but processes multiple micro-batches/requests concurrently',
+        'Throughput (many requests in flight)',
         'Memory only',
         'Precision',
       ],
@@ -219,7 +219,7 @@ export default defineQuestions(
       q: 'Why does activation checkpointing INCREASE HFU but not necessarily MFU?',
       o: [
         'It reduces FLOPs',
-        'It recomputes activations in the backward pass (extra hardware FLOPs counted in HFU), but those recomputed FLOPs aren’t "useful model FLOPs" — so MFU (useful/peak) is unchanged while HFU (all/peak) rises',
+        'Recompute adds hardware FLOPs, not model ones',
         'It increases accuracy',
         'It shards the model',
       ],
@@ -238,7 +238,7 @@ export default defineQuestions(
       q: 'In serving, continuous (in-flight) batching beats static batching because…',
       o: [
         'It is more accurate',
-        'Sequences finish at different times; continuous batching swaps completed sequences for new ones each step instead of waiting for the whole batch — keeping the GPU busy and improving throughput/latency',
+        'Swaps finished sequences for new ones each step',
         'It uses FP64',
         'It shards the model',
       ],
@@ -257,7 +257,7 @@ export default defineQuestions(
       q: 'The reason KV-cache memory (not compute) limits decode batch size is…',
       o: [
         'Decode is compute-bound',
-        'Each sequence’s KV cache grows with its length and consumes GPU memory; the cache (not the small per-step matmuls) is what fills memory, capping how many concurrent sequences fit',
+        'The KV cache, not the matmuls, fills memory',
         'Weights dominate',
         'The optimizer is resident',
       ],
@@ -276,7 +276,7 @@ export default defineQuestions(
       q: 'A practical reason RLHF generation+training loops are hard to make efficient is…',
       o: [
         'They use FP64',
-        'They alternate autoregressive GENERATION (latency-bound decode) with TRAINING (compute-bound) across multiple models, so the system must keep diverse resources busy and manage data flow between phases',
+        'They alternate generation with training',
         'They have no models',
         'They are single-GPU',
       ],
@@ -295,7 +295,7 @@ export default defineQuestions(
       q: 'Why is MFU rarely close to 100% even for well-optimized LLM training?',
       o: [
         'Bugs',
-        'Non-matmul work (attention softmax, norms, elementwise), communication, pipeline bubbles, memory-bound steps, and data loading all consume time that isn’t peak-rate matmul — so 100% peak is unattainable; ~40–55% is strong',
+        'Non-matmul ops, comm, and bubbles',
         'FP64 usage',
         'The dataset',
       ],
@@ -314,7 +314,7 @@ export default defineQuestions(
       q: 'For very long context training, sequence/context parallelism is needed because…',
       o: [
         'It speeds the optimizer',
-        'Attention activation memory and compute scale with sequence length (quadratically for scores); splitting the sequence across GPUs (exchanging K/V) makes long contexts fit and distributes the work',
+        'Attention scales with sequence length; split it',
         'It reduces parameters',
         'It uses FP64',
       ],
@@ -333,7 +333,7 @@ export default defineQuestions(
       q: 'A reason FSDP can be slower than TP+DP for some models despite both fitting memory is…',
       o: [
         'FSDP is always slower',
-        'FSDP all-gathers full parameters every forward/backward (extra comm scaling with model size), which at large scale may exceed compute to hide it; a TP+DP layout can keep heavy comm on fast NVLink and reduce gather volume',
+        'FSDP all-gathers can exceed the compute',
         'TP uses no comm',
         'FSDP uses FP64',
       ],
@@ -352,7 +352,7 @@ export default defineQuestions(
       q: 'The "effective batch size" for convergence in a 3D-parallel + gradient-accumulation setup is…',
       o: [
         'micro_batch × tensor_parallel',
-        'micro_batch × grad_accum_steps × data_parallel_size (TP and PP split one replica, so they do NOT multiply the batch)',
+        'micro_batch × grad_accum × DP_size',
         'micro_batch × pipeline_stages',
         'micro_batch × world_size',
       ],
@@ -371,7 +371,7 @@ export default defineQuestions(
       q: 'Gradient accumulation interacts with BatchNorm/normalization statistics such that…',
       o: [
         'No interaction',
-        'Accumulating gradients over micro-batches does NOT combine their normalization statistics — each micro-batch normalizes independently, so BN stats reflect the micro-batch, not the effective batch (a reason transformers prefer LayerNorm)',
+        'BN stats stay per micro-batch, not combined',
         'It averages BN stats',
         'It disables BN',
       ],
@@ -390,7 +390,7 @@ export default defineQuestions(
       q: 'Pipeline "1F1B" vs GPipe scheduling: 1F1B has the SAME bubble but…',
       o: [
         'More memory',
-        'LOWER peak activation memory, because it starts backward passes early (bounding in-flight activations to ~pipeline depth) instead of storing activations for all micro-batches as GPipe does',
+        'Lower peak activation memory',
         'No bubble',
         'Higher accuracy',
       ],
@@ -409,7 +409,7 @@ export default defineQuestions(
       q: 'For inference, GQA/MQA reduce decode bandwidth because…',
       o: [
         'They quantize weights',
-        'Sharing K/V heads across query heads shrinks the KV cache that decode must READ each step — and decode is bandwidth-bound on weights + KV — so a smaller KV cache directly raises decode throughput',
+        'Fewer K/V heads shrink the KV cache to read',
         'They add heads',
         'They use FP64',
       ],
@@ -428,7 +428,7 @@ export default defineQuestions(
       q: 'A reason to overlap the parameter all-gather of layer N+1 with layer N’s compute in FSDP is correct ONLY if…',
       o: [
         'Always',
-        'The prefetch is issued on a separate stream early enough and there’s enough compute in layer N to hide the gather; otherwise layer N+1 stalls waiting for its parameters',
+        'Layer N compute hides the gather',
         'Compute is zero',
         'For FP64',
       ],
@@ -447,7 +447,7 @@ export default defineQuestions(
       q: 'Speculative decoding’s speedup depends critically on…',
       o: [
         'Model size',
-        'The ACCEPTANCE RATE of draft tokens — if the small draft model’s proposals are usually accepted, many tokens are produced per expensive verification step; low acceptance wastes the draft work',
+        'The draft-token acceptance rate',
         'FP64',
         'The dataset',
       ],
@@ -466,7 +466,7 @@ export default defineQuestions(
       q: 'Why does increasing pipeline micro-batches reduce the bubble but eventually hurt?',
       o: [
         'It never hurts',
-        'More micro-batches shrink the bubble fraction but each micro-batch is smaller (less efficient GEMMs / more per-step overhead) and activation memory / scheduling overhead grow — so there’s an optimal count',
+        'Smaller micro-batches are less efficient GEMMs',
         'It removes communication',
         'For FP64',
       ],
@@ -485,7 +485,7 @@ export default defineQuestions(
       q: 'A reason large-batch training needs LR warmup AND careful schedules (beyond linear scaling) is…',
       o: [
         'Bugs',
-        'At very large batches, the linearly-scaled LR is large and the early training is unstable; warmup plus adaptive optimizers (LAMB/LARS) and decay schedules are needed to converge — pure linear scaling eventually breaks down',
+        'Linear LR scaling breaks down at huge batches',
         'Small batches diverge',
         'For FP64',
       ],
@@ -504,7 +504,7 @@ export default defineQuestions(
       q: 'The systems benefit of paged KV cache (vLLM) over a contiguous per-sequence cache is…',
       o: [
         'Higher precision',
-        'It eliminates the fragmentation/over-allocation of reserving a max-length contiguous buffer per sequence, packing KV into shared fixed-size pages — fitting more sequences and enabling prefix sharing',
+        'Packs KV into shared pages, no waste',
         'Faster matmul',
         'Using FP64',
       ],
@@ -523,7 +523,7 @@ export default defineQuestions(
       q: 'When scaling a model 10×, keeping training efficient typically requires CHANGING the parallelism mix because…',
       o: [
         'It does not',
-        'A bigger model needs more model parallelism (TP/PP) to fit and to keep per-GPU GEMMs efficient, and the communication/memory balance shifts — the optimal DP/TP/PP/CP mix depends on model size, cluster, and interconnect',
+        'Bigger models need more TP/PP',
         'Only DP matters',
         'For FP64',
       ],
@@ -542,7 +542,7 @@ export default defineQuestions(
       q: 'A reason inference is often MEMORY-BANDWIDTH-bound while training is more COMPUTE-bound is…',
       o: [
         'They are the same',
-        'Training does large-batch matmuls (high intensity, compute-bound) plus a backward pass; autoregressive decode does small per-step matmuls dominated by reading weights/KV (low intensity, bandwidth-bound)',
+        'Training: big matmuls; decode: reads weights/KV',
         'Inference uses FP64',
         'Training has no matmuls',
       ],

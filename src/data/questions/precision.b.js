@@ -20,7 +20,7 @@ export default defineQuestions(
       q: 'Flushing denormals (subnormals) to zero in a kernel…',
       o: [
         'Improves accuracy near zero',
-        'Can be faster (denormal handling may be slow) but loses precision for very small magnitudes; --ftz=true / fast math enables it',
+        'Speed up at cost of near-zero precision; --ftz=true',
         'Is required for tensor cores',
         'Has no effect',
       ],
@@ -39,7 +39,7 @@ export default defineQuestions(
       q: 'In IEEE-754, what does 0.0/0.0 produce, and what is special about comparing it?',
       o: [
         'Zero; compares equal to 0',
-        'NaN; and NaN compares unequal to everything, including itself (x != x is true for NaN)',
+        'NaN; and NaN != NaN (x != x is true for NaN)',
         'Infinity; compares greater than all',
         'It traps and halts the kernel',
       ],
@@ -77,7 +77,7 @@ export default defineQuestions(
       q: 'Stochastic rounding (rounding up or down with probability proportional to the residual) is valuable in low-precision training because…',
       o: [
         'It is faster than nearest rounding',
-        'It avoids the systematic bias where small updates always round away, so accumulated small increments are preserved in expectation',
+        'No systematic bias: small increments preserved in expectation',
         'It is exact',
         'It eliminates overflow',
       ],
@@ -96,7 +96,7 @@ export default defineQuestions(
       q: 'Dynamic loss scaling (as in AMP) adjusts the scale factor by…',
       o: [
         'Keeping it fixed forever',
-        'Increasing it when no inf/NaN is seen for a while, and backing it off (skipping the step) when an overflow occurs',
+        'Increase on clean steps; back off (skip) on overflow',
         'Setting it to the learning rate',
         'Using the gradient norm',
       ],
@@ -115,7 +115,7 @@ export default defineQuestions(
       q: 'For inference, BF16 is often preferred over FP16 because…',
       o: [
         'BF16 is more precise',
-        'BF16’s wider exponent range avoids overflow/underflow without loss scaling, simplifying deployment, at the cost of fewer mantissa bits',
+        'BF16 range avoids overflow; no loss scaling needed',
         'BF16 uses fewer bytes',
         'FP16 has no hardware support',
       ],
@@ -134,7 +134,7 @@ export default defineQuestions(
       q: 'FP8 training with "delayed scaling" (as in Transformer Engine) keeps an amax history so that…',
       o: [
         'It can skip scaling',
-        'The current scale factor is chosen from recent maximum-absolute-value statistics, avoiding an extra pass to compute amax of the current tensor',
+        'Scale from recent amax history; no extra amax pass',
         'It uses FP32 everywhere',
         'It disables tensor cores',
       ],
@@ -153,7 +153,7 @@ export default defineQuestions(
       q: 'Post-Training Quantization (PTQ) vs Quantization-Aware Training (QAT): PTQ…',
       o: [
         'Retrains the model from scratch',
-        'Quantizes an already-trained model (often with a small calibration set), no/minimal retraining; QAT simulates quantization during training for better accuracy',
+        'Calibrate a trained model; QAT simulates quant',
         'Is always more accurate',
         'Requires no data',
       ],
@@ -172,7 +172,7 @@ export default defineQuestions(
       q: 'INT8 calibration (e.g. entropy/percentile calibration) is needed to…',
       o: [
         'Train the model',
-        'Choose per-tensor (or per-channel) scale factors that map the float range to INT8 with minimal information loss',
+        'Pick per-tensor/channel scales mapping float to INT8',
         'Compress the weights losslessly',
         'Select the GPU',
       ],
@@ -191,7 +191,7 @@ export default defineQuestions(
       q: 'Per-channel (vs per-tensor) quantization of weights helps because…',
       o: [
         'It uses fewer bits',
-        'Each output channel gets its own scale, accommodating channels with very different magnitude ranges and reducing quantization error',
+        'Own scale per channel — handles varying ranges',
         'It is faster',
         'It avoids calibration',
       ],
@@ -210,7 +210,7 @@ export default defineQuestions(
       q: 'Weight-only quantization methods like GPTQ/AWQ (e.g. INT4 weights, FP16 activations) are popular for LLM inference because…',
       o: [
         'They speed up training',
-        'LLM inference is often memory/bandwidth-bound on weights, so compressing weights to 4-bit cuts memory and bandwidth while keeping activations in higher precision for accuracy',
+        '4-bit weights cut bandwidth; FP16 activations stay',
         'They use FP64',
         'They remove the KV cache',
       ],
@@ -229,7 +229,7 @@ export default defineQuestions(
       q: 'Quantizing the KV cache (e.g. to INT8/FP8) in long-context LLM inference primarily reduces…',
       o: [
         'Compute',
-        'The memory and bandwidth consumed by the growing key/value cache, which can dominate at long sequence lengths',
+        'KV-cache memory/bandwidth at long sequences',
         'The number of layers',
         'The vocabulary size',
       ],
@@ -248,7 +248,7 @@ export default defineQuestions(
       q: 'The error of a low-precision (e.g. FP16-input) matmul generally grows with…',
       o: [
         'The output size only',
-        'The contraction dimension K — more accumulated products means more rounding error (mitigated by FP32 accumulation)',
+        'Grows with K (more accumulated products)',
         'The batch size only',
         'Nothing; it is constant',
       ],
@@ -267,7 +267,7 @@ export default defineQuestions(
       q: 'The log-sum-exp trick computes log(Σ exp(x_i)) stably by…',
       o: [
         'Ignoring large terms',
-        'Factoring out the max: m + log(Σ exp(x_i − m)), so the largest exponent is exp(0)=1 and no overflow occurs',
+        'Subtract max m; largest = exp(0)=1, no overflow',
         'Using FP64',
         'Clamping inputs to [0,1]',
       ],
@@ -286,7 +286,7 @@ export default defineQuestions(
       q: 'A mixed-precision Adam optimizer typically keeps which states in FP32?',
       o: [
         'None',
-        'The master weights and the moment estimates (m, v), so small updates accumulate accurately even though forward/backward use BF16/FP16',
+        'Master weights + Adam moments (m, v) stay FP32',
         'Only the gradients',
         'Only the activations',
       ],
@@ -305,7 +305,7 @@ export default defineQuestions(
       q: 'Many DL frameworks enable TF32 by default for FP32 matmuls/convolutions, which means…',
       o: [
         'Results are bit-identical to FP32',
-        'FP32 ops are silently accelerated via TF32 tensor cores (≈10-bit mantissa), so "FP32" results differ slightly — you can disable it for exactness',
+        'FP32 matmuls use TF32 (~10-bit); results not bit-exact',
         'FP32 is unavailable',
         'It only affects FP16',
       ],
@@ -324,7 +324,7 @@ export default defineQuestions(
       q: 'The FP4 "E2M1" format has how many exponent and mantissa bits, and why does it need block scaling?',
       o: [
         '3 exponent, 0 mantissa; no scaling needed',
-        '2 exponent, 1 mantissa (plus sign) — only ~16 distinct values, so a shared per-block scale is essential to cover the data’s range',
+        '2 exp, 1 mantissa (sign): ~16 values; per-block scale needed',
         '4 exponent, 0 mantissa; scaling optional',
         '1 exponent, 2 mantissa; never used',
       ],
@@ -343,7 +343,7 @@ export default defineQuestions(
       q: 'NF4 (4-bit NormalFloat, used by QLoRA/bitsandbytes) differs from a uniform INT4 grid by…',
       o: [
         'Using more bits',
-        'Placing its 16 quantization levels to match a normal distribution (information-theoretically optimal for normally-distributed weights), rather than evenly spaced',
+        'Levels at normal quantiles vs uniform spacing',
         'Being an integer format',
         'Requiring no scaling',
       ],
@@ -362,7 +362,7 @@ export default defineQuestions(
       q: 'Why must softmax accumulate the sum of exponentials in higher precision (e.g. FP32) even when inputs are FP16?',
       o: [
         'FP16 cannot store the inputs',
-        'Summing many exp() terms accumulates rounding error and can overflow FP16; FP32 accumulation preserves accuracy and range',
+        'exp() sum can overflow FP16; FP32 accumulation needed',
         'It is required by tensor cores',
         'FP16 has no exp function',
       ],
@@ -381,7 +381,7 @@ export default defineQuestions(
       q: 'The hardware provides fast conversion between FP32 and BF16 essentially by…',
       o: [
         'A lookup table',
-        'Truncating/rounding the FP32 mantissa to 7 bits and keeping the 8-bit exponent (BF16 is the top 16 bits of FP32, modulo rounding)',
+        'Round FP32 mantissa to 7 bits; exponent unchanged',
         'Re-encoding the exponent',
         'Software emulation only',
       ],
@@ -400,7 +400,7 @@ export default defineQuestions(
       q: 'A subtle bug: accumulating a large reduction in FP16 gives a result that stops increasing partway through. The cause is…',
       o: [
         'Integer overflow',
-        'Swamping — once the running sum is large, adding small FP16 terms rounds to no change (the increment is below the ULP at that magnitude)',
+        'Swamping: small terms below ULP, vanish',
         'A race condition',
         'Denormal flushing',
       ],
@@ -419,7 +419,7 @@ export default defineQuestions(
       q: 'Gradient clipping (by global norm) interacts with loss scaling because you must…',
       o: [
         'Clip before unscaling',
-        'UNSCALE the gradients first (divide out the loss scale), then clip to the true norm — clipping scaled gradients would use the wrong threshold',
+        'Unscale first, then clip to the true norm',
         'Skip clipping in mixed precision',
         'Clip the loss instead',
       ],
@@ -438,7 +438,7 @@ export default defineQuestions(
       q: 'FP8 is increasingly used for inference (and training) of LLMs because, relative to FP16/BF16, it…',
       o: [
         'Has more mantissa bits',
-        'Halves memory/bandwidth and roughly doubles tensor-core throughput, with per-tensor/block scaling keeping accuracy acceptable',
+        'Halves memory/bandwidth, doubles throughput (with scaling)',
         'Removes the need for tensor cores',
         'Is exact',
       ],
@@ -457,7 +457,7 @@ export default defineQuestions(
       q: 'Why does microscaling (e.g. MXFP8/MXFP6/MXFP4) use a shared scale per small block (commonly 32 elements) rather than per-tensor?',
       o: [
         'To save metadata',
-        'A per-block scale captures local dynamic range far better than one global scale, which is essential when only a few mantissa bits are available',
+        'Per-block scale for local range; few bits need it',
         'To increase the bit-width',
         'To avoid tensor cores',
       ],
@@ -486,7 +486,7 @@ export default defineQuestions(
       q: 'When converting activations to FP8 with E4M3, why is choosing the scale so that the tensor’s max maps near the format’s max (but not over) important?',
       o: [
         'To use integer math',
-        'Too small a scale wastes the few available codes (underflow to zero); too large overflows to inf/NaN — the scale must center the data in the representable window',
+        'Too small = zeros; too large = inf; scale to window',
         'To avoid tensor cores',
         'To increase K',
       ],

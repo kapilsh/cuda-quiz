@@ -10,7 +10,7 @@ export default defineQuestions(
       q: 'Hopper’s Tensor Memory Accelerator (TMA) and async barriers together implement a hardware pattern best described as…',
       o: [
         'Synchronous copy',
-        'A decoupled producer/consumer: TMA bulk-copies tiles into shared memory asynchronously and signals an mbarrier, while compute warps wait on that barrier — overlapping data movement with tensor-core math',
+        'Decoupled TMA copy + compute via mbarrier',
         'A reduction',
         'A host callback',
       ],
@@ -29,7 +29,7 @@ export default defineQuestions(
       q: 'Why does each new tensor-core generation tend to ADD a lower-precision format rather than just raising clocks?',
       o: [
         'Clocks are fixed',
-        'Halving bit-width roughly doubles MACs per cycle (more compute per area/Watt) — a far bigger throughput lever than clock increases, which are limited by power/thermals',
+        '2× MACs per halved bit-width; bigger than clocks',
         'Lower precision is more accurate',
         'For graphics',
       ],
@@ -48,7 +48,7 @@ export default defineQuestions(
       q: 'The per-SM L1/shared SRAM being unified (configurable split) reflects the design insight that…',
       o: [
         'Caches are useless',
-        'Different kernels need different mixes: tiled kernels want lots of shared memory, irregular/cache-friendly kernels want L1 — a fixed split would waste SRAM for one class or the other',
+        'Configurable split via carveout',
         'Shared memory is slow',
         'L1 is off-chip',
       ],
@@ -67,7 +67,7 @@ export default defineQuestions(
       q: 'The reason thread block clusters required a new SM-to-SM network (not just software) is…',
       o: [
         'Software is slow',
-        'Distributed shared memory needs blocks on DIFFERENT SMs to access each other’s on-chip shared memory with low latency — that requires a physical interconnect between SMs, which earlier architectures lacked',
+        'DSMEM requires SM-to-SM interconnect',
         'For graphics',
         'To save power',
       ],
@@ -86,7 +86,7 @@ export default defineQuestions(
       q: 'Blackwell pairs two dies as one GPU using NV-HBI. The software-visible consequence is that…',
       o: [
         'Two separate GPUs appear',
-        'A single CUDA device with a unified memory space is presented; kernels and allocations work as on one GPU, with the die-to-die link handling cross-die accesses coherently',
+        'One CUDA device with unified memory space',
         'You must split work manually',
         'It runs on the CPU',
       ],
@@ -105,7 +105,7 @@ export default defineQuestions(
       q: 'Why is the L2 cache shared (device-wide) rather than per-SM like L1?',
       o: [
         'To save power',
-        'A shared L2 captures reuse ACROSS blocks/SMs and provides the device-wide coherence point for atomics and global accesses — per-SM L2 couldn’t share data between SMs',
+        'Cross-SM reuse; atomics resolve at L2',
         'L2 is slower',
         'For graphics',
       ],
@@ -124,7 +124,7 @@ export default defineQuestions(
       q: 'On Blackwell, moving tensor-core accumulators into Tensor Memory (TMEM) instead of the register file addresses which scaling limit?',
       o: [
         'Memory bandwidth',
-        'Register-file capacity/pressure — wider, higher-throughput MMAs would otherwise need too many registers for accumulators; TMEM offloads that, letting tensor throughput scale without exhausting registers',
+        'Register file pressure on accumulators',
         'Clock speed',
         'Network bandwidth',
       ],
@@ -143,7 +143,7 @@ export default defineQuestions(
       q: 'The hardware guarantee that lets the same CUDA binary scale from a small GPU to a large one is…',
       o: [
         'Fixed SM count',
-        'Block independence + dynamic block-to-SM scheduling: blocks make no inter-block assumptions, so the work distributor maps them to whatever SMs exist, scaling transparently',
+        'Block independence + dynamic scheduling',
         'A fixed grid size',
         'The CPU',
       ],
@@ -162,7 +162,7 @@ export default defineQuestions(
       q: 'HBM stacks deliver high bandwidth via a WIDE interface rather than high per-pin speed because…',
       o: [
         'Wide is cheaper',
-        'A very wide bus (thousands of bits over an interposer) at moderate clocks moves enormous aggregate bytes/sec while keeping per-pin signaling and power manageable — vs GDDR’s narrower, faster bus',
+        'Wide bus over interposer; TB/s bandwidth',
         'HBM is slower',
         'For graphics',
       ],
@@ -181,7 +181,7 @@ export default defineQuestions(
       q: 'Why does wgmma being asynchronous (vs the synchronous mma.sync) matter for keeping tensor cores busy?',
       o: [
         'It is more accurate',
-        'Async issue lets the warpgroup launch an MMA and immediately issue the next operand loads (TMA/async copy) without blocking — so data movement and math overlap continuously, avoiding idle tensor cores',
+        'Loads and math overlap; TCs stay busy',
         'It uses the CPU',
         'It reduces memory',
       ],
@@ -200,7 +200,7 @@ export default defineQuestions(
       q: 'The practical effect of FP64 tensor cores (A100/H100) is…',
       o: [
         'Faster FP16',
-        'Accelerated double-precision matmul for HPC (e.g. linear algebra), giving data-center GPUs strong FP64 throughput that consumer GPUs lack',
+        'FP64 matmul for HPC (data-center only)',
         'Graphics speedup',
         'Lower precision',
       ],
@@ -219,7 +219,7 @@ export default defineQuestions(
       q: 'Why are atomics resolved at L2 rather than at each SM’s L1?',
       o: [
         'L1 is faster',
-        'Atomics must be globally consistent across all SMs; only the shared L2 (the device-wide coherence point) can serialize/order updates to a location that any SM may target',
+        'Shared L2 serializes cross-SM atomics',
         'For graphics',
         'To save power',
       ],
@@ -238,7 +238,7 @@ export default defineQuestions(
       q: 'The "Transformer Engine" choosing FP8 vs higher precision per layer is necessary because…',
       o: [
         'FP8 always works',
-        'Some layers/tensors have dynamic ranges or sensitivities where FP8 would lose too much accuracy; runtime statistics let it keep those in higher precision while using FP8 where it’s safe — maximizing speed within an accuracy budget',
+        'Runtime stats pick precision per layer',
         'It is random',
         'For graphics',
       ],
@@ -257,7 +257,7 @@ export default defineQuestions(
       q: 'Why does increasing per-SM shared memory across generations specifically help GEMM and attention?',
       o: [
         'They are compute-light',
-        'Both are tiling/reuse-heavy: larger on-chip tiles raise operand reuse (arithmetic intensity) and allow more pipeline stages, keeping the growing tensor-core throughput fed without stalling on HBM',
+        'Larger tiles + pipelines keep TCs fed',
         'They avoid memory',
         'For graphics',
       ],
@@ -276,7 +276,7 @@ export default defineQuestions(
       q: 'NVLink-C2C (Grace Hopper) being CACHE-COHERENT (not just high bandwidth) matters because…',
       o: [
         'It is faster',
-        'Coherence lets the GPU and CPU share data structures and pointers seamlessly (no manual copies/invalidations), so the GPU can use CPU memory as a true extended tier with consistent views',
+        'GPU and CPU share data without copies',
         'It uses PCIe',
         'For graphics',
       ],
@@ -295,7 +295,7 @@ export default defineQuestions(
       q: 'The reason a GPU has thousands of relatively SIMPLE cores instead of a few complex ones is…',
       o: [
         'Cost',
-        'Throughput-oriented design: many simple ALUs maximize parallel arithmetic per area/Watt for data-parallel work, trading single-thread latency (which GPUs hide via multithreading) for aggregate throughput',
+        'Many simple ALUs for parallel throughput',
         'For graphics only',
         'For FP64',
       ],
@@ -314,7 +314,7 @@ export default defineQuestions(
       q: 'Why is the warp (32 threads) the granularity of scheduling AND divergence, not 1 or 1024?',
       o: [
         'Arbitrary choice',
-        'It balances control-overhead amortization (sharing fetch/decode across 32 lanes) against divergence cost (a smaller group diverges less but amortizes less) — 32 is the hardware’s chosen trade-off',
+        'Balances amortization vs divergence cost',
         'For graphics',
         'For FP64',
       ],
@@ -333,7 +333,7 @@ export default defineQuestions(
       q: 'Structured 2:4 sparsity is "structured" (vs arbitrary sparsity) specifically so that…',
       o: [
         'It is more accurate',
-        'The fixed 2-of-4 pattern allows simple, regular hardware: compact storage + small metadata and predictable operand selection — arbitrary sparsity would need irregular indexing the tensor cores can’t do efficiently',
+        'Fixed 2:4 → regular hardware + metadata',
         'It is random',
         'For graphics',
       ],
@@ -352,7 +352,7 @@ export default defineQuestions(
       q: 'A reason data-center GPUs (SXM form factor) outperform PCIe versions of the same chip is…',
       o: [
         'Different ISA',
-        'Higher power/thermal limits and full NVLink connectivity (SXM) allow higher sustained clocks and much faster GPU-to-GPU bandwidth than the power-limited, PCIe-linked card',
+        'Higher TDP + NVLink vs PCIe card',
         'More SMs',
         'Lower precision',
       ],
@@ -371,7 +371,7 @@ export default defineQuestions(
       q: 'Why does the GPU keep ALL resident warps’ contexts in hardware rather than spilling some to memory like CPU threads?',
       o: [
         'To save power',
-        'Latency hiding requires instant warp switching; keeping every resident warp’s registers/PC live in the (large) register file enables zero-overhead switching — spilling contexts would defeat the latency-hiding purpose',
+        'Keeps all warp contexts live',
         'For graphics',
         'For FP64',
       ],
@@ -390,7 +390,7 @@ export default defineQuestions(
       q: 'The architectural motivation for TMA descriptors living in (host-created) tensor maps is…',
       o: [
         'To save memory',
-        'To encode the multidimensional tensor layout once so the hardware can generate all tile addresses (handling strides/boundaries) without per-thread index math — offloading address generation entirely',
+        'Offload address generation to hardware',
         'For graphics',
         'For FP64',
       ],
@@ -409,7 +409,7 @@ export default defineQuestions(
       q: 'Why does each SM having its own register file, shared memory, and schedulers (vs sharing globally) help?',
       o: [
         'It is cheaper',
-        'Localizing these resources per SM avoids global contention and long wires, letting each SM operate independently at high speed — the GPU scales by replicating SMs',
+        'Local resources avoid contention',
         'For graphics',
         'For FP64',
       ],
@@ -428,7 +428,7 @@ export default defineQuestions(
       q: 'On Blackwell, the second-generation Transformer Engine’s support for very low precision (FP4) with micro-scaling targets primarily…',
       o: [
         'Training only',
-        'INFERENCE throughput — packing more elements per byte/cycle with per-block scales to keep accuracy, roughly doubling inference rate over FP8 for supported models',
+        'Inference throughput; ~2× over FP8',
         'Graphics',
         'FP64 HPC',
       ],
@@ -447,7 +447,7 @@ export default defineQuestions(
       q: 'Why can a kernel that performs well on A100 underperform on H100 without changes, despite H100 being faster?',
       o: [
         'H100 is slower',
-        'H100’s peak relies on new features (TMA, wgmma, clusters, bigger shared memory); an Ampere-tuned kernel using cp.async/mma may not exploit them, leaving the added throughput unused until rewritten',
+        'TMA/wgmma/clusters unused without rewrite',
         'The ISA is incompatible',
         'It needs FP64',
       ],
@@ -466,7 +466,7 @@ export default defineQuestions(
       q: 'The memory subsystem interleaving addresses across many channels/partitions means a good access pattern…',
       o: [
         'Targets one channel',
-        'Spreads accesses across all partitions (avoiding "partition camping") so the full aggregate DRAM bandwidth is engaged',
+        'Distributes across partitions; no camping',
         'Uses constant memory',
         'Avoids the L2',
       ],
@@ -485,7 +485,7 @@ export default defineQuestions(
       q: 'Why is rack-scale NVLink (NVL72) described as making 72 GPUs act like "one big GPU" for certain models?',
       o: [
         'They share one die',
-        'The unified high-bandwidth NVLink domain gives all-to-all bandwidth across 72 GPUs so tensor/expert parallelism (heavy collectives) span them efficiently — the communication is fast enough to treat them as one large accelerator',
+        'All-to-all NVLink; 72 GPUs act as one',
         'They run on one CPU',
         'For graphics',
       ],
@@ -504,7 +504,7 @@ export default defineQuestions(
       q: 'The reason async copy (cp.async/TMA) is essential for tensor-core efficiency is…',
       o: [
         'It compresses data',
-        'Tensor cores consume operands faster than synchronous loads can supply; async copies overlap data movement with computation so the math units don’t stall waiting for the next tile',
+        'Async copies keep TCs fed; overlap with math',
         'It increases precision',
         'For graphics',
       ],
@@ -523,7 +523,7 @@ export default defineQuestions(
       q: 'A "GPC" grouping SMs is relevant to the CUDA programmer mainly because…',
       o: [
         'It sets the warp size',
-        'Hopper thread-block clusters are co-scheduled within a GPC, so the GPC’s SM count bounds cluster size and enables DSMEM/cluster.sync',
+        'Clusters are co-scheduled within a single GPC',
         'It sets the clock',
         'It is the memory controller',
       ],
@@ -542,7 +542,7 @@ export default defineQuestions(
       q: 'Why does the trend of growing L2 cache (e.g. ~40 MB A100 → ~50 MB H100) specifically help modern AI workloads?',
       o: [
         'It replaces HBM',
-        'Larger L2 keeps more reused operands/working-set on-chip across blocks, cutting HBM traffic for bandwidth-bound layers and capturing cross-block reuse in GEMM/attention',
+        'More on-chip reuse; cuts HBM traffic',
         'It increases clocks',
         'For graphics',
       ],
@@ -561,7 +561,7 @@ export default defineQuestions(
       q: 'The architectural reason FP8 needs scaling but FP16 (mostly) does not is…',
       o: [
         'FP8 has no exponent',
-        'FP8’s very few exponent/mantissa bits give a narrow representable range, so values must be scaled into that window per tensor; FP16’s wider range tolerates typical values without per-tensor scaling (though it can still overflow gradients)',
+        'FP8 narrow range needs per-tensor scaling',
         'FP16 is integer',
         'For graphics',
       ],

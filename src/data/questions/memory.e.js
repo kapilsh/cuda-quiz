@@ -10,7 +10,7 @@ export default defineQuestions(
       q: 'cuMemSetAccess (Virtual Memory Management API) is used after mapping physical memory to…',
       o: [
         'Free the memory',
-        'Grant specific devices (and the host) read/write access to a mapped VA range — enabling selective peer access per allocation rather than all-or-nothing',
+        'Grant specific devices access to a VA range',
         'Compress the memory',
         'Pin the memory',
       ],
@@ -29,7 +29,7 @@ export default defineQuestions(
       q: 'cuMemGetAllocationGranularity is queried when using the VMM API because…',
       o: [
         'It sets the block size',
-        'Physical allocations and mappings must be sized/aligned to the device’s allocation granularity (e.g. 2 MB), so you round reservations/maps to it',
+        'Allocations must align to the granularity',
         'It picks the stream',
         'It reduces precision',
       ],
@@ -48,7 +48,7 @@ export default defineQuestions(
       q: 'NVLink multicast (cuMulticast / multicast objects) lets multiple GPUs…',
       o: [
         'Share registers',
-        'Bind a memory region to a multicast object so a single write/read can be broadcast/reduced across the bound GPUs over NVLink, accelerating some collective/shared patterns',
+        'Broadcast/reduce a region across GPUs',
         'Run one kernel',
         'Compress data',
       ],
@@ -67,7 +67,7 @@ export default defineQuestions(
       q: 'Fabric memory handles (and Multi-Node NVLink, MNNVL) extend memory sharing by…',
       o: [
         'Using PCIe',
-        'Allowing GPU memory to be shared/addressed across nodes connected by an NVLink fabric (e.g. NVL72), so GPUs in different chassis access each other’s memory over NVLink',
+        'Share GPU memory across nodes over NVLink',
         'Compressing memory',
         'Running on the CPU',
       ],
@@ -86,7 +86,7 @@ export default defineQuestions(
       q: 'The accessPolicyWindow’s hitRatio parameter controls…',
       o: [
         'The cache size',
-        'What FRACTION of accesses in the marked window get the persisting (hit) property — e.g. 0.6 means ~60% of the region is treated as persisting in L2',
+        'Fraction of the window persisting',
         'The block size',
         'The clock',
       ],
@@ -105,7 +105,7 @@ export default defineQuestions(
       q: 'Approximate shared-memory bandwidth per SM is computed as…',
       o: [
         'banks × clock',
-        '32 banks × 4 bytes/bank × SM clock (one 4-byte word per bank per cycle) — far exceeding DRAM bandwidth, which is why shared-memory tiling is fast',
+        '32 banks × 4 bytes × SM clock',
         'DRAM bandwidth / 32',
         'warpSize × clock',
       ],
@@ -124,7 +124,7 @@ export default defineQuestions(
       q: 'cudaMemcpy (the blocking variant) on the default stream is "implicitly synchronizing," meaning…',
       o: [
         'It is asynchronous',
-        'It waits for prior work on the device (in the relevant streams) to complete and blocks the host until the copy finishes — so it serializes with surrounding work',
+        'It waits for prior work and blocks the host',
         'It runs on the GPU only',
         'It never blocks',
       ],
@@ -143,7 +143,7 @@ export default defineQuestions(
       q: 'cudaMemPoolSetAttribute(pool, cudaMemPoolAttrReleaseThreshold, value) controls…',
       o: [
         'The pool size',
-        'How many bytes the pool keeps cached before returning memory to the OS/driver on the next free — higher keeps more for fast reuse, lower reduces footprint',
+        'Bytes the pool caches before releasing',
         'The block size',
         'The precision',
       ],
@@ -162,7 +162,7 @@ export default defineQuestions(
       q: 'Memory FRAGMENTATION in a long-running GPU service manifests as…',
       o: [
         'Slow kernels',
-        'Out-of-memory or failed allocations despite enough TOTAL free memory, because free space is split into chunks too small for a contiguous request',
+        'OOM despite enough total free memory',
         'Bank conflicts',
         'Low occupancy',
       ],
@@ -181,7 +181,7 @@ export default defineQuestions(
       q: 'cudaMemPool IPC export (cudaMemPoolExportToShareableHandle) enables…',
       o: [
         'Cross-node sharing',
-        'Sharing a memory pool (and allocations from it) with another PROCESS on the same node, so async allocations can be accessed across processes',
+        'Sharing a memory pool across processes',
         'Compression',
         'Host execution',
       ],
@@ -200,7 +200,7 @@ export default defineQuestions(
       q: 'The NVIDIA bandwidthTest sample reports H2D, D2H, and D2D bandwidths to…',
       o: [
         'Compile kernels',
-        'Sanity-check that transfer bandwidths (PCIe/NVLink/HBM copy) match expectations for your system, helping spot misconfigured links or non-pinned memory',
+        'Sanity-check transfer bandwidths',
         'Profile a kernel',
         'Train a model',
       ],
@@ -219,7 +219,7 @@ export default defineQuestions(
       q: 'ECC and DRAM refresh reduce ACHIEVABLE bandwidth below the raw peak because…',
       o: [
         'They add compute',
-        'Check-bit traffic (ECC) and periodic refresh cycles consume some memory-bus time/capacity, so real kernels reach a fraction (~80–90%) of the theoretical peak',
+        'ECC and refresh consume some bus time',
         'They disable the cache',
         'They lower the clock',
       ],
@@ -238,7 +238,7 @@ export default defineQuestions(
       q: 'Register-file bandwidth vastly exceeds shared-memory bandwidth, which is why…',
       o: [
         'Registers are slow',
-        'Keeping the innermost reused operands (e.g. a GEMM micro-tile) in registers — not shared memory — maximizes the feed rate to the math units',
+        'Keep reused operands in registers, not SMEM',
         'Shared memory is unused',
         'Registers are off-chip',
       ],
@@ -257,7 +257,7 @@ export default defineQuestions(
       q: 'Setting the L2 persisting set-aside is done via cudaDeviceSetLimit(cudaLimitPersistingL2CacheSize, bytes). If you set an access window LARGER than this set-aside…',
       o: [
         'It is faster',
-        'The persisting benefit degrades/thrashes — the hot region can’t all stay resident, so persistence helps only up to the set-aside size',
+        'Persistence thrashes beyond the set-aside',
         'It increases the L2',
         'It disables the L2',
       ],
@@ -276,7 +276,7 @@ export default defineQuestions(
       q: 'A kernel that revisits a small (~few-MB) lookup table across all blocks benefits from…',
       o: [
         'Putting it in registers',
-        'Keeping it resident in L2 (it fits), or marking it persisting, so cross-block accesses hit on-chip instead of refetching from HBM',
+        'Keeping it resident/persisting in L2',
         'Recomputing it',
         'Putting it in local memory',
       ],
@@ -295,7 +295,7 @@ export default defineQuestions(
       q: 'In a cluster GEMM, distributed shared memory (DSMEM) lets a block READ a tile from a peer block’s shared memory. The benefit vs each block loading from HBM is…',
       o: [
         'Higher precision',
-        'The tile is fetched from HBM once (into one block’s shared memory) and shared over the fast SM-to-SM network, cutting redundant HBM bandwidth',
+        'Fetch from HBM once, share on-chip',
         'Lower occupancy',
         'More registers',
       ],
@@ -314,7 +314,7 @@ export default defineQuestions(
       q: 'A "bank conflict" of degree N in shared memory means the access…',
       o: [
         'Is N times faster',
-        'Serializes into N transactions (N threads hit different words in the same bank), so an N-way conflict is ~N× slower than conflict-free for that access',
+        'Serializes into N transactions',
         'Uses N banks',
         'Fails',
       ],
@@ -333,7 +333,7 @@ export default defineQuestions(
       q: 'When P2P access between two GPUs is enabled, a kernel on GPU A reading GPU B’s memory…',
       o: [
         'Copies it to GPU A first',
-        'Issues the read over the interconnect (NVLink/PCIe) on demand, at that link’s bandwidth/latency — fast over NVLink, slow over PCIe',
+        'Reads over the link on demand (NVLink/PCIe)',
         'Runs on GPU B',
         'Uses host memory',
       ],
@@ -352,7 +352,7 @@ export default defineQuestions(
       q: 'A reason to prefer cudaMallocAsync (pooled) over repeated cudaMalloc in a serving loop is…',
       o: [
         'It is more accurate',
-        'cudaMalloc/cudaFree synchronize the device and are slow; the async pool reuses freed blocks stream-ordered, avoiding per-request allocation stalls',
+        'The async pool reuses blocks without syncs',
         'It compresses memory',
         'It pins memory',
       ],
@@ -371,7 +371,7 @@ export default defineQuestions(
       q: 'Why does the VMM-based "expandable segment" approach reduce OOM failures in training frameworks?',
       o: [
         'It compresses tensors',
-        'By mapping physical pages into a reserved VA range as the segment grows, it keeps a logically contiguous buffer without realloc-and-copy, reducing fragmentation that causes large allocations to fail',
+        'Grows a contiguous buffer, no realloc-copy',
         'It uses the CPU',
         'It pins memory',
       ],
@@ -390,7 +390,7 @@ export default defineQuestions(
       q: 'For a warp loading 32 consecutive doubles (8 bytes each = 256 bytes), the global access maps to…',
       o: [
         'One 32-byte sector',
-        'Two 128-byte cache lines (8 sectors) — still fully coalesced/utilized since the access is contiguous and aligned',
+        'Two 128-byte lines, fully coalesced',
         '32 separate transactions',
         'No transactions',
       ],
@@ -409,7 +409,7 @@ export default defineQuestions(
       q: 'cudaMemAdvise(SetReadMostly) plus prefetching to multiple GPUs lets a read-only managed buffer…',
       o: [
         'Be writable everywhere',
-        'Be REPLICATED read-only on each accessing GPU, so concurrent readers hit a local copy instead of migrating/contending on one copy',
+        'Be replicated read-only on each GPU',
         'Be pinned on the host',
         'Be compressed',
       ],
@@ -428,7 +428,7 @@ export default defineQuestions(
       q: 'NVLink multicast (NVLS) specifically accelerates all-reduce by…',
       o: [
         'Compressing data',
-        'Letting the multicast/switch hardware fan out and REDUCE data in the fabric, so each GPU sends its data once and the reduced result is returned — roughly halving traffic vs a ring',
+        'In-fabric reduction halves traffic',
         'Using the CPU',
         'Disabling NVLink',
       ],
@@ -447,7 +447,7 @@ export default defineQuestions(
       q: 'A read-only input reused across threads but WRITTEN elsewhere in the kernel should NOT be tagged const __restrict__/__ldg because…',
       o: [
         'It is faster',
-        'The read-only cache assumes immutability; if the data changes during the kernel, cached reads may return stale values — only truly read-only data is safe',
+        'The read-only cache can return stale data',
         'It uses more registers',
         'It disables coalescing',
       ],
@@ -466,7 +466,7 @@ export default defineQuestions(
       q: 'For a strided reduction over columns of a row-major matrix (each thread sums a column), performance suffers because…',
       o: [
         'Columns are contiguous',
-        'Column access is strided (stride = row length), so a warp’s reads scatter across cache lines (uncoalesced) — transposing or tiling via shared memory restores coalescing',
+        'Column access is strided and uncoalesced',
         'Reductions are slow',
         'It needs atomics',
       ],
@@ -485,7 +485,7 @@ export default defineQuestions(
       q: 'The reason multicast objects must be created and bound BEFORE use (cuMulticastCreate/AddDevice/BindMem) is…',
       o: [
         'For speed only',
-        'The fabric must know which GPUs participate and which physical memory is multicast-mapped, so the hardware can route broadcasts/reductions correctly to bound members',
+        'The fabric must know members and mapping',
         'To compress data',
         'To pin host memory',
       ],
@@ -504,7 +504,7 @@ export default defineQuestions(
       q: 'A kernel that is L1/shared-bandwidth-bound (not DRAM-bound) might be improved by…',
       o: [
         'Adding more global loads',
-        'Vectorizing shared accesses, reducing shared-memory transactions (fewer/wider accesses, fix bank conflicts), or keeping more data in registers to offload the shared-memory pipe',
+        'Vectorize SMEM, cut transactions, use registers',
         'Lowering occupancy',
         'Using FP64',
       ],
@@ -523,7 +523,7 @@ export default defineQuestions(
       q: 'Why does cudaMemcpyAsync between two pinned host buffers (H2H) on a stream still benefit from being async?',
       o: [
         'It uses the GPU',
-        'It can overlap with GPU work and other stream operations and avoids blocking the host, even though it’s a host-to-host copy',
+        'It overlaps with other work, non-blocking',
         'It is faster than memcpy',
         'It uses tensor cores',
       ],
@@ -542,7 +542,7 @@ export default defineQuestions(
       q: 'On an NVL72 system, treating 72 GPUs’ HBM as a shared pool (via fabric memory) is powerful for inference because…',
       o: [
         'It compresses weights',
-        'A model/KV-cache too large for one GPU’s HBM can be spread across the fabric and accessed over NVLink at high bandwidth, as if one large memory — enabling huge models with low remote-access cost',
+        'A huge model spreads across HBM over NVLink',
         'It runs on the CPU',
         'It lowers precision',
       ],

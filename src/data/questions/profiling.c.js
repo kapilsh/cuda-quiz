@@ -10,7 +10,7 @@ export default defineQuestions(
       q: 'In Nsight Compute, the metric sm__throughput.avg.pct_of_peak_sustained_elapsed reports…',
       o: [
         'The clock frequency',
-        'The SM (compute) pipeline utilization as a percentage of its sustainable peak — a key Speed-of-Light number',
+        'SM pipe utilization as % of peak',
         'The DRAM size',
         'The register count',
       ],
@@ -29,7 +29,7 @@ export default defineQuestions(
       q: 'Nsight Compute organizes analysis into "sections" (Occupancy, Memory Workload Analysis, Scheduler Statistics, etc.). Using --set basic vs full controls…',
       o: [
         'The GPU clock',
-        'How many sections/metrics are collected (and thus how many replays and how long profiling takes)',
+        'How many sections/metrics are collected',
         'The kernel itself',
         'The output file format',
       ],
@@ -48,7 +48,7 @@ export default defineQuestions(
       q: 'PC sampling (statistical sampling of warp program counters) in profilers is used to…',
       o: [
         'Count exact instructions',
-        'Statistically attribute stall reasons and hot spots to source/SASS locations without instrumenting every instruction',
+        'Statistically attribute stalls to code locations',
         'Measure bandwidth',
         'Set the clock',
       ],
@@ -67,7 +67,7 @@ export default defineQuestions(
       q: 'nsys profile --trace=cuda,nvtx,osrt,cublas adds osrt and cublas tracing to…',
       o: [
         'Speed up the app',
-        'Capture OS runtime (thread scheduling, syscalls) and cuBLAS calls on the timeline, helping locate CPU-side and library bottlenecks',
+        'Trace OS runtime and cuBLAS calls',
         'Reduce overhead',
         'Disable CUDA tracing',
       ],
@@ -86,7 +86,7 @@ export default defineQuestions(
       q: 'nsys stats <report>.nsys-rep produces…',
       o: [
         'A new kernel',
-        'Text/CSV summary tables (kernel durations, memcpy stats, API call counts) from a captured report — scriptable, no GUI needed',
+        'Text/CSV summary tables from a report',
         'A roofline chart',
         'A SASS dump',
       ],
@@ -105,7 +105,7 @@ export default defineQuestions(
       q: 'The Nsight Compute "rules" / guided analysis surface things like "Uncoalesced Global Accesses" by…',
       o: [
         'Guessing',
-        'Applying built-in heuristics over collected metrics to flag likely bottlenecks and suggest fixes, turning raw counters into actionable advice',
+        'Heuristics over metrics flag likely bottlenecks',
         'Recompiling the kernel',
         'Running the kernel twice',
       ],
@@ -124,7 +124,7 @@ export default defineQuestions(
       q: 'To compare two kernel implementations fairly under boost-clock variability, you should…',
       o: [
         'Run each once',
-        'Lock the GPU clocks (nvidia-smi -lgc / ncu --clock-control) so timing differences reflect the code, not clock fluctuations',
+        'Lock the GPU clocks (nvidia-smi -lgc)',
         'Use a larger grid',
         'Disable the L2',
       ],
@@ -143,7 +143,7 @@ export default defineQuestions(
       q: 'In Nsight Systems, enabling GPU metrics sampling (--gpu-metrics-device) adds timeline rows for…',
       o: [
         'Per-kernel registers',
-        'Coarse hardware activity over time (SM active %, tensor/DRAM activity) sampled across the run, independent of per-kernel replay',
+        'Coarse SM/tensor/DRAM activity over time',
         'Source lines',
         'Bank conflicts',
       ],
@@ -162,7 +162,7 @@ export default defineQuestions(
       q: 'For profiling a PyTorch training step, a good first tool is…',
       o: [
         'cuobjdump',
-        'torch.profiler (or Nsight Systems with NVTX) to see Python/CPU ops, CUDA kernels, and gaps on a timeline',
+        'torch.profiler or nsys for a timeline',
         'Nsight Compute on every kernel',
         'compute-sanitizer',
       ],
@@ -181,7 +181,7 @@ export default defineQuestions(
       q: 'The metric dram__bytes.sum tells you…',
       o: [
         'The DRAM capacity',
-        'The total bytes transferred to/from device memory during the kernel — used to compute achieved bandwidth and verify reuse',
+        'Total bytes moved to/from device memory',
         'The L1 size',
         'The register count',
       ],
@@ -200,7 +200,7 @@ export default defineQuestions(
       q: 'A high L1/TEX cache hit rate but a still-slow memory-bound kernel suggests…',
       o: [
         'Perfect performance',
-        'The kernel may be limited by the cache/LSU throughput or instruction count rather than DRAM — look at pipe utilization and replays, not just hit rate',
+        'Limited by the L1/LSU pipe, not DRAM',
         'Register spilling',
         'A divergent branch',
       ],
@@ -219,7 +219,7 @@ export default defineQuestions(
       q: 'launch__registers_per_thread (reported by ncu) is useful because…',
       o: [
         'It times the kernel',
-        'It tells you the register usage that drives occupancy and spill behavior, so you can target -maxrregcount/__launch_bounds__',
+        'Register usage that drives occupancy/spills',
         'It measures bandwidth',
         'It counts blocks',
       ],
@@ -238,7 +238,7 @@ export default defineQuestions(
       q: 'Nsight Compute reports many smsp__ metrics. "smsp" refers to…',
       o: [
         'Shared memory',
-        'The SM sub-partition (sub-processor) — metrics scoped to one of the SM’s 4 schedulers/datapaths',
+        'The SM sub-partition (one of 4 schedulers)',
         'A streaming multiprocessor pair',
         'A memory partition',
       ],
@@ -257,7 +257,7 @@ export default defineQuestions(
       q: 'You can run Nsight Compute headless on a server and view results later by…',
       o: [
         'It is impossible',
-        'Collecting with the ncu CLI to an .ncu-rep report file, then opening it in the Nsight Compute GUI on your workstation',
+        'Collect to an .ncu-rep, open in the GUI later',
         'Only using printf',
         'Streaming the GUI live only',
       ],
@@ -276,7 +276,7 @@ export default defineQuestions(
       q: 'DCGM (Data Center GPU Manager) is used in clusters to…',
       o: [
         'Profile a single kernel',
-        'Continuously monitor GPU health, utilization, power, thermals, and errors across many GPUs/nodes (telemetry, not per-kernel profiling)',
+        'Monitor GPU health/telemetry across nodes',
         'Compile kernels',
         'Disassemble SASS',
       ],
@@ -295,7 +295,7 @@ export default defineQuestions(
       q: 'A profile shows the GPU frequently throttling. nvidia-smi -q can reveal the throttle reason, which is often…',
       o: [
         'A software bug',
-        'Power (TDP) or thermal limits (or clocks capped) — the GPU reduces frequency to stay within power/temperature budgets',
+        'Power or thermal limits cap the clock',
         'Too many registers',
         'A divergent branch',
       ],
@@ -314,7 +314,7 @@ export default defineQuestions(
       q: 'To capture only steady-state iterations with Nsight Systems (skip warm-up), you can use…',
       o: [
         'Nothing; it captures everything',
-        '--capture-range with cudaProfilerStart/Stop (or -y delay / -d duration) to bound the capture window',
+        '--capture-range to bound the window',
         'A larger block size',
         'compute-sanitizer',
       ],
@@ -333,7 +333,7 @@ export default defineQuestions(
       q: 'In a multi-stream app, Nsight Systems shows two kernels you expected to overlap running sequentially. A likely cause is…',
       o: [
         'The GPU is broken',
-        'A hidden synchronization (e.g. a default-stream operation, a blocking copy, or an event wait) is serializing them, or one kernel saturates the SMs',
+        'A hidden sync serializes them, or SMs are full',
         'Too few registers',
         'The kernels are too small',
       ],
@@ -352,7 +352,7 @@ export default defineQuestions(
       q: 'Achieved FLOP/s for a kernel can be computed in Nsight Compute from…',
       o: [
         'The kernel name',
-        'FLOP-counting instruction metrics (e.g. sm__sass_thread_inst_executed_op_*fma_pred_on) scaled appropriately, divided by the kernel duration',
+        'FLOP instruction metrics ÷ kernel duration',
         'The register count',
         'The grid size only',
       ],
@@ -371,7 +371,7 @@ export default defineQuestions(
       q: 'For multi-node training, profiling the whole job is best approached by…',
       o: [
         'Running ncu on every kernel on every node',
-        'Profiling a few representative ranks with Nsight Systems (per-rank reports), plus NCCL/communication tracing, then correlating — full ncu on all is impractical',
+        'Profile a few ranks with nsys + NCCL tracing',
         'Using printf',
         'Only nvidia-smi',
       ],
@@ -390,7 +390,7 @@ export default defineQuestions(
       q: 'compute-sanitizer --tool racecheck detects…',
       o: [
         'Global memory leaks',
-        'Shared-memory data races (unsynchronized conflicting accesses within a block)',
+        'Shared-memory data races',
         'Slow kernels',
         'Uncoalesced accesses',
       ],
@@ -409,7 +409,7 @@ export default defineQuestions(
       q: 'A training step’s nsys timeline shows the GPU idle while the CPU is busy in the data loader. The fix is to…',
       o: [
         'Buy a faster GPU',
-        'Overlap/prefetch data loading (more workers, pinned memory, async H2D) so the next batch is ready before the GPU finishes the current one',
+        'Overlap/prefetch data loading',
         'Reduce the model size',
         'Lower the learning rate',
       ],
@@ -428,7 +428,7 @@ export default defineQuestions(
       q: 'The Nsight Compute roofline can show TWO ceilings (e.g. an FP32 roof and a Tensor-core roof). A GEMM dot below the tensor roof but near the FP32 roof means…',
       o: [
         'It is optimal',
-        'It is not using tensor cores effectively — it is bound by the much lower CUDA-core (FP32) ceiling and should be routed through tensor cores',
+        'Not using tensor cores; stuck at the FP32 roof',
         'It is memory-bound',
         'It uses too many registers',
       ],
@@ -447,7 +447,7 @@ export default defineQuestions(
       q: 'When profiling, "kernel replay" can give misleading results if the kernel…',
       o: [
         'Is deterministic',
-        'Has side effects or depends on state modified by earlier launches, since each replay restores only the captured memory — stateful behavior across launches may not be reproduced correctly',
+        'It depends on state from earlier launches',
         'Uses shared memory',
         'Is compute-bound',
       ],
@@ -466,7 +466,7 @@ export default defineQuestions(
       q: 'The single most useful question Nsight Systems answers first is…',
       o: [
         'How many registers per thread?',
-        '"Is the GPU actually busy, and if not, why?" — revealing CPU bottlenecks, missing overlap, and idle gaps before any kernel tuning',
+        'Is the GPU actually busy, and if not, why?',
         'What is the bank-conflict rate?',
         'What is the roofline position?',
       ],
@@ -485,7 +485,7 @@ export default defineQuestions(
       q: 'sm__warps_active.avg.pct_of_peak_sustained_active corresponds to…',
       o: [
         'Theoretical occupancy',
-        'Achieved occupancy — the average active warps as a percentage of the maximum, measured during execution',
+        'Achieved occupancy (avg active warps)',
         'The register count',
         'DRAM throughput',
       ],
@@ -504,7 +504,7 @@ export default defineQuestions(
       q: 'You suspect a kernel is bound by instruction issue (not memory or math throughput). The metric to inspect is…',
       o: [
         'DRAM throughput',
-        'Issue slot utilization / eligible-warps-per-scheduler — if few warps are eligible to issue each cycle, the scheduler is starved',
+        'Eligible warps per scheduler',
         'L2 hit rate',
         'Register count',
       ],
@@ -523,7 +523,7 @@ export default defineQuestions(
       q: 'Exporting an nsys report to SQLite (nsys export) is valuable because…',
       o: [
         'It speeds up the app',
-        'You can run custom SQL queries / scripts over the raw trace data for automated, reproducible analysis and dashboards',
+        'Run custom SQL queries over the trace',
         'It reduces overhead',
         'It compiles the kernels',
       ],
@@ -542,7 +542,7 @@ export default defineQuestions(
       q: 'Why is profiling overhead a concern, and how does Nsight mitigate measurement distortion of timing?',
       o: [
         'It is not a concern',
-        'Instrumentation/replay perturb timing; Nsight derives metrics from controlled counter collection and reports them separately from a clean duration, rather than trusting wall-time during heavy collection',
+        'Replay perturbs timing; use controlled passes',
         'It overclocks the GPU',
         'It runs on the CPU',
       ],

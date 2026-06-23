@@ -10,7 +10,7 @@ export default defineQuestions(
       q: 'By Little’s law, the number of in-flight memory requests needed to saturate bandwidth equals…',
       o: [
         'The number of SMs',
-        'Bandwidth × latency (e.g. ~TB/s × hundreds of ns ⇒ thousands of outstanding requests) — achieved via many warps and/or per-thread memory-level parallelism',
+        'Bandwidth × latency (concurrency)',
         'The warp size',
         'One per block',
       ],
@@ -29,7 +29,7 @@ export default defineQuestions(
       q: 'The low-level Virtual Memory Management API (cuMemCreate, cuMemAddressReserve, cuMemMap) is used to…',
       o: [
         'Allocate pinned memory',
-        'Decouple virtual address reservation from physical backing, enabling growable allocations (reserve a large VA range, map physical pages as needed) without copying',
+        'Decouple VA reservation from physical backing',
         'Compress memory',
         'Pin host memory',
       ],
@@ -48,7 +48,7 @@ export default defineQuestions(
       q: 'cudaMemcpy3D with a cudaPitchedPtr and cudaExtent is used to…',
       o: [
         'Copy 1D arrays',
-        'Copy 3D regions between pitched/array memory, handling per-row/per-slice padding via the pitched pointer and extent descriptors',
+        'Copy 3D regions, handling pitch and extent',
         'Copy host-to-host only',
         'Compress data',
       ],
@@ -67,7 +67,7 @@ export default defineQuestions(
       q: 'A layered texture (texture array) differs from a 3D texture in that…',
       o: [
         'It is writable',
-        'It is an array of independent 2D (or 1D) textures indexed by a layer; filtering does NOT interpolate across layers (unlike a 3D texture’s depth dimension)',
+        'An array of 2D textures; no cross-layer filtering',
         'It is stored on the host',
         'It has no filtering',
       ],
@@ -86,7 +86,7 @@ export default defineQuestions(
       q: 'Prefetching managed memory to the CPU uses cudaMemPrefetchAsync with which destination device id?',
       o: [
         'Device 0',
-        'cudaCpuDeviceId — the special id denoting host memory, to migrate pages back before CPU access',
+        'cudaCpuDeviceId (the host id)',
         'The number of GPUs',
         '-1 always errors',
       ],
@@ -105,7 +105,7 @@ export default defineQuestions(
       q: 'NUMA effects matter for pinned host memory because…',
       o: [
         'Pinned memory is on the GPU',
-        'On multi-socket systems, a transfer is faster when the pinned buffer is allocated on the NUMA node nearest the GPU’s PCIe root, avoiding cross-socket hops',
+        'Pin near the GPU’s NUMA node to avoid hops',
         'NUMA disables pinning',
         'It has no effect',
       ],
@@ -124,7 +124,7 @@ export default defineQuestions(
       q: 'cudaMemPoolTrimTo (or a pool release threshold) controls…',
       o: [
         'The kernel size',
-        'How much memory the stream-ordered allocator’s pool keeps cached vs. returns to the OS/driver, trading reuse speed against footprint',
+        'How much the pool caches vs. releases',
         'The block size',
         'The precision',
       ],
@@ -143,7 +143,7 @@ export default defineQuestions(
       q: 'Saturating DRAM bandwidth on a copy kernel typically requires…',
       o: [
         'One warp',
-        'Enough resident warps (and/or vectorized loads) to keep many memory requests in flight — too few threads leaves the kernel latency-bound below peak bandwidth',
+        'Enough warps to keep requests in flight',
         'Only constant memory',
         'A single block',
       ],
@@ -162,7 +162,7 @@ export default defineQuestions(
       q: 'Global memory transactions are serviced in 32-byte sectors. A warp reading one float per thread (128 bytes contiguous, aligned) uses…',
       o: [
         '32 sectors',
-        '4 sectors (128 bytes / 32) — fully utilized, the ideal coalesced case',
+        '4 sectors, fully utilized',
         '1 sector',
         '128 sectors',
       ],
@@ -181,7 +181,7 @@ export default defineQuestions(
       q: 'Framework caching allocators (e.g. PyTorch) use "expandable segments" / the VMM API to…',
       o: [
         'Compress tensors',
-        'Grow a memory segment in place by mapping more physical pages into a reserved VA range, reducing fragmentation versus allocating many fixed-size blocks',
+        'Grow a segment in place via more pages',
         'Run on the CPU',
         'Pin host memory',
       ],
@@ -200,7 +200,7 @@ export default defineQuestions(
       q: 'A "partition camping" performance problem occurs when…',
       o: [
         'Too many registers are used',
-        'Memory accesses concentrate on a few memory partitions/channels instead of spreading across all, underutilizing aggregate DRAM bandwidth',
+        'Accesses concentrate on a few DRAM channels',
         'Shared memory overflows',
         'A warp diverges',
       ],
@@ -219,7 +219,7 @@ export default defineQuestions(
       q: 'Mapped (zero-copy) host memory accessed by a kernel is cached/coherent how?',
       o: [
         'Fully cached in L1 like global memory',
-        'Each access goes over the interconnect to host memory (not persistently device-cached), so heavy reuse is slow — best for small or streamed, low-reuse data',
+        'Each access goes to host memory, not device-cached',
         'Stored in shared memory',
         'Copied to device first',
       ],
@@ -238,7 +238,7 @@ export default defineQuestions(
       q: 'A texture object can provide hardware "gather" (tex2Dgather) which returns…',
       o: [
         'A single filtered sample',
-        'The four texels that would be used in bilinear filtering of a 2D fetch (one component each), useful for custom filtering or stencils',
+        'The four texels of a bilinear 2×2 neighborhood',
         'A whole row',
         'A reduction',
       ],
@@ -257,7 +257,7 @@ export default defineQuestions(
       q: 'cudaMemAdvise vs cudaMemPrefetchAsync: advise is…',
       o: [
         'A copy operation',
-        'A hint about access patterns/locality (preferred location, read-mostly, accessed-by) that influences future migration policy; prefetch actively moves pages now',
+        'A locality hint guiding future migration',
         'A synchronization call',
         'A kernel launch',
       ],
@@ -276,7 +276,7 @@ export default defineQuestions(
       q: 'Why might increasing per-thread memory-level parallelism (independent loads) raise achieved bandwidth more than increasing occupancy?',
       o: [
         'It never does',
-        'Each thread issuing several independent loads adds outstanding requests without needing more resident warps, reaching the concurrency Little’s law demands at lower occupancy',
+        'More loads per thread, not more warps',
         'It reduces latency',
         'It uses tensor cores',
       ],
@@ -295,7 +295,7 @@ export default defineQuestions(
       q: 'A growable allocation via the VMM API avoids the cost that plain cudaMalloc+copy incurs when a buffer must expand, namely…',
       o: [
         'JIT compilation',
-        'Allocating a new larger buffer and copying all existing data into it (O(n) copy + temporary double memory)',
+        'Allocate a bigger buffer and copy all data',
         'Pinning memory',
         'Launching a kernel',
       ],
@@ -314,7 +314,7 @@ export default defineQuestions(
       q: 'Surface objects require the backing cudaArray to be created with which flag?',
       o: [
         'cudaArrayDefault',
-        'cudaArraySurfaceLoadStore — to permit read/write (surface) access',
+        'cudaArraySurfaceLoadStore',
         'cudaArrayTextureGather',
         'cudaArrayLayered only',
       ],
@@ -333,7 +333,7 @@ export default defineQuestions(
       q: 'L2 hit rate can be improved for a tiled kernel by "block swizzling" (remapping block→tile assignment) because…',
       o: [
         'It reduces registers',
-        'It reorders which tiles neighboring blocks process so that concurrently-running blocks reuse overlapping data resident in L2, raising temporal locality',
+        'Concurrent blocks reuse overlapping data in L2',
         'It avoids global memory',
         'It increases occupancy',
       ],
@@ -352,7 +352,7 @@ export default defineQuestions(
       q: 'For a 3D stencil, using a 3D texture (or read-only cache) over plain global loads can help because…',
       o: [
         'Textures are writable',
-        'The texture cache exploits 3D spatial locality so neighbor reads (reused across output points) hit the cache, reducing DRAM traffic',
+        'The texture cache captures 3D neighbor reuse',
         'It avoids the halo',
         'It removes synchronization',
       ],
@@ -371,7 +371,7 @@ export default defineQuestions(
       q: 'cudaHostAllocMapped requires which device flag (on older/UVA-limited setups) to obtain usable device pointers?',
       o: [
         'Nothing ever',
-        'cudaSetDeviceFlags(cudaDeviceMapHost) must be set before allocation so mapped (zero-copy) host memory is supported',
+        'cudaDeviceMapHost, set before allocation',
         'cudaDeviceScheduleSpin',
         'cudaDeviceLmemResizeToMax',
       ],
@@ -390,7 +390,7 @@ export default defineQuestions(
       q: 'Why does a memory-bound kernel sometimes scale SUBLINEARLY when you double the data per thread (coarsening)?',
       o: [
         'It always scales linearly',
-        'Past the point where bandwidth is saturated, adding work per thread can’t increase throughput; it only helps until you reach the bandwidth roof (or if you were latency-bound)',
+        'Once bandwidth saturates, more work won’t help',
         'Coarsening reduces bandwidth',
         'It increases divergence',
       ],
@@ -409,7 +409,7 @@ export default defineQuestions(
       q: 'cudaMallocManaged with the cudaMemAttachHost flag initially attaches the allocation to…',
       o: [
         'All GPUs',
-        'The host (so it’s host-resident until a stream/GPU touches it), useful to control initial placement and avoid premature migration',
+        'The host, until a stream/GPU touches it',
         'The L2 cache',
         'Constant memory',
       ],
@@ -428,7 +428,7 @@ export default defineQuestions(
       q: 'The achieved memory bandwidth of a well-tuned copy kernel relative to the theoretical peak is typically…',
       o: [
         'Exactly 100%',
-        'Around 80–90% (overheads, ECC, refresh, imperfect scheduling prevent reaching the exact theoretical maximum)',
+        'Around 80–90% of theoretical peak',
         'About 10%',
         'Over 100%',
       ],
@@ -447,7 +447,7 @@ export default defineQuestions(
       q: 'Sparse cudaArrays / sparse textures allow…',
       o: [
         'Compressing textures',
-        'Binding/committing only parts of a large (possibly larger-than-memory) texture/array on demand, mapping physical memory to accessed tiles (like virtual memory for textures)',
+        'Back only the tiles you touch, on demand',
         'Faster filtering',
         'Read-only access only',
       ],
@@ -466,7 +466,7 @@ export default defineQuestions(
       q: 'Why is reading data you just wrote from another block via global memory unsafe without a fence, even on the same GPU?',
       o: [
         'Global memory is read-only',
-        'Per-SM L1 caches aren’t coherent, and writes may be buffered, so without __threadfence the reader (on another SM) can see stale data',
+        'Per-SM L1s are incoherent; reads can be stale',
         'It is always safe',
         'It needs atomics only',
       ],
@@ -485,7 +485,7 @@ export default defineQuestions(
       q: 'Texture mipmaps (cudaMipmappedArray) provide…',
       o: [
         'Compression',
-        'Precomputed downsampled levels so sampling at a chosen level-of-detail (LOD) is cheap and aliasing is reduced — useful for multiscale sampling',
+        'Precomputed downsampled LOD levels',
         'Atomic writes',
         'Faster atomics',
       ],
@@ -504,7 +504,7 @@ export default defineQuestions(
       q: 'A kernel’s "memory throughput" reported near peak while "compute throughput" is low most accurately means…',
       o: [
         'It is compute-bound',
-        'It is memory-bound — the optimization focus should be reducing bytes moved (reuse, fusion, lower precision) or improving coalescing, not adding compute',
+        'Memory-bound — reduce bytes moved',
         'It is latency-bound',
         'It is optimal',
       ],
@@ -523,7 +523,7 @@ export default defineQuestions(
       q: 'On Grace Hopper, the GPU accessing the CPU’s LPDDR memory over NVLink-C2C is attractive for huge models because…',
       o: [
         'LPDDR is faster than HBM',
-        'It provides a large, coherent memory pool (CPU LPDDR, hundreds of GB) at ~900 GB/s — far more capacity than HBM, useful when weights/KV cache exceed GPU memory',
+        'A large coherent pool (~900 GB/s) beyond HBM',
         'It replaces HBM',
         'It is on the same die',
       ],
@@ -542,7 +542,7 @@ export default defineQuestions(
       q: 'Allocating one large device buffer and sub-allocating from it (a custom arena) instead of many cudaMalloc calls helps because…',
       o: [
         'It increases bandwidth',
-        'cudaMalloc/cudaFree are relatively expensive and synchronizing; a pre-allocated arena (or the async pool) avoids per-allocation overhead in hot loops',
+        'cudaMalloc/cudaFree are costly, synchronizing',
         'It compresses data',
         'It pins memory',
       ],

@@ -10,7 +10,7 @@ export default defineQuestions(
       q: 'A histogram with 256 bins and 1M elements does one global atomicAdd per element. Switching to per-block shared histograms then merging reduces global atomics by roughly…',
       o: [
         'No change',
-        'From ~1M to ~(numBlocks × 256) global atomics — orders of magnitude fewer, with most updates hitting fast shared memory instead',
+        'From ~1M to ~numBlocks × 256 atomics',
         '2×',
         'It increases them',
       ],
@@ -25,7 +25,7 @@ export default defineQuestions(
       q: 'Warp-aggregated atomics replace up to 32 same-target atomicAdds per warp with 1. The speedup is largest when…',
       o: [
         'Targets are all distinct',
-        'Many lanes in a warp update the SAME address (high same-target frequency) — aggregation then cuts atomic traffic by up to ~32× for that hot address',
+        'Many lanes update the same address',
         'There is no contention',
         'Atomics are disabled',
       ],
@@ -44,7 +44,7 @@ export default defineQuestions(
       q: 'Two counters that each thread increments lie 4 bytes apart (same cache line). Performance is poor due to…',
       o: [
         'A correctness bug',
-        'False sharing — atomics serialize at line granularity, so the two counters contend on the shared line; padding them to separate lines restores throughput',
+        'False sharing on the cache line',
         'A deadlock',
         'Divergence',
       ],
@@ -63,7 +63,7 @@ export default defineQuestions(
       q: 'A spin-loop `while (atomicCAS(lock,0,1)!=0);` across all 32 lanes of a warp can livelock pre-Volta because…',
       o: [
         'Atomics fail',
-        'Under lockstep SIMT, the lane that won the lock can’t exit the critical section while the other lanes keep spinning (they reconverge together), so no one progresses',
+        'The winner cannot exit while losers spin',
         'The lock overflows',
         'Shared memory is full',
       ],
@@ -82,7 +82,7 @@ export default defineQuestions(
       q: 'A producer writes data then `ready=1` (plain store); a consumer spins on ready then reads data. The bug is…',
       o: [
         'None',
-        'Missing ordering: without a release on the store / acquire on the load (or fences), the data write can be reordered after the flag, so the consumer reads stale data',
+        'No release/acquire ordering on the flag',
         'The flag is too small',
         'Too many threads',
       ],
@@ -101,7 +101,7 @@ export default defineQuestions(
       q: 'In an mbarrier-based TMA pipeline, the consumer waits on a barrier with an expected transaction count so that…',
       o: [
         'Threads are counted',
-        'The wait completes only when the expected NUMBER OF BYTES from the TMA copy has landed in shared memory — synchronizing on data arrival, not just thread arrival',
+        'Wait completes when the expected bytes land',
         'The grid syncs',
         'The host signals',
       ],
@@ -120,7 +120,7 @@ export default defineQuestions(
       q: 'A reduction using atomicAdd into one float accumulator gives slightly different totals each run. This is because…',
       o: [
         'Atomics lose updates',
-        'The atomic ORDER varies with scheduling and FP addition is non-associative, so rounding differs run-to-run — a deterministic (fixed-order tree) reduction avoids it',
+        'Varying order + non-associative FP rounding',
         'Overflow',
         'A race condition',
       ],
@@ -139,7 +139,7 @@ export default defineQuestions(
       q: 'A device-set flag the HOST polls (mapped memory) isn’t seen by the host. The device should publish it with…',
       o: [
         '__threadfence_block',
-        '__threadfence_system() (or a system-scope release atomic), so the write is visible across the system boundary to the host CPU',
+        '__threadfence_system() (visible to the host)',
         '__syncthreads',
         'No fence',
       ],
@@ -158,7 +158,7 @@ export default defineQuestions(
       q: 'A CAS-retry loop building a custom atomic on a hot address shows throughput COLLAPSING under high contention because…',
       o: [
         'CAS is broken',
-        'Many threads contend on one address; most CAS attempts fail and retry (the value keeps changing), so effective progress serializes — privatization/aggregation reduces the contention',
+        'Contended CAS attempts fail and retry',
         'It deadlocks',
         'It overflows',
       ],
@@ -177,7 +177,7 @@ export default defineQuestions(
       q: 'A kernel calls __syncthreads() inside `if (threadIdx.x < 100)` in a 256-thread block. The result is…',
       o: [
         'Correct',
-        'Undefined behavior / deadlock — threads with threadIdx.x ≥ 100 never reach that barrier, so the others wait forever; barriers must be in uniform control flow',
+        'Deadlock: some threads never reach it',
         'Slower but correct',
         'A bank conflict',
       ],
@@ -196,7 +196,7 @@ export default defineQuestions(
       q: 'A single-launch grid reduction writes partials, then `__threadfence(); atomicInc(&count)`. If you SWAP the order (atomicInc before fence), the bug is…',
       o: [
         'None',
-        'The last block could see count==gridDim and read a partial that isn’t yet globally visible (the fence must publish the write BEFORE announcing completion)',
+        'A not-yet-visible partial may be read',
         'Slower only',
         'A bank conflict',
       ],
@@ -215,7 +215,7 @@ export default defineQuestions(
       q: 'cluster.sync() in a 4-block cluster blocks until…',
       o: [
         'One block arrives',
-        'Every thread of all 4 cluster blocks reaches the barrier — a cluster-wide rendezvous, enabled because the blocks are co-scheduled on one GPC',
+        'All threads of the 4 cluster blocks arrive',
         'The grid syncs',
         'The host signals',
       ],
@@ -234,7 +234,7 @@ export default defineQuestions(
       q: 'For a grid-wide barrier in a 3-phase algorithm, choosing TWO kernel launches over a cooperative grid.sync barrier is better when…',
       o: [
         'Always',
-        'You want maximum parallelism (an unconstrained grid) and the per-phase state can live in global memory — the kernel boundary is a free global barrier, and you avoid cooperative-launch’s grid-size cap',
+        'State fits in global; want an unconstrained grid',
         'Never',
         'State is huge in registers',
       ],
@@ -253,7 +253,7 @@ export default defineQuestions(
       q: 'atomicMax on a positive float via atomicMax on its bitcast int works because…',
       o: [
         'Floats are ints',
-        'For nonnegative IEEE-754 floats, the bit pattern is monotonic with value, so integer max gives the float max; negatives need handling since their ordering reverses',
+        'Nonnegative float bits are monotonic',
         'It is always exact',
         'CAS is required',
       ],
@@ -272,7 +272,7 @@ export default defineQuestions(
       q: 'A leader-initializes-then-barrier pattern: `if(tid==0) init(s); __syncthreads();`. Removing the barrier causes…',
       o: [
         'No effect',
-        'A race — other threads may read s before thread 0 finishes writing it; the barrier publishes the initialization and forces others to wait',
+        'A race: others read s before it is set',
         'A deadlock',
         'Slower correct code',
       ],
@@ -291,7 +291,7 @@ export default defineQuestions(
       q: 'A double-buffered tile loop uses two __syncthreads per iteration. Removing the SECOND barrier causes…',
       o: [
         'No issue',
-        'The next iteration’s load may overwrite the buffer while some threads still read it (read/write race) — the second barrier ensures all reads finish before the buffer is refilled',
+        'The next load overwrites a buffer still read',
         'A deadlock',
         'Slower correct code',
       ],
@@ -310,7 +310,7 @@ export default defineQuestions(
       q: 'A seqlock reader reads the sequence counter before AND after the data; it must RETRY when…',
       o: [
         'The counter is even',
-        'The counter changed between the two reads, or is odd (a writer is in progress) — indicating the data may be inconsistent',
+        'The counter changed or is odd',
         'The data is zero',
         'Never',
       ],
@@ -329,7 +329,7 @@ export default defineQuestions(
       q: 'For a global counter incremented by every thread, reading it correctly as the FINAL total requires…',
       o: [
         'Just atomicAdd',
-        'A grid-wide synchronization point (grid.sync or a separate kernel) after all increments — otherwise a read may occur before all blocks have contributed',
+        'A grid-wide sync after all increments',
         'A spinlock',
         'Constant memory',
       ],
@@ -348,7 +348,7 @@ export default defineQuestions(
       q: 'cuda::atomic with thread_scope_block is cheaper than device scope because…',
       o: [
         'It is non-atomic',
-        'Its ordering/coherence guarantees apply only within the block (resolvable in the SM), avoiding the device-wide L2 coordination that device-scope atomics require',
+        'Block-only guarantees, resolved in the SM',
         'It spans the grid',
         'It uses the host',
       ],
@@ -367,7 +367,7 @@ export default defineQuestions(
       q: 'Why does using __syncwarp() between warp-shuffle steps matter on Volta+ but "worked" on Pascal without it?',
       o: [
         'Shuffles changed',
-        'Pascal executed warps in lockstep (implicit reconvergence between steps); Volta’s independent thread scheduling can interleave diverged lanes, so explicit __syncwarp (or the _sync intrinsics’ semantics) is needed for correctness',
+        'Volta drops implicit lockstep',
         'It is faster',
         'For FP64',
       ],
@@ -386,7 +386,7 @@ export default defineQuestions(
       q: 'A producer/consumer ring buffer in shared memory needs, besides head/tail indices…',
       o: [
         'Nothing',
-        'Ordering between the data write and the index update (release/acquire or barriers), so a consumer never reads a slot before the producer’s data write is visible',
+        'Order the data write before the index',
         'A global lock',
         'Constant memory',
       ],
@@ -405,7 +405,7 @@ export default defineQuestions(
       q: 'In a multi-stage pipeline, why use a separate mbarrier per stage rather than one for the whole pipeline?',
       o: [
         'For speed only',
-        'Per-stage barriers let the producer fill stage k+1 while the consumer drains stage k (overlap); a single barrier would force lockstep, defeating the pipelining',
+        'Per-stage barriers let stages overlap',
         'To sync the grid',
         'To reduce registers',
       ],
@@ -424,7 +424,7 @@ export default defineQuestions(
       q: 'A relaxed-atomic counter read AFTER a grid barrier gives the correct total because…',
       o: [
         'Relaxed implies ordering',
-        'Atomicity guarantees each increment applied exactly once; the grid barrier establishes a point after which all increments are complete and visible — relaxed only drops ordering with OTHER memory, not atomicity',
+        'Increments are atomic; barrier makes them visible',
         'It needs seq_cst',
         'It loses updates',
       ],
@@ -443,7 +443,7 @@ export default defineQuestions(
       q: 'A lock-free stack push (CAS on head) is correct but suffers the ABA problem when…',
       o: [
         'The stack is empty',
-        'A node is popped and a NEW node reuses the same address, so a stale CAS sees the head "unchanged" (A→B→A) and succeeds incorrectly — tagged pointers (version counters) fix it',
+        'A reused address lets a stale CAS succeed',
         'Two pushes race',
         'The head overflows',
       ],
@@ -462,7 +462,7 @@ export default defineQuestions(
       q: 'Why is reducing __syncthreads frequency (e.g. via double buffering) a performance win?',
       o: [
         'Barriers corrupt data',
-        'Each barrier stalls the block until the slowest warp arrives; fewer barriers (overlapping load/compute) reduce that waiting, improving throughput',
+        'Each barrier waits for the slowest warp',
         'It uses fewer registers',
         'It disables coalescing',
       ],
@@ -481,7 +481,7 @@ export default defineQuestions(
       q: 'A cuda::pipeline consumer must call consumer_release() after using a stage, or…',
       o: [
         'Nothing happens',
-        'The producer eventually STALLS — with all stages marked full and none released, no buffer is available to refill, so the pipeline back-pressures and can deadlock',
+        'The producer stalls with no free buffer',
         'It runs faster',
         'It loses data',
       ],
@@ -500,7 +500,7 @@ export default defineQuestions(
       q: 'A global spinlock guarding a critical section that every thread enters makes a 100k-thread kernel…',
       o: [
         'Faster',
-        'Effectively serial (and prone to livelock/deadlock under SIMT) — all threads queue on one lock, destroying parallelism; use privatization/lock-free/reduction instead',
+        'Effectively serial; SIMT can livelock',
         'More accurate',
         'Lower memory',
       ],
@@ -519,7 +519,7 @@ export default defineQuestions(
       q: 'A flag-based handshake works on one GPU but breaks when the producer and consumer are on DIFFERENT GPUs because…',
       o: [
         'GPUs cannot share memory',
-        'Device-scope fences/atomics don’t guarantee cross-GPU visibility; you need system-scope ordering (and P2P/managed memory) so the consumer GPU observes the producer GPU’s writes',
+        'Device scope is not visible across GPUs',
         'It is always fine',
         'A bank conflict',
       ],
@@ -538,7 +538,7 @@ export default defineQuestions(
       q: 'Why does a hierarchical reduction (warp shuffle → block shared → few global atomics) scale far better than per-thread global atomics?',
       o: [
         'It is less accurate',
-        'It collapses contention at each level: the warp and block stages combine values locally (cheap), so only a few global atomics per block remain — versus every thread contending on global memory',
+        'Combines locally; few global atomics',
         'It uses more memory',
         'It needs the host',
       ],

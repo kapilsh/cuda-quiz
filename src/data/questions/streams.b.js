@@ -10,7 +10,7 @@ export default defineQuestions(
       q: 'Compiling with --default-stream per-thread changes the legacy default stream so that…',
       o: [
         'It is removed entirely',
-        'Each host thread gets its own default stream that does NOT implicitly synchronize with other streams',
+        'Per-thread non-synchronizing default stream',
         'It becomes higher priority',
         'It runs on the device only',
       ],
@@ -29,7 +29,7 @@ export default defineQuestions(
       q: 'cudaStreamCreateWithPriority lets you…',
       o: [
         'Run streams on different GPUs',
-        'Hint that work in one stream should preempt/schedule ahead of lower-priority streams when they compete for SMs',
+        'Favor this stream’s work over lower-priority streams',
         'Make a stream synchronous',
         'Increase the stream’s bandwidth',
       ],
@@ -48,7 +48,7 @@ export default defineQuestions(
       q: 'cudaStreamWaitEvent(streamB, event) makes streamB…',
       o: [
         'Record a timestamp',
-        'Wait until the given event (recorded in another stream) has completed before continuing, creating a cross-stream dependency',
+        'Pause until a cross-stream event completes',
         'Run on the host',
         'Stop permanently',
       ],
@@ -67,7 +67,7 @@ export default defineQuestions(
       q: 'Creating events with cudaEventCreateWithFlags(..., cudaEventDisableTiming) is recommended when…',
       o: [
         'You need precise timing',
-        'You only use the event for synchronization (not timing), since disabling timing makes record/wait cheaper',
+        'Events used only for ordering, not timing',
         'You profile the kernel',
         'You want host callbacks',
       ],
@@ -86,7 +86,7 @@ export default defineQuestions(
       q: 'cudaLaunchHostFunc (or the older cudaStreamAddCallback) enqueues a host function in a stream. A strict rule is that the host function…',
       o: [
         'Must allocate device memory',
-        'Must NOT call any CUDA runtime/driver API (doing so can deadlock)',
+        'Must NOT call any CUDA runtime/driver API',
         'Must run a kernel',
         'Must synchronize the device',
       ],
@@ -105,7 +105,7 @@ export default defineQuestions(
       q: 'The stream-ordered memory allocator (cudaMallocAsync / cudaFreeAsync with memory pools) improves over cudaMalloc by…',
       o: [
         'Allocating on the host',
-        'Making allocation/free stream-ordered and pooled, avoiding the implicit device-wide synchronization that plain cudaMalloc/cudaFree cause',
+        'Pooled stream-ordered alloc/free; no device sync',
         'Doubling memory',
         'Disabling caching',
       ],
@@ -134,7 +134,7 @@ export default defineQuestions(
       q: 'cudaGraphExecUpdate (or cudaGraphExecKernelNodeSetParams) lets you…',
       o: [
         'Recompile the graph',
-        'Update a graph’s node parameters (e.g. new pointers, kernel args) without re-instantiating the whole executable graph',
+        'Patch node params in place (no re-instantiation)',
         'Run the graph on the host',
         'Change the GPU',
       ],
@@ -153,7 +153,7 @@ export default defineQuestions(
       q: 'A GPU typically has separate copy engines for H2D and D2H. The benefit is…',
       o: [
         'Faster kernels',
-        'Host-to-device and device-to-host transfers can happen simultaneously (and overlap with compute) using different engines/streams',
+        'H2D + D2H + compute concurrently',
         'Larger memory',
         'Lower latency loads',
       ],
@@ -172,7 +172,7 @@ export default defineQuestions(
       q: 'cudaStreamQuery(stream) is useful because it…',
       o: [
         'Blocks until the stream is done',
-        'Non-blockingly reports whether all work in the stream has completed (cudaSuccess) or is still running (cudaErrorNotReady)',
+        'Non-blocking poll: done (cudaSuccess) or still running',
         'Cancels the stream',
         'Times the stream',
       ],
@@ -191,7 +191,7 @@ export default defineQuestions(
       q: 'When capturing a graph that includes a cuBLAS or NCCL call, the library call must…',
       o: [
         'Be skipped',
-        'Support stream capture (issue only capturable stream work) so its kernels are recorded into the graph rather than executing immediately',
+        'Be capture-safe: only issue capturable stream work',
         'Run on the host',
         'Use the default stream',
       ],
@@ -210,7 +210,7 @@ export default defineQuestions(
       q: 'How many kernels can execute CONCURRENTLY on a GPU (resources permitting)?',
       o: [
         'Exactly one',
-        'Several, if they are on different streams and the SMs have spare capacity (concurrent kernel execution)',
+        'Several, on different streams with spare SM capacity',
         'Unlimited, always',
         'Only kernels from different processes',
       ],
@@ -229,7 +229,7 @@ export default defineQuestions(
       q: 'cudaEventElapsedTime between two events is only valid when…',
       o: [
         'The events are on different GPUs',
-        'Both events were recorded on the same device (and with timing enabled)',
+        'Both events on the same device with timing enabled',
         'The host clock is synced',
         'A kernel is running',
       ],
@@ -248,7 +248,7 @@ export default defineQuestions(
       q: 'A stream created with cudaStreamNonBlocking differs from the regular created stream in that it…',
       o: [
         'Cannot run kernels',
-        'Does NOT implicitly synchronize with the legacy default (null) stream',
+        'No implicit sync with the legacy null stream',
         'Has higher priority',
         'Runs on the host',
       ],
@@ -267,7 +267,7 @@ export default defineQuestions(
       q: 'For an inference server running the same small model repeatedly, CUDA Graphs help most by…',
       o: [
         'Making each kernel faster internally',
-        'Capturing the fixed sequence of many small kernels once and replaying it, cutting per-iteration CPU launch overhead and inter-kernel gaps',
+        'Capture the fixed kernel sequence once; replay cuts overhead',
         'Reducing memory',
         'Increasing precision',
       ],
@@ -286,7 +286,7 @@ export default defineQuestions(
       q: 'To pipeline a large array through the GPU, you split it into chunks and, per chunk, issue H2D copy, kernel, and D2H copy on a rotating set of streams. The goal is to…',
       o: [
         'Reduce memory usage',
-        'Overlap each chunk’s transfers with another chunk’s computation, hiding transfer time',
+        'Overlap transfers with compute across chunks',
         'Increase occupancy',
         'Avoid kernels',
       ],
@@ -305,7 +305,7 @@ export default defineQuestions(
       q: 'Why might launching many kernels on the SAME stream prevent overlap even though they are small?',
       o: [
         'Same-stream kernels run on the host',
-        'A single stream is an ordered queue — its operations execute one after another, so they cannot overlap each other',
+        'Single stream is strictly ordered; ops cannot overlap',
         'Streams cannot run kernels',
         'Small kernels never overlap',
       ],
@@ -324,7 +324,7 @@ export default defineQuestions(
       q: 'Conditional and loop nodes (newer CUDA Graph features) let a captured graph…',
       o: [
         'Run only on the host',
-        'Include data-dependent control flow (if/while) inside the graph, so dynamic iteration counts can be replayed without re-capturing',
+        'Dynamic if/while inside the graph, no re-capture',
         'Compress kernels',
         'Skip synchronization',
       ],
@@ -343,7 +343,7 @@ export default defineQuestions(
       q: 'cudaStreamBeginCapture has modes (Global, ThreadLocal, Relaxed). Capture mode controls…',
       o: [
         'The kernel priority',
-        'How strictly potentially-unsafe operations (e.g. APIs that would synchronize) during capture are detected/allowed across threads',
+        'Strictness of unsafe-op detection during capture',
         'The graph’s memory size',
         'The replay speed',
       ],
@@ -362,7 +362,7 @@ export default defineQuestions(
       q: 'After building a cudaGraph_t, you must call cudaGraphInstantiate before launching because…',
       o: [
         'It copies the graph to the host',
-        'Instantiation produces an executable graph (cudaGraphExec_t) with finalized scheduling/resources that you then launch repeatedly',
+        'Bakes the graph into cudaGraphExec_t for fast replay',
         'It frees the graph',
         'It runs the graph once',
       ],
@@ -381,7 +381,7 @@ export default defineQuestions(
       q: 'Events serve two distinct purposes in CUDA. They are…',
       o: [
         'Allocation and deallocation',
-        'Timing (measure elapsed GPU time) and synchronization (express dependencies / wait for completion)',
+        'GPU timing and cross-stream ordering/sync',
         'Compilation and linking',
         'Kernel launch and teardown',
       ],
@@ -400,7 +400,7 @@ export default defineQuestions(
       q: 'A reason cudaMallocAsync pairs especially well with CUDA Graphs is that…',
       o: [
         'It disables the pool',
-        'Its allocations are stream-ordered and capturable as graph memory nodes, avoiding the device-wide sync that plain cudaMalloc would inject (which is illegal during capture)',
+        'Capturable; no device-wide sync',
         'It runs on the host',
         'It compresses memory',
       ],
@@ -419,7 +419,7 @@ export default defineQuestions(
       q: 'You want a low-latency kernel to run ahead of background work competing for the GPU. The mechanism is…',
       o: [
         'A larger block size',
-        'Place it on a high-priority stream (cudaStreamCreateWithPriority) so the scheduler favors it',
+        'Run it on a high-priority stream',
         'cudaDeviceSynchronize',
         'Constant memory',
       ],
@@ -438,7 +438,7 @@ export default defineQuestions(
       q: 'In a tight training loop, replacing per-step Python/host launches with a captured CUDA Graph mainly attacks which bottleneck?',
       o: [
         'GPU memory bandwidth',
-        'CPU-side launch/overhead and inter-kernel gaps that leave the GPU idle (launch-bound / CPU-bound steps)',
+        'CPU overhead + inter-kernel idle gaps',
         'Tensor-core throughput',
         'Network bandwidth',
       ],
@@ -457,7 +457,7 @@ export default defineQuestions(
       q: 'Overlapping a memcpy with a kernel requires the memcpy to be…',
       o: [
         'A blocking cudaMemcpy on the default stream',
-        'cudaMemcpyAsync from pinned memory on a stream different from (or concurrent with) the kernel',
+        'cudaMemcpyAsync from pinned memory on a different stream',
         'Larger than the kernel’s data',
         'Done before the kernel launches',
       ],
@@ -476,7 +476,7 @@ export default defineQuestions(
       q: 'Why is it usually better to create a fixed pool of streams and reuse them rather than creating/destroying streams frequently?',
       o: [
         'Streams cannot be destroyed',
-        'Stream creation/destruction has overhead and can synchronize; reusing a small pool avoids that cost in hot loops',
+        'Small pool reused; avoids create/destroy overhead',
         'More streams always means more speed',
         'Streams consume no resources',
       ],

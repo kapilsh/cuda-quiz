@@ -10,7 +10,7 @@ export default defineQuestions(
       q: 'FP6 formats (e.g. E2M3 and E3M2) sit between FP4 and FP8 and are useful because…',
       o: [
         'They are integers',
-        'They offer a middle ground: more precision/range than FP4 at smaller size than FP8 — letting you trade accuracy vs footprint more finely (e.g. MXFP6 for weights where FP4 loses too much)',
+        'More precision/range than FP4; smaller than FP8',
         'They have no exponent',
         'They are larger than FP8',
       ],
@@ -29,7 +29,7 @@ export default defineQuestions(
       q: 'The Straight-Through Estimator (STE) in Quantization-Aware Training is used to…',
       o: [
         'Quantize the loss',
-        'Pass gradients THROUGH the non-differentiable quantization (round) operation as if it were the identity, so the network can be trained with simulated quantization in the forward pass',
+        'Pass gradients through round (as identity); QAT',
         'Skip the backward pass',
         'Use FP64',
       ],
@@ -48,7 +48,7 @@ export default defineQuestions(
       q: '"Fake quantization" in QAT means the forward pass…',
       o: [
         'Skips quantization',
-        'Simulates quantization (quantize then dequantize, introducing the rounding error) while keeping tensors in floating point — so training "sees" quantization effects without actually running integer kernels',
+        'Quant+dequant in FP; injects quant error',
         'Uses FP64',
         'Removes weights',
       ],
@@ -67,7 +67,7 @@ export default defineQuestions(
       q: 'In LLM quantization, "W8A8" vs "W4A16" refer to…',
       o: [
         'Two GPUs',
-        'Weight/Activation bit-widths: W8A8 = 8-bit weights AND activations (compute-friendly, e.g. INT8 tensor cores); W4A16 = 4-bit weights with 16-bit activations (memory-friendly, weight-only)',
+        'W8A8: 8-bit W+A (compute); W4A16: 4-bit W, FP16 A',
         'Two optimizers',
         'Two layers',
       ],
@@ -86,7 +86,7 @@ export default defineQuestions(
       q: 'W4A16 (4-bit weight-only) is favored for LLM DECODE specifically because…',
       o: [
         'Decode is compute-bound',
-        'Decode is bandwidth-bound on reading weights; 4-bit weights cut that memory/bandwidth ~4×, while keeping activations at FP16 preserves accuracy — even though the weights are dequantized on the fly',
+        'Decode is BW-bound on weights; 4-bit cuts ~4×',
         'It uses FP64',
         'It shards the model',
       ],
@@ -105,7 +105,7 @@ export default defineQuestions(
       q: 'Running attention in FP8 is harder than FP8 GEMM because…',
       o: [
         'Attention has no matmul',
-        'Attention’s softmax and the wide dynamic range of scores/exponentials are sensitive to FP8’s tiny range/precision; the QK^T and softmax/accumulation usually stay higher precision while only some matmuls go FP8',
+        'Score/softmax range too wide for FP8',
         'It uses FP64',
         'It is compute-free',
       ],
@@ -124,7 +124,7 @@ export default defineQuestions(
       q: '"Current" scaling vs "delayed" scaling for FP8: current scaling…',
       o: [
         'Uses a fixed scale',
-        'Computes the scale from the CURRENT tensor’s amax (an extra reduction/pass, most accurate), while delayed scaling uses recent amax history (cheaper, slightly less adaptive)',
+        'Current: amax now; delayed: history-based',
         'Uses no scale',
         'Uses FP64',
       ],
@@ -143,7 +143,7 @@ export default defineQuestions(
       q: 'Quantizing the KV cache to FP8 requires a scale because…',
       o: [
         'FP8 has no exponent',
-        'FP8’s narrow range means K/V values must be scaled into the representable window; without an appropriate (per-tensor/-head/-token) scale, values overflow or underflow, corrupting attention',
+        'FP8 narrow; K/V need per-tensor/head scale',
         'It is integer',
         'KV is constant',
       ],
@@ -162,7 +162,7 @@ export default defineQuestions(
       q: 'For tensor cores, FP16 vs BF16 ACCURACY differs such that…',
       o: [
         'They are identical',
-        'FP16 has more MANTISSA bits (finer precision, narrower range) while BF16 has more EXPONENT (wider range, coarser precision) — FP16 can be more accurate for in-range values, BF16 more robust to overflow',
+        'FP16: more mantissa; BF16: more exponent (wider)',
         'BF16 is more precise',
         'FP16 has more range',
       ],
@@ -181,7 +181,7 @@ export default defineQuestions(
       q: 'Percentile (or KL-divergence) calibration for INT8 is preferred over naive min/max when…',
       o: [
         'There are no outliers',
-        'Activation distributions have OUTLIERS — naive min/max stretches the scale to the outlier, crushing the resolution of typical values; percentile/KL clips outliers to preserve precision where the mass is',
+        'Outliers stretch scale; percentile clips them',
         'Values are uniform',
         'For FP64',
       ],
@@ -200,7 +200,7 @@ export default defineQuestions(
       q: 'Activation outliers concentrated in specific CHANNELS (common in LLMs) motivate which quantization choice?',
       o: [
         'Per-tensor activation scale',
-        'Per-CHANNEL (or per-token) handling — or migrating the difficulty to weights (SmoothQuant) — so a few outlier channels don’t force a coarse scale that ruins the other channels',
+        'Per-channel/per-token handles outlier channels',
         'FP64',
         'No scaling',
       ],
@@ -219,7 +219,7 @@ export default defineQuestions(
       q: 'Why is INT8 attractive for the PREFILL phase but FP16/4-bit-weights often better for DECODE?',
       o: [
         'They are the same',
-        'Prefill is compute-bound (large matmuls → INT8 tensor cores give throughput); decode is bandwidth-bound on weights (4-bit weight-only cuts the dominant traffic, activations kept FP16)',
+        'Prefill: compute-bound; decode: bandwidth-bound',
         'Decode is compute-bound',
         'For FP64',
       ],
@@ -238,7 +238,7 @@ export default defineQuestions(
       q: 'Mixed-precision iterative refinement using tensor cores (FP16/TF32 solve, FP64 residual) can achieve FP64-accurate solutions because…',
       o: [
         'FP16 is exact',
-        'The fast low-precision factorization gives an approximate solution; computing the residual in high precision and correcting iteratively recovers the lost accuracy — exploiting cheap tensor-core matmul for the bulk work',
+        'Low-prec solve; high-prec residuals recover',
         'It avoids the solve',
         'It uses integers',
       ],
@@ -257,7 +257,7 @@ export default defineQuestions(
       q: 'Error feedback in low-precision/compressed gradient training works by…',
       o: [
         'Discarding errors',
-        'Accumulating the quantization/compression ERROR of each step into the next step’s gradient, so information lost to low precision isn’t dropped but eventually applied — preserving convergence',
+        'Compression error fed into next gradient',
         'Using FP64',
         'Skipping steps',
       ],
@@ -276,7 +276,7 @@ export default defineQuestions(
       q: 'The MX (microscaling) block size of 32 elements is a compromise because…',
       o: [
         'It is arbitrary',
-        'Smaller blocks adapt the shared scale to local range better (more accuracy) but cost more scale metadata; 32 balances accuracy against metadata/overhead and maps well to hardware (warp/tile granularity)',
+        'Finer blocks fit better; 32 balances overhead',
         'It uses FP64',
         'It removes scaling',
       ],
@@ -295,7 +295,7 @@ export default defineQuestions(
       q: 'Why keep the SOFTMAX in attention at FP32/BF16 even in an otherwise low-precision (FP8) pipeline?',
       o: [
         'For speed',
-        'The exponentials and their sum span a wide dynamic range and are accuracy-critical; FP8 would overflow/underflow and lose precision, corrupting the attention weights — so softmax stays higher precision',
+        'exp/sum range too wide for FP8 precision',
         'FP8 has no exp',
         'It is integer',
       ],
@@ -314,7 +314,7 @@ export default defineQuestions(
       q: 'The reason FP8 E5M2 is paired with E4M3 (rather than using one format everywhere) reflects…',
       o: [
         'Hardware limits',
-        'Different needs in forward vs backward: E4M3 (more mantissa) for weights/activations (precision), E5M2 (more exponent/range) for gradients (which span a wider magnitude) — using each where its bit allocation fits',
+        'E4M3 fwd (precision); E5M2 bwd (range)',
         'Random choice',
         'Integer math',
       ],
@@ -333,7 +333,7 @@ export default defineQuestions(
       q: 'When deploying a QAT model, the deployed INT8 weights/activations…',
       o: [
         'Differ from training',
-        'Match the fake-quant the model trained with — because QAT simulated the exact quantization (scales, rounding) during training, the deployed integer model behaves as trained, retaining accuracy',
+        'Fake-quant matches training; model adapted',
         'Are random',
         'Use FP64',
       ],
@@ -352,7 +352,7 @@ export default defineQuestions(
       q: 'A reason BF16 became the default training precision (over FP16) despite FP16’s finer mantissa is…',
       o: [
         'BF16 is faster',
-        'BF16’s FP32-range exponent removes the overflow/underflow fragility and the loss-scaling machinery FP16 needs — robustness/simplicity at scale outweighs FP16’s extra mantissa bits',
+        'BF16 range avoids FP16 overflow/scaling issues',
         'FP16 is unsupported',
         'BF16 is integer',
       ],
@@ -371,7 +371,7 @@ export default defineQuestions(
       q: 'Why does increasing the contraction dimension K in a low-precision matmul eventually require attention to accumulation precision?',
       o: [
         'K is irrelevant',
-        'Longer dot products sum more terms; even with FP32 accumulation, the FP16/FP8 INPUT rounding error per term accumulates with K — for very large K (or ill-conditioned data) this can degrade accuracy enough to matter',
+        'FP16/FP8 input errors accumulate over large K',
         'It overflows always',
         'It is exact',
       ],
@@ -390,7 +390,7 @@ export default defineQuestions(
       q: 'A reason per-token activation quantization pairs naturally with per-channel weight quantization in LLM inference is…',
       o: [
         'They conflict',
-        'In Y = X·W, scaling X per row (token) and W per column (output channel) keeps the dequantization a simple outer-product of scales applied to the INT result — each operand quantized along the dimension where its outliers vary',
+        'Row×col scales dequant as outer product',
         'For FP64',
         'Random pairing',
       ],
@@ -409,7 +409,7 @@ export default defineQuestions(
       q: 'The reason FP4 needs micro-scaling (per-block scale) but FP16 does not is rooted in…',
       o: [
         'FP4 is integer',
-        'FP4 has ~16 representable values with tiny range, so a single per-tensor scale can’t fit elements of varying magnitude; a per-block scale adapts locally. FP16’s 16 bits give enough range/precision to avoid per-block scaling',
+        'FP4’s ~16 values need per-block scale',
         'FP16 is integer',
         'They both need it',
       ],
@@ -428,7 +428,7 @@ export default defineQuestions(
       q: 'Why is the OPTIMIZER step (Adam update) typically NOT done in FP8 even when matmuls are FP8?',
       o: [
         'For speed',
-        'The update applies tiny increments to weights and maintains second-moment statistics; FP8’s coarse precision would lose these small/precise values, harming convergence — so master weights and Adam states stay FP32',
+        'FP8 too coarse for moments; FP32 masters',
         'It is compute-free',
         'For graphics',
       ],
@@ -447,7 +447,7 @@ export default defineQuestions(
       q: 'For numerically robust FP8 training, gradient tensors typically use E5M2 because…',
       o: [
         'They need precision',
-        'Gradients span a wide dynamic range (small to large magnitudes), and E5M2’s extra exponent bits cover that range better than E4M3 — even at the cost of fewer mantissa bits',
+        'E5M2 wide exponent covers gradient range',
         'They are integer',
         'For graphics',
       ],
@@ -466,7 +466,7 @@ export default defineQuestions(
       q: 'A subtle FP8 training failure mode is "scale lag" with delayed scaling, where…',
       o: [
         'Nothing happens',
-        'A sudden increase in a tensor’s magnitude isn’t reflected by the (history-based) scale yet, causing overflow (inf) before the scale catches up — a reason to bound/clip or use current scaling for volatile tensors',
+        'Stale scale misses spikes → overflow',
         'The model speeds up',
         'It uses FP64',
       ],
@@ -485,7 +485,7 @@ export default defineQuestions(
       q: 'Why might a model quantized to INT8 with PTQ lose accuracy that QAT recovers?',
       o: [
         'PTQ is exact',
-        'PTQ just rounds a trained model to INT8 (the weights weren’t trained to tolerate it); QAT trains WITH simulated quantization so the model adapts its weights to be robust to the rounding — recovering accuracy at low bit-widths',
+        'PTQ: round trained model; QAT: train with quant',
         'QAT uses FP64',
         'They are identical',
       ],
@@ -504,7 +504,7 @@ export default defineQuestions(
       q: 'The HPL-MxP (mixed-precision HPL) benchmark exists alongside HPL (FP64) because…',
       o: [
         'They are the same',
-        'It measures mixed-precision (tensor-core) performance with iterative refinement to FP64 accuracy — reflecting how modern AI hardware accelerates HPC linear algebra, vs HPL’s pure-FP64 measure',
+        'Tensor-core throughput to FP64 accuracy',
         'It is slower',
         'It avoids matmul',
       ],
@@ -523,7 +523,7 @@ export default defineQuestions(
       q: 'When converting weights to FP8 with a per-tensor scale, choosing the scale so amax maps just BELOW the format max (with a small margin) is done to…',
       o: [
         'Waste range',
-        'Avoid overflow to inf from values at/above amax (and rounding up) while still using most of the representable range — a safety margin against clipping/overflow',
+        'Amax just below max: safety margin against overflow',
         'Increase precision to FP16',
         'Use the CPU',
       ],
@@ -542,7 +542,7 @@ export default defineQuestions(
       q: 'A reason low-precision training generally tolerates reduced precision better than low-precision SCIENTIFIC computing is…',
       o: [
         'Science uses integers',
-        'Neural-net training is statistically robust and self-correcting (SGD averages noise; the objective is approximate), while many HPC algorithms are sensitive to rounding (ill-conditioning, accumulation) and need FP64 for correct results',
+        'DL self-corrects; HPC ill-conditioned, FP64',
         'Training is exact',
         'Science is random',
       ],

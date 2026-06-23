@@ -30,7 +30,7 @@ export default defineQuestions(
       q: 'atomicInc(addr, val) has special wraparound semantics:',
       o: [
         'It simply adds 1',
-        'It computes ((old >= val) ? 0 : old+1), wrapping to 0 at the limit — useful for ring-buffer indices',
+        'Wraps to 0 at val (ring-buffer index)',
         'It decrements',
         'It saturates at val',
       ],
@@ -49,7 +49,7 @@ export default defineQuestions(
       q: '__syncthreads_count(predicate) returns…',
       o: [
         'Nothing; it just synchronizes',
-        'After a block barrier, the number of threads in the block for which the predicate was nonzero',
+        'Count of threads with predicate true (after barrier)',
         'The first thread index with predicate true',
         'A per-warp count',
       ],
@@ -68,7 +68,7 @@ export default defineQuestions(
       q: 'atomicAdd_system (system-scope atomic) is needed when…',
       o: [
         'Many threads update shared memory',
-        'A device atomic must be ordered/visible with respect to the host CPU or peer GPUs accessing the same (unified/mapped) memory',
+        'It must be visible to the host CPU or peer GPUs',
         'You want faster atomics',
         'The value is a double',
       ],
@@ -87,7 +87,7 @@ export default defineQuestions(
       q: 'Why are atomics to SHARED memory generally faster than the same atomics to GLOBAL memory?',
       o: [
         'Shared atomics are not really atomic',
-        'Shared memory is on-chip with much lower latency, so the read-modify-write completes far faster under contention',
+        'On-chip shared memory has much lower latency',
         'Global atomics are emulated',
         'Shared memory has more banks',
       ],
@@ -106,7 +106,7 @@ export default defineQuestions(
       q: 'The CUDA memory consistency model is "weak/relaxed." A practical consequence is that…',
       o: [
         'All memory operations are globally ordered automatically',
-        'Without fences/atomics with proper ordering, one thread’s writes may become visible to others out of program order',
+        'Writes can become visible out of program order',
         'Shared memory is never coherent',
         'Atomics are unnecessary',
       ],
@@ -125,7 +125,7 @@ export default defineQuestions(
       q: 'In libcu++/CUDA C++ atomics, a load with cuda::memory_order_acquire paired with a store with memory_order_release guarantees…',
       o: [
         'Nothing in particular',
-        'That writes before the release store are visible to a thread that observes the value via the acquire load (a release/acquire handshake)',
+        'A release/acquire happens-before handshake',
         'Faster atomics',
         'Lower register usage',
       ],
@@ -144,7 +144,7 @@ export default defineQuestions(
       q: 'A simple spin-lock on the GPU acquires with a loop like `while (atomicCAS(lock, 0, 1) != 0);` and must release with…',
       o: [
         'Just lock = 0;',
-        'A fence then the release, e.g. __threadfence(); atomicExch(lock, 0); so protected writes are visible before the lock is freed',
+        '__threadfence(); atomicExch(lock, 0)',
         'cudaDeviceSynchronize()',
         'Nothing; CAS handles it',
       ],
@@ -163,7 +163,7 @@ export default defineQuestions(
       q: 'Writing a spin-lock so that all 32 lanes of a warp try to grab the SAME lock can deadlock (especially pre-Volta) because…',
       o: [
         'Locks are illegal in CUDA',
-        'A lane holding the lock may be waiting at the reconvergence point for lanes that are spinning to acquire it — they never make progress together',
+        'The holder waits at reconvergence for spinning lanes',
         'atomicCAS is too slow',
         'Shared memory is unavailable',
       ],
@@ -182,7 +182,7 @@ export default defineQuestions(
       q: 'After threads write to shared memory and before a different set of threads reads those values, you place __syncthreads() because it acts as…',
       o: [
         'Only a performance hint',
-        'Both a barrier AND a memory barrier: it ensures all prior shared/global writes by the block are complete and visible before anyone proceeds',
+        'Both a barrier and a memory barrier',
         'A no-op in release builds',
         'A warp-level fence',
       ],
@@ -201,7 +201,7 @@ export default defineQuestions(
       q: 'cuda::barrier (an arrive/wait barrier from libcu++) generalizes __syncthreads by allowing…',
       o: [
         'Only block-wide sync',
-        'Threads to "arrive" (signal) and later "wait", decoupling the signal from the wait so producers can proceed while consumers block — and supporting async-copy completion',
+        'Separate arrive() and wait() phases',
         'Synchronization across GPUs',
         'Lower precision',
       ],
@@ -220,7 +220,7 @@ export default defineQuestions(
       q: 'For a counter that many threads increment but whose intermediate order does not matter, using a relaxed atomic (memory_order_relaxed) instead of a stronger one…',
       o: [
         'Breaks correctness',
-        'Is fine and can be cheaper, since you only need atomicity of the increment, not ordering with other memory',
+        'Fine and cheaper; only atomicity is needed',
         'Is impossible on GPUs',
         'Forces sequential consistency',
       ],
@@ -239,7 +239,7 @@ export default defineQuestions(
       q: 'A block-level reduction in shared memory halves the active stride each step (s = blockDim/2, s/=2) with a __syncthreads() inside the loop. The barrier is required because…',
       o: [
         'It speeds up the loop',
-        'Each step reads values written by other threads in the previous step, so all writes must complete before the next read',
+        'Each step reads writes from the previous step',
         'It avoids atomics',
         'Shared memory is read-only otherwise',
       ],
@@ -258,7 +258,7 @@ export default defineQuestions(
       q: 'To implement atomicMax on a float (no native float atomicMax historically), a common trick is…',
       o: [
         'Use atomicAdd with the max',
-        'Reinterpret the float bits as int and use atomicMax on the int pattern, exploiting that IEEE float ordering matches int ordering for nonnegative values (with sign handling)',
+        'atomicMax on the float bit pattern as int',
         'It is impossible',
         'Use a double instead',
       ],
@@ -277,7 +277,7 @@ export default defineQuestions(
       q: 'On Hopper, an mbarrier tracks an "arrive count" AND a "transaction count" so that…',
       o: [
         'It can count warps only',
-        'Consumers can wait until a specified number of bytes (e.g. from a TMA copy) have landed, not just until threads have arrived',
+        'Wait until N bytes (e.g. a TMA copy) land',
         'It replaces all atomics',
         'It synchronizes across GPUs',
       ],
@@ -296,7 +296,7 @@ export default defineQuestions(
       q: 'Two threads atomicAdd to two DIFFERENT counters that happen to lie in the same 128-byte cache line. The effect is…',
       o: [
         'A correctness bug',
-        'Correct results, but possible "false sharing" contention as the line bounces, reducing atomic throughput',
+        'Correct, but false-sharing contention',
         'A deadlock',
         'Undefined behavior',
       ],
@@ -325,7 +325,7 @@ export default defineQuestions(
       q: 'A flag-based handshake: producer writes data then sets a flag; consumer spins on the flag then reads data. To be correct the producer needs ___ and the consumer needs ___.',
       o: [
         'Nothing / nothing',
-        '__threadfence() before setting the flag / to read the flag with appropriate ordering (and a fence/acquire) before reading the data',
+        'Release fence before the flag / acquire before the data',
         'Only __syncthreads / only atomics',
         'A larger block / more registers',
       ],
@@ -344,7 +344,7 @@ export default defineQuestions(
       q: 'For a zero-copy flag that the HOST polls to detect device completion, the device should publish it with…',
       o: [
         '__threadfence_block()',
-        '__threadfence_system(), so the write is visible to the host CPU',
+        '__threadfence_system() (visible to host)',
         'No fence',
         '__syncthreads()',
       ],
@@ -363,7 +363,7 @@ export default defineQuestions(
       q: 'Why is a lock-free design (using atomicCAS retry loops) often preferred over locks on the GPU?',
       o: [
         'Locks are not supported',
-        'Lock-free code avoids the warp-level deadlock/serialization risks of holding a lock, and tends to scale better under massive parallelism',
+        'Avoids warp deadlock; scales better',
         'Lock-free is always simpler',
         'Atomics are free',
       ],
@@ -382,7 +382,7 @@ export default defineQuestions(
       q: 'atomicAdd returning the old value lets you implement a parallel append/compaction by…',
       o: [
         'Sorting the array first',
-        'Using the returned old index as a unique slot to write into a shared output buffer (a global counter as the next-free index)',
+        'The old value gives a unique output slot',
         'Using shared memory only',
         'Calling it twice',
       ],
@@ -401,7 +401,7 @@ export default defineQuestions(
       q: 'In a producer/consumer kernel using a multi-stage shared-memory buffer, how many mbarriers/phases are typically needed?',
       o: [
         'One total',
-        'One pair (full/empty) per buffer stage, so producers and consumers can work on different stages concurrently',
+        'One full/empty pair per buffer stage',
         'One per thread',
         'None',
       ],
@@ -420,7 +420,7 @@ export default defineQuestions(
       q: '__syncthreads() placed so that threads in a block reach DIFFERENT __syncthreads() calls (e.g. two barriers in opposite branches) is…',
       o: [
         'Perfectly fine',
-        'Undefined behavior — all threads of the block must arrive at the same barrier',
+        'Undefined; all threads must hit the same barrier',
         'A way to synchronize warps separately',
         'Faster than one barrier',
       ],
@@ -439,7 +439,7 @@ export default defineQuestions(
       q: 'Named barriers (PTX bar.sync with an id and thread count) enable…',
       o: [
         'Grid-wide barriers',
-        'Subsets of a block to synchronize independently — e.g. producer warps on one barrier, consumer warps on another (warp specialization)',
+        'Subsets of a block sync independently',
         'Cross-GPU sync',
         'Atomic operations',
       ],
@@ -458,7 +458,7 @@ export default defineQuestions(
       q: 'Reading a value written by another thread in the same warp via shared memory still needs ordering because…',
       o: [
         'Warps never share data',
-        'Under independent thread scheduling lanes may not be lockstep, so use __syncwarp() (or volatile/shuffle) to guarantee the write is seen',
+        'Lanes need __syncwarp under ITS',
         'Shared memory is per-thread',
         'It always works without care',
       ],
@@ -477,7 +477,7 @@ export default defineQuestions(
       q: 'A grid-wide reduction implemented as two kernel launches (partial reduce, then reduce the partials) avoids inter-block synchronization by…',
       o: [
         'Using atomics for everything',
-        'Using the kernel boundary itself as a global barrier — all blocks of kernel 1 finish before kernel 2 starts',
+        'The kernel boundary acts as a global barrier',
         'Using __syncthreads across blocks',
         'Running on two GPUs',
       ],
@@ -496,7 +496,7 @@ export default defineQuestions(
       q: 'Using atomicAdd into a single global accumulator from every thread of a large grid is correct but slow primarily because…',
       o: [
         'Floating-point addition is non-associative',
-        'All updates serialize on one memory location, so throughput is bounded by atomic latency regardless of parallelism',
+        'All updates serialize on one location',
         'Atomics are not supported on global memory',
         'It deadlocks',
       ],
@@ -515,7 +515,7 @@ export default defineQuestions(
       q: 'Floating-point atomicAdd makes a parallel sum non-deterministic across runs because…',
       o: [
         'Atomics can lose updates',
-        'The order of additions varies with scheduling, and FP addition is not associative, so rounding differs run to run',
+        'Varying add order + non-associative FP rounding',
         'The hardware is buggy',
         'It overflows randomly',
       ],

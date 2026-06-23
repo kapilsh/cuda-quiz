@@ -10,7 +10,7 @@ export default defineQuestions(
       q: 'In a tiled GEMM with a 32×32 shared tile, each loaded element is reused approximately…',
       o: [
         'Once',
-        '32 times (each element participates in 32 multiply-adds along the tile dimension), so global loads drop ~32× vs the naive kernel',
+        '32 times (loads drop ~32×)',
         '1024 times',
         'Twice',
       ],
@@ -35,7 +35,7 @@ export default defineQuestions(
       q: 'Fusing a bias+activation into a GEMM whose output is 4096×4096 FP16 saves about…',
       o: [
         'Nothing',
-        '~2 reads+writes of the 32 MB output (the separate kernel would reload and rewrite it) — eliminating ~tens of MB of HBM traffic',
+        '~64 MB of HBM round-trip',
         'A reduction',
         'Compute only',
       ],
@@ -54,7 +54,7 @@ export default defineQuestions(
       q: 'Register blocking where each thread computes an 8×8 output micro-tile yields how many FMAs per pair of loaded operands (one column of A, one row of B)?',
       o: [
         '8',
-        '64 (the outer product of an 8-vector of A and an 8-vector of B), so 16 loaded values drive 64 FMAs — high compute-to-load ratio',
+        '64 (16 loads drive 64 FMAs)',
         '16',
         '1',
       ],
@@ -69,7 +69,7 @@ export default defineQuestions(
       q: 'A GEMM with M=N=128, K=16384 underutilizes the GPU (few output tiles). The fix is…',
       o: [
         'Larger tiles',
-        'Split-K or Stream-K: parallelize the long K dimension across more blocks (then reduce partials), giving enough work to fill the SMs',
+        'Split-K/Stream-K over the long K',
         'Smaller grid',
         'FP64',
       ],
@@ -88,7 +88,7 @@ export default defineQuestions(
       q: 'Naive attention writes the N×N score matrix to HBM (O(N²) bytes); FlashAttention’s online softmax reduces this to…',
       o: [
         'O(N²) still',
-        'O(N·d) — it never materializes the full score matrix, streaming K/V tiles and keeping only running statistics + output, so HBM traffic scales with N·d not N²',
+        'O(N·d) — no full score matrix',
         'O(1)',
         'O(N³)',
       ],
@@ -103,7 +103,7 @@ export default defineQuestions(
       q: 'Coalescing a previously strided (stride-8) memory-bound kernel could improve its bandwidth by up to roughly…',
       o: [
         'Nothing',
-        '~8× in the worst case — stride-8 used ~1/8 of each fetched line; coalescing (stride-1) uses the full line, eliminating the over-fetch',
+        '~8× (stride-8 wasted ~7/8 of each line)',
         '2×',
         'It would slow down',
       ],
@@ -118,7 +118,7 @@ export default defineQuestions(
       q: 'A dot-product inner loop with a single accumulator stalls on FMA latency. Using 4 accumulators helps because…',
       o: [
         'It reduces memory',
-        'It breaks the serial dependency chain — 4 independent FMA chains run in parallel, covering the FMA latency (~4 cycles), so the pipe issues every cycle; the 4 partials are summed at the end',
+        'Breaks the dependency chain with 4 FMA chains',
         'It increases precision',
         'It avoids tensor cores',
       ],
@@ -137,7 +137,7 @@ export default defineQuestions(
       q: 'Replacing repeated `x / d` (constant d) in a hot loop with `x * (1/d)` helps because…',
       o: [
         'It is more accurate',
-        'GPU division is multi-instruction/slow; computing the reciprocal once and multiplying turns many divides into one divide + cheap multiplies (watch accuracy / fast-math flags)',
+        'Division is slow; precompute the reciprocal',
         'It uses tensor cores',
         'It coalesces',
       ],
@@ -156,7 +156,7 @@ export default defineQuestions(
       q: 'A 3-pass softmax (max, exp-sum, normalize) fused into one kernel saves…',
       o: [
         'Compute',
-        '~2 extra reads/writes of the row to/from HBM — the fused kernel keeps the row on-chip across the passes (often with online softmax), cutting memory traffic',
+        'Extra HBM reads/writes of the row',
         'A reduction',
         'Registers',
       ],
@@ -175,7 +175,7 @@ export default defineQuestions(
       q: 'Vectorizing an elementwise kernel from scalar float to float4 reduces the load/store instruction count by about…',
       o: [
         'Nothing',
-        '~4× (each instruction now moves 4 elements / 16 bytes), raising memory-instruction efficiency and helping a memory-bound kernel approach peak bandwidth',
+        '~4× (4 elements per instruction)',
         '2×',
         '32×',
       ],
@@ -190,7 +190,7 @@ export default defineQuestions(
       q: 'Stream-K eliminates the tail (wave-quantization) inefficiency of tile-per-block GEMM by…',
       o: [
         'Larger tiles',
-        'Launching a fixed wave of blocks that each process a balanced slice of the TOTAL MAC iteration space — so all SMs stay busy to the end regardless of the problem’s tile count',
+        'A fixed wave splits the total MAC work evenly',
         'One block',
         'Disabling tensor cores',
       ],
@@ -209,7 +209,7 @@ export default defineQuestions(
       q: 'A reduction with each thread summing 8 elements (grid-stride) before the tree reduction primarily improves…',
       o: [
         'Precision',
-        'Memory throughput — threads stream many coalesced elements, keeping the kernel bandwidth-bound (its ideal) and amortizing the reduction overhead over more data',
+        'Memory throughput (coalesced loads)',
         'Occupancy',
         'Divergence',
       ],
@@ -228,7 +228,7 @@ export default defineQuestions(
       q: 'CUB’s decoupled look-back scan is single-pass (vs a 2-pass scan), nearly bandwidth-optimal, because each block…',
       o: [
         'Sorts first',
-        'Computes its local aggregate, publishes it, then inspects predecessors’ published states to derive its prefix — avoiding a second full pass over the data',
+        'Publishes aggregate, looks back for its prefix',
         'Uses atomics per element',
         'Runs on the host',
       ],
@@ -247,7 +247,7 @@ export default defineQuestions(
       q: 'Padding a GEMM’s M, N, K to multiples of the tensor-core MMA tile (e.g. 16) avoids…',
       o: [
         'Compute',
-        'Wasted throughput from partial/predicated MMA tiles or slower library fallbacks; aligned dimensions map cleanly to whole MMA instructions',
+        'Partial MMA tiles and fallbacks',
         'A reduction',
         'Coalescing',
       ],
@@ -266,7 +266,7 @@ export default defineQuestions(
       q: 'A kernel hits 90% of peak bandwidth (memory-bound). The ONLY way to go faster is…',
       o: [
         'More occupancy',
-        'Reduce the bytes moved — fuse with neighbors, tile for reuse, or store in fewer bytes (FP16/INT8); you can’t exceed the bandwidth roof, so move less data',
+        'Reduce the bytes moved',
         'More registers',
         'Larger grid',
       ],
@@ -285,7 +285,7 @@ export default defineQuestions(
       q: 'Choosing channels-last (NHWC) for a conv on tensor cores matters because…',
       o: [
         'It uses less memory',
-        'The fastest tensor-core/implicit-GEMM conv kernels expect channels contiguous; NCHW forces transposes or slower kernels, so NHWC lets the model hit the fast path',
+        'Fast conv kernels want channels contiguous',
         'It increases precision',
         'It avoids tensor cores',
       ],
@@ -304,7 +304,7 @@ export default defineQuestions(
       q: 'A double-buffered cp.async GEMM uses 2 stages but tensor cores still stall on loads. The likely fix is…',
       o: [
         'Fewer stages',
-        'Add stages (3–4 buffers) so more tile loads are in flight to cover the global-load latency — provided shared memory/occupancy allow',
+        'Add stages to hide the load latency',
         'More atomics',
         'FP64',
       ],
@@ -323,7 +323,7 @@ export default defineQuestions(
       q: 'Eliminating a 16-way bank conflict in a shared-memory access can speed that access by up to…',
       o: [
         'Nothing',
-        '~16× for that access — the 16-way conflict serialized into 16 transactions; conflict-free access is one transaction',
+        '~16× (16 transactions → 1)',
         '2×',
         'It slows down',
       ],
@@ -338,7 +338,7 @@ export default defineQuestions(
       q: 'A fused kernel is SLOWER than two separate kernels despite less HBM traffic. The most likely cause is…',
       o: [
         'Fusion never helps',
-        'The fused kernel’s higher register/shared-memory demand dropped occupancy or caused spills, outweighing the saved memory traffic — check resource usage and achieved occupancy',
+        'Resource demand cut occupancy or spilled',
         'More launches',
         'Divergence',
       ],
@@ -357,7 +357,7 @@ export default defineQuestions(
       q: 'A transpose kernel writes uncoalesced. Staging the tile in shared memory and writing it out transposed makes both global accesses coalesced; padding the tile to [32][33]…',
       o: [
         'Wastes memory uselessly',
-        'Removes the 32-way bank conflict on the transposed (column) shared access, at the cost of a tiny amount of shared memory',
+        'Removes the 32-way column bank conflict',
         'Slows it down',
         'Disables coalescing',
       ],
@@ -376,7 +376,7 @@ export default defineQuestions(
       q: 'Thread coarsening (each thread computes 4 outputs) helps a latency-bound kernel by…',
       o: [
         'Reducing memory',
-        'Adding independent per-thread work (ILP/MLP) to cover latencies without more warps — useful when occupancy is capped; too much coarsening raises register pressure',
+        'Independent per-thread work (ILP/MLP)',
         'Increasing occupancy',
         'Using tensor cores',
       ],
@@ -395,7 +395,7 @@ export default defineQuestions(
       q: 'In FlashAttention, keeping the query tile in registers while streaming K/V is chosen because…',
       o: [
         'Q is largest',
-        'Each query tile is reused against EVERY K/V tile (high reuse), so caching it in fast registers and streaming K/V (each read once) maximizes reuse and minimizes HBM traffic',
+        'Q is reused against every K/V tile',
         'K is constant',
         'It avoids softmax',
       ],
@@ -414,7 +414,7 @@ export default defineQuestions(
       q: 'A kernel is SFU-bound after switching to __expf. Going faster now requires…',
       o: [
         'More memory accesses',
-        'Reducing the COUNT of transcendentals (algebraic simplification, reuse) or overlapping them with other pipes — the SFU throughput is the ceiling, already accelerated by the fast intrinsic',
+        'Cut the count of transcendentals',
         'More occupancy',
         'Larger grid',
       ],
@@ -433,7 +433,7 @@ export default defineQuestions(
       q: 'For an iterative algorithm, keeping intermediate state in GLOBAL memory across kernel launches (vs copying to host each step) matters because…',
       o: [
         'Host memory is larger',
-        'PCIe transfer is far slower than HBM; round-tripping intermediates to the host each iteration would dominate runtime — device residency keeps it on the fast memory',
+        'PCIe is far slower than HBM',
         'Global memory clears between launches',
         'It improves occupancy',
       ],
@@ -452,7 +452,7 @@ export default defineQuestions(
       q: 'A GEMM tuned for Ampere (cp.async + mma) underperforms on Hopper. To reach Hopper peak you typically need…',
       o: [
         'Nothing',
-        'A Hopper-aware kernel: TMA bulk copies, async wgmma, thread-block clusters/DSMEM, larger tiles and warp specialization — the Ampere scheme doesn’t exploit the new data paths',
+        'A Hopper kernel: TMA, wgmma, clusters',
         'More registers',
         'FP64',
       ],
@@ -471,7 +471,7 @@ export default defineQuestions(
       q: 'Top-k for small k is best done WITHOUT a full sort by…',
       o: [
         'Always sorting',
-        'Maintaining a small candidate set (bitonic top-k, per-warp/block heaps, or threshold selection) — avoiding the O(n log n) cost of sorting the whole array',
+        'Track only the k largest',
         'atomicMax only',
         'The CPU',
       ],
@@ -490,7 +490,7 @@ export default defineQuestions(
       q: 'A kernel is L2-bound (high L2 throughput, DRAM not saturated). A useful step is…',
       o: [
         'More atomics',
-        'Increase L1/register reuse (tile so more accesses hit L1 or stay in registers) so fewer requests reach L2 — or improve locality to raise the L1 hit rate',
+        'More L1/register reuse, fewer L2 hits',
         'Use FP64',
         'Lower occupancy',
       ],
@@ -509,7 +509,7 @@ export default defineQuestions(
       q: 'The single biggest reason a custom fused Triton/CUTLASS kernel beats calling separate library ops is usually…',
       o: [
         'Faster math units',
-        'Fusion: combining the op chain (matmul + bias + activation + dropout/residual) so intermediates stay on-chip, eliminating the HBM round-trips the separate calls incur',
+        'Fusion keeps intermediates on-chip',
         'Lower precision',
         'More occupancy',
       ],

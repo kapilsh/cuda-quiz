@@ -10,7 +10,7 @@ export default defineQuestions(
       q: 'The modern way to use textures (vs. deprecated texture references) is…',
       o: [
         'Global __texture__ variables',
-        'Texture objects: create a cudaTextureObject_t from a resource + texture descriptor and pass it to the kernel',
+        'Texture objects (cudaTextureObject_t)',
         'cudaMemcpyToSymbol',
         'Constant memory',
       ],
@@ -29,7 +29,7 @@ export default defineQuestions(
       q: 'A cudaArray (cudaMallocArray) differs from linear device memory in that it…',
       o: [
         'Lives on the host',
-        'Uses an opaque, hardware-optimized layout for texture/surface access (e.g. space-filling order for 2D locality)',
+        'An opaque layout tuned for texture access',
         'Is always faster for linear access',
         'Cannot be read by kernels',
       ],
@@ -48,7 +48,7 @@ export default defineQuestions(
       q: 'Surface memory (surface objects) differs from texture objects mainly because surfaces…',
       o: [
         'Are read-only',
-        'Support WRITES to cudaArray-backed memory from kernels (read-write), whereas textures are read-only with filtering',
+        'Support writes to array-backed memory',
         'Are stored in registers',
         'Cannot be cached',
       ],
@@ -67,7 +67,7 @@ export default defineQuestions(
       q: 'To make the L2 persisting (access policy) window actually retain a buffer, you set an access policy on a stream/graph AND ensure…',
       o: [
         'Nothing else is needed',
-        'The persisting window size does not exceed the L2 set-aside capacity (cudaDeviceSetLimit(cudaLimitPersistingL2CacheSize)); otherwise it thrashes',
+        'The window fits the L2 set-aside capacity',
         'The buffer is in shared memory',
         'ECC is disabled',
       ],
@@ -86,7 +86,7 @@ export default defineQuestions(
       q: 'GPU L1 caches are NOT coherent across SMs. A practical consequence is that…',
       o: [
         'L1 is useless',
-        'A value written to global memory by a block on one SM may not be seen by another SM’s stale L1 copy without a fence (or bypassing L1)',
+        'Another SM may hold a stale L1 copy without a fence',
         'Shared memory is incoherent',
         'Registers are shared',
       ],
@@ -105,7 +105,7 @@ export default defineQuestions(
       q: 'PTX cache operators like ld.global.cs ("cache streaming") hint that data…',
       o: [
         'Should be pinned in L1',
-        'Will not be reused, so it should be cached with eviction-first policy (or bypass L1) to avoid polluting the cache',
+        'Won’t be reused; cache evict-first',
         'Is constant',
         'Must be atomic',
       ],
@@ -143,7 +143,7 @@ export default defineQuestions(
       q: 'cudaHostRegister lets you…',
       o: [
         'Allocate new pinned memory',
-        'Page-lock an EXISTING host allocation (e.g. from malloc) so it can be used for fast/async transfers or mapping',
+        'Page-lock an existing host allocation',
         'Register a kernel',
         'Free host memory',
       ],
@@ -162,7 +162,7 @@ export default defineQuestions(
       q: 'Unified Memory "oversubscription" means…',
       o: [
         'Using more registers than available',
-        'Allocating more managed memory than physical GPU memory; pages migrate in/out on demand (paging to host), enabling larger-than-GPU working sets at a performance cost',
+        'Allocating more managed memory than GPU RAM',
         'Running too many kernels',
         'Exceeding the warp limit',
       ],
@@ -181,7 +181,7 @@ export default defineQuestions(
       q: 'cudaPointerGetAttributes(&attr, ptr) is useful to…',
       o: [
         'Allocate memory',
-        'Determine at runtime whether a pointer is host, device, or managed memory (and which device) — handy in generic library code',
+        'Tell if a pointer is host, device, or managed',
         'Free a pointer',
         'Convert host to device pointers',
       ],
@@ -200,7 +200,7 @@ export default defineQuestions(
       q: 'For 8-byte shared-memory elements (double), bank conflicts behave such that…',
       o: [
         'There are never conflicts',
-        'A warp’s 32 doubles span two 128-byte rows of 32 banks; access patterns must still avoid mapping different threads to the same bank in the same phase',
+        'Doubles span two banks; avoid same-bank phases',
         'Doubles cannot be in shared memory',
         'Conflicts double precision',
       ],
@@ -219,7 +219,7 @@ export default defineQuestions(
       q: 'Global memory atomics on most GPUs are performed at which level of the hierarchy?',
       o: [
         'In each SM’s L1',
-        'At the L2 cache (the device-wide coherence point), which is why atomics order correctly across SMs',
+        'At the L2 cache (device-wide coherence point)',
         'In registers',
         'On the host',
       ],
@@ -238,7 +238,7 @@ export default defineQuestions(
       q: 'Vectorizing SHARED-memory accesses (e.g. reading float4 from shared) can help by…',
       o: [
         'Avoiding bank conflicts always',
-        'Reducing the number of shared-memory instructions; but you must ensure the 16-byte access pattern still avoids bank conflicts',
+        'Fewer SMEM instructions (mind bank conflicts)',
         'Bypassing the banks',
         'Increasing occupancy',
       ],
@@ -257,7 +257,7 @@ export default defineQuestions(
       q: 'cudaMemAdviseSetPreferredLocation on managed memory tells the driver to…',
       o: [
         'Pin pages on the host',
-        'Keep the pages physically resident on a specified processor (GPU or CPU), so others access them remotely instead of migrating them away',
+        'Anchor pages to one processor; others access remotely',
         'Compress the pages',
         'Make them read-only',
       ],
@@ -276,7 +276,7 @@ export default defineQuestions(
       q: 'Approximately how does pinned-memory H2D transfer bandwidth compare to pageable on PCIe Gen4?',
       o: [
         'Pinned is slower',
-        'Pinned is notably faster (closer to PCIe peak) because DMA needs page-locked memory; pageable is staged through an internal pinned buffer',
+        'Pinned is faster (near PCIe peak) — DMA needs it',
         'They are identical',
         'Pageable is faster for small sizes only',
       ],
@@ -295,7 +295,7 @@ export default defineQuestions(
       q: 'When using cp.async to load global→shared, you must signal completion before reading the data. The mechanism is…',
       o: [
         'A plain __syncthreads with no commit',
-        'cp.async.commit_group then cp.async.wait_group (or an mbarrier) so threads wait until the async copies have landed in shared memory',
+        'commit_group then wait_group (or an mbarrier)',
         'A memory fence only',
         'An atomicAdd',
       ],
@@ -314,7 +314,7 @@ export default defineQuestions(
       q: 'Normalized texture coordinates and a "clamp" address mode are useful because they…',
       o: [
         'Make textures writable',
-        'Let you sample with [0,1) coordinates and automatically handle out-of-range accesses (clamp to edge), simplifying boundary handling in stencils/resampling',
+        'Sample with [0,1) coords; clamp handles edges',
         'Increase bandwidth',
         'Disable caching',
       ],
@@ -333,7 +333,7 @@ export default defineQuestions(
       q: 'A kernel writes results to global memory; a later kernel (separate launch) reads them. Is an explicit fence/flush needed between them?',
       o: [
         'Yes, always __threadfence_system',
-        'No — the kernel-launch boundary guarantees the first kernel’s global writes are visible to the second',
+        'No — the launch boundary makes writes visible',
         'Yes, you must call cudaMemcpy',
         'Only if using shared memory',
       ],
@@ -352,7 +352,7 @@ export default defineQuestions(
       q: 'For a kernel dominated by large, single-pass streaming reads you never reuse, a good caching strategy is to…',
       o: [
         'Force everything into L1',
-        'Use streaming/L2-only cache hints (.cs/.cg) so the streamed data does not evict useful L1/L2 lines',
+        'Use streaming hints (.cs/.cg) to avoid eviction',
         'Use constant memory',
         'Use atomics',
       ],
@@ -381,7 +381,7 @@ export default defineQuestions(
       q: 'A 32×32 shared-memory tile of floats accessed by row (tile[ty][tx], tx along the warp) has bank conflicts of what degree, before padding?',
       o: [
         'None (perfectly conflict-free)',
-        'None for the row access — consecutive tx hit consecutive banks; conflicts arise for COLUMN access (tile[tx][ty]), which padding to [32][33] fixes',
+        'None for rows; columns conflict (fix by padding)',
         '32-way for rows',
         '16-way for rows',
       ],
@@ -400,7 +400,7 @@ export default defineQuestions(
       q: 'Coalescing applies to global WRITES as well as reads. A scattered write pattern (thread i writes out[perm[i]]) is slow because…',
       o: [
         'Writes are always slow',
-        'The warp’s stores hit many different cache lines, requiring many transactions and partially-used lines',
+        'Stores hit many cache lines, more transactions',
         'It causes a race condition',
         'It needs atomics',
       ],
@@ -419,7 +419,7 @@ export default defineQuestions(
       q: 'cudaMemcpyPeerAsync(dst, dstDev, src, srcDev, bytes, stream) copies…',
       o: [
         'Host to host',
-        'Directly between two GPUs’ memories (peer-to-peer), asynchronously on a stream',
+        'Between two GPUs (peer-to-peer), async',
         'Device to host',
         'Within one GPU only',
       ],
@@ -438,7 +438,7 @@ export default defineQuestions(
       q: 'Why might storing a frequently-reused operand tile in REGISTERS outperform shared memory in a GEMM inner loop?',
       o: [
         'Registers are off-chip',
-        'Registers have no bank conflicts and the highest bandwidth/lowest latency; keeping the micro-tile in registers feeds the FMAs without shared-memory traffic each step',
+        'Registers: no conflicts, fastest, feed the FMAs',
         'Registers are larger than shared memory',
         'Shared memory cannot hold floats',
       ],
@@ -457,7 +457,7 @@ export default defineQuestions(
       q: 'The "AccessedBy" advice (cudaMemAdviseSetAccessedBy) for managed memory…',
       o: [
         'Migrates the data to that device',
-        'Establishes a mapping so the named processor can access the pages without page faults/migration (direct remote access)',
+        'Maps pages for direct remote access (no faults)',
         'Makes the data read-only',
         'Pins the pages on the host',
       ],
@@ -476,7 +476,7 @@ export default defineQuestions(
       q: 'Why is reading the same global array through both a normal pointer and a const __restrict__ (read-only cache) pointer in the same kernel potentially unsafe?',
       o: [
         'It always crashes',
-        'If the kernel writes the array via the normal pointer, the read-only cache may return stale data (it assumes the data is immutable)',
+        'A write can leave the read-only cache stale',
         'It uses too many registers',
         'It disables coalescing',
       ],
@@ -495,7 +495,7 @@ export default defineQuestions(
       q: 'A 3D texture is particularly useful for…',
       o: [
         'Sorting',
-        'Volumetric data (e.g. medical/CT volumes, 3D simulations) where trilinear filtering and 3D spatial caching accelerate sampling',
+        'Volumetric data with 3D filtering',
         'Matrix multiply',
         'Reductions',
       ],
@@ -514,7 +514,7 @@ export default defineQuestions(
       q: 'On Hopper, TMA "multicast" reduces HBM traffic by…',
       o: [
         'Compressing the tile',
-        'Loading a global tile once and distributing it to the shared memory of multiple blocks in a cluster, instead of each block reading it from HBM',
+        'Load a tile once, share across the cluster',
         'Caching in registers',
         'Using constant memory',
       ],
@@ -533,7 +533,7 @@ export default defineQuestions(
       q: 'A managed-memory program runs much slower than expected with many "page fault" events in the profile. The fix is usually to…',
       o: [
         'Add more streams',
-        'Prefetch data to the GPU (cudaMemPrefetchAsync) and/or set access hints so pages are resident before the kernel touches them',
+        'Prefetch to the GPU and set access hints',
         'Increase the block size',
         'Use constant memory',
       ],
